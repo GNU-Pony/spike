@@ -1,3 +1,6 @@
+spike [--interative]
+--> start interactive graphical terminal mode
+
 spike --bootstrap
 --> update package manager and reposity
 
@@ -64,4 +67,5 @@ spike --version
 -v  --version
 -a  --nodep
 -f  --info
+-I  --interactive
 
