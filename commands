@@ -10,7 +10,7 @@ spike --proofread SCROLL...
 spike --ride SCROLL [--private]
 --> execute package in best possible way
 
-spike --read SCROLL... [--list] [--info=FIELD]
+spike --read SCROLL... [--list | --info=FIELD]
 --> get scroll information
 
 spike --write SCROLL... [--pinpal ROOT] [--private] [--asdep | --asexplicit] [--nodep] [--force]
