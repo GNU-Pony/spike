@@ -13,7 +13,7 @@ spike --ride SCROLL [--private]
 spike --read SCROLL... [--list] [--info=FIELD]
 --> get scroll information
 
-spike --write SCROLL... [--pinpal ROOT] [--private] [--asdep | --asexplicit] [--nodep]
+spike --write SCROLL... [--pinpal ROOT] [--private] [--asdep | --asexplicit] [--nodep] [--force]
 --> install package
 
 spike --find SCROLL... [--owner | --written=yes|no]
@@ -50,22 +50,23 @@ spike --version
 -W  --write
 -F  --find
 -E  --erase
--p  --pinpal
+    --pinpal
 -C  --claim
--r  --recursive
--e  --entire
+    --recursive
+    --entire
 -D  --disclaim
 -u  --private
 -o  --owner
 -l  --list
 -N  --clean
--d  --asdep
--n  --asexplicit
+    --asdep
+    --asexplicit
 -i  --ignore
 -w  --written
 -h  --help
 -v  --version
--a  --nodep
+    --nodep
 -f  --info
 -I  --interactive
+    --force
 
