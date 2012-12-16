@@ -1,0 +1,67 @@
+spike --bootstrap
+--> update package manager and reposity
+
+spike --proofread SCROLL...
+--> verify that a scroll is correct
+
+spike --ride SCROLL [--private]
+--> execute package in best possible way
+
+spike --read SCROLL... [--list] [--info=FIELD]
+--> get scroll information
+
+spike --write SCROLL... [--pinpal ROOT] [--private] [--asdep | --asexplicit] [--nodep]
+--> install package
+
+spike --find SCROLL... [--owner | --written=yes|no]
+--> find a scroll either by name (default) or by ownership
+
+spike --erase SCROLL... [--pinpal ROOT] [--private]
+--> uninstall package
+
+spike --claim FILE... [--recursive | --entire] SCROLL
+--> make FILE a part of SCROLL, and all subfiles if --recursive
+--> if --entire is on, --recursive is emulated at lookup
+
+spike --disclaim FILE... [--recursive] SCROLL
+--> remove FILE from SCROLL, and all subfiles if --rescursive
+
+spike --update [--ignore SCROLL]...
+--> install updated packages
+
+spike --clean
+--> uninstall unneeded package
+
+spike --help
+--> display help
+
+spike --version
+--> display version information
+
+
+
+-B  --bootstrap
+-P  --proofread
+-X  --ride
+-R  --read
+-W  --write
+-F  --find
+-E  --erase
+-p  --pinpal
+-C  --claim
+-r  --recursive
+-e  --entire
+-D  --disclaim
+-u  --private
+-o  --owner
+-l  --list
+-N  --clean
+-d  --asdep
+-n  --asexplicit
+-i  --ignore
+-w  --written
+-h  --help
+-v  --version
+-a  --nodep
+-f  --info
+
