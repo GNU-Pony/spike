@@ -32,6 +32,18 @@ spike --disclaim FILE... [--recursive] SCROLL
 spike --update [--ignore SCROLL]...
 --> install updated packages
 
+spike --archive ARCHIVE [--scrolls]
+--> create an archive of everything that is installed,
+--> if --scrolls is on, only the scroll versions are
+--> and file claims are stored and used at restore
+
+spike --restore ARCHIVE [--shared | --full | --old] [--downgrade | --upgrade]
+--> restore an archived state, either only shared packages,
+--> full restore (default) which removed unarchived packages,
+--> or only archived packages that is currently not installed;
+--> and either downgrades only, upgrades only, or (default)
+--> regardless of version.
+
 spike --clean
 --> uninstall unneeded package
 
@@ -69,4 +81,11 @@ spike --version
 -f  --info
 -I  --interactive
     --force
-
+    --archive
+    --restore-archive
+    --scrolls
+    --downgrade
+    --upgrade
+    --shared
+    --full
+    --old
