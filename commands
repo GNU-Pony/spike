@@ -13,13 +13,13 @@ spike --ride SCROLL [--private]
 spike --read SCROLL... [--list | --info=FIELD]
 --> get scroll information
 
-spike --write SCROLL... [--pinpal ROOT] [--private] [--asdep | --asexplicit] [--nodep] [--force]
+spike --write SCROLL... [--pinpal ROOT | --private] [--asdep | --asexplicit] [--nodep] [--force]
 --> install package
 
 spike --find SCROLL... [--owner | --written=yes|no]
 --> find a scroll either by name (default) or by ownership
 
-spike --erase SCROLL... [--pinpal ROOT] [--private]
+spike --erase SCROLL... [--pinpal ROOT | --private]
 --> uninstall package
 
 spike --claim FILE... [--recursive | --entire] [--force] [--private] SCROLL

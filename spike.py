@@ -22,6 +22,7 @@ import sys
 import os
 
 
+
 SPIKE_VERSION = '0.1'
 '''
 This version of spike
@@ -89,7 +90,8 @@ class Spike():
                      19 - Non-private installation is not supported
                      20 - Scroll error
                      21 - Pony ride error
-                     22 - Proofread find scroll error
+                     22 - Proofread found scroll error
+                     23 - File access denied
                     255 - Unknown error
         
         @param  args:list<str>  Command line arguments, including invoked program alias ($0)
@@ -130,11 +132,11 @@ class Spike():
         opts.add_argumentless(['-F', '--find'],                       help = 'Find a scroll either by name or by ownership\n'
                                                              'slaves: [--owner | --written=]')
         opts.add_argumentless(['-W', '--write'],                      help = 'Install a pony (package) from scroll\n'
-                                                             'slaves: [--pinpal=] [--private] [--asdep | --asexplicit] [--nodep] [--force]')
+                                                             'slaves: [--pinpal= | --private] [--asdep | --asexplicit] [--nodep] [--force]')
         opts.add_argumentless(['-U', '--update'],                     help = 'Update to new versions of the installed ponies\n'
                                                              'slaves: [--pinpal=] [--ignore=]...')
         opts.add_argumentless(['-E', '--erase'],                      help = 'Uninstall a pony\n'
-                                                             'slaves: [--pinpal=] [--private]')
+                                                             'slaves: [--pinpal= | --private]')
         opts.add_argumented(  ['-X', '--ride'],      arg = 'SCROLL',  help = 'Execute a scroll after best effort\n'
                                                              'slaves: [--private]')
         opts.add_argumentless(['-R', '--read'],                       help = 'Get scroll information\n'
@@ -205,7 +207,7 @@ class Spike():
         for opt in 'vhcBFWUEXRCDANPI':
             exclusives.add('-' + opt)
         exclusives.add('--restore-archive')
-        self.test_exclusiveness(opts.opts, exclusives, longmap, True);
+        self.test_exclusiveness(opts.opts, exclusives, longmap, True)
         exclusives = set()
         
         for opt in opts.opts:
@@ -251,7 +253,7 @@ class Spike():
             elif opts.opts['-F'] is not None:
                 exclusives.add('-o')
                 exclusives.add('-w')
-                self.test_exclusiveness(opts.opts, exclusives, longmap, True);
+                self.test_exclusiveness(opts.opts, exclusives, longmap, True)
                 self.test_allowed(opts.opts, allowed, longmap, True)
                 allowed.add('-o')
                 allowed.add('-w')
@@ -267,11 +269,15 @@ class Spike():
                     exitValue = self.find_owner(opts.files)
                 else:
                     exitValue = self.find_scroll(opts.files, installed = True, notinstalled = True)
-                    
+                
             elif opts.opts['-W'] is not None:
+                exclusives.add('--pinpal')
+                exclusives.add('-u')
+                self.test_exclusiveness(opts.opts, exclusives, longmap, True)
+                exclusives = set()
                 exclusives.add('--asdep')
                 exclusives.add('--asexplicit')
-                self.test_exclusiveness(opts.opts, exclusives, longmap, True);
+                self.test_exclusiveness(opts.opts, exclusives, longmap, True)
                 allowed.add('--pinpal')
                 allowed.add('-u')
                 allowed.add('--asdep')
@@ -297,6 +303,9 @@ class Spike():
                                         ignores = opts.opts['-i'] if opts.opts['-i'] is not None else [])
                 
             elif opts.opts['-E'] is not None:
+                exclusives.add('--pinpal')
+                exclusives.add('-u')
+                self.test_exclusiveness(opts.opts, exclusives, longmap, True)
                 allowed.add('--pinpal')
                 allowed.add('-u')
                 self.test_allowed(opts.opts, allowed, longmap, True)
@@ -315,7 +324,7 @@ class Spike():
             elif opts.opts['-R'] is not None:
                 exclusives.add('-l')
                 exclusives.add('-f')
-                self.test_exclusiveness(opts.opts, exclusives, longmap, True);
+                self.test_exclusiveness(opts.opts, exclusives, longmap, True)
                 allowed.add('-l')
                 allowed.add('-f')
                 self.test_allowed(opts.opts, allowed, longmap, True)
@@ -329,7 +338,7 @@ class Spike():
             elif opts.opts['-C'] is not None:
                 exclusives.add('--recursive')
                 exclusives.add('--entire')
-                self.test_exclusiveness(opts.opts, exclusives, longmap, True);
+                self.test_exclusiveness(opts.opts, exclusives, longmap, True)
                 allowed.add('--recursive')
                 allowed.add('--entire')
                 allowed.add('-u')
@@ -361,11 +370,11 @@ class Spike():
                 exclusives.add('--shared')
                 exclusives.add('--full')
                 exclusives.add('--old')
-                self.test_exclusiveness(opts.opts, exclusives, longmap, True);
+                self.test_exclusiveness(opts.opts, exclusives, longmap, True)
                 exclusives = set()
                 exclusives.add('--downgrade')
                 exclusives.add('--upgrade')
-                self.test_exclusiveness(opts.opts, exclusives, longmap, True);
+                self.test_exclusiveness(opts.opts, exclusives, longmap, True)
                 allowed.add('--shared')
                 allowed.add('--full')
                 allowed.add('--old')
@@ -439,7 +448,7 @@ class Spike():
             if do_exit:
                 exit(1)
             return False
-        return True;
+        return True
     
     
     def test_allowed(self, opts, allowed, longmap, do_exit = False):
@@ -521,55 +530,395 @@ class Spike():
               'along with this program.  If not, see <http://www.gnu.org/licenses/>.')
     
     
+    
     def bootstrap(self):
-        return 0
+        '''
+        Update the spike and the scroll archives
+        
+        @return  :byte  Exit value, see description of `mane` 
+        '''
+        return LibSpike.bootstrap()
     
-    def find_scroll(self, patterns, installed = False, notinstalled = False):
-        return 0
     
-    def find_owner(self, patterns):
-        return 0
+    def find_scroll(self, patterns, installed = True, notinstalled = True):
+        '''
+        Search for a scroll
+        
+        @param   patterns:list<str>  Regular expression search patterns
+        @param   installed:bool      Look for installed packages
+        @param   uninstalled:bool    Look for not installed packages
+        @return  :byte               Exit value, see description of `mane`
+        '''
+        return LibSpike.find_scroll(pattern, installed, notinstalled)
+    
+    
+    def find_owner(self, files):
+        '''
+        Search for a files owner pony, includes only installed ponies
+        
+        @param   files:list<string>  Files for which to do lookup
+        @return  :byte               Exit value, see description of `mane`
+        '''
+        return LibSpike.find_owner(files)
+    
     
     def write(self, scrolls, root = '/', private = False, explicitness = 0, nodep = False, force = False):
-        return 0
+        '''
+        Install ponies from scrolls
+        
+        @param   scrolls:list<str>  Scroll to install
+        @param   root:str           Mounted filesystem to which to perform installation
+        @param   private:bool       Whether to install as user private
+        @param   explicitness:int   -1 for install as dependency, 1 for install as explicit, and 0 for explicit if not previously as dependency
+        @param   nodep:bool         Whether to ignore dependencies
+        @param   force:bool         Whether to ignore file claims
+        @return  :byte              Exit value, see description of `mane`
+        '''
+        return LibSpike.write(scrolls, root, private, explicitness, nodep, force)
+    
     
     def update(self, root = '/', ignores = []):
-        return 0
+        '''
+        Update installed ponies
+        
+        @param   root:str           Mounted filesystem to which to perform installation
+        @param   ignores:list<str>  Ponies not to update
+        @return  :byte              Exit value, see description of `mane`
+        '''
+        return LibSpike.update(root, ignore)
     
-    def erase(self, root = '/', private = False):
-        return 0
+    
+    def erase(self, ponies, root = '/', private = False):
+        '''
+        Uninstall ponies
+        
+        @param   ponies:list<str>  Ponies to uninstall
+        @param   root:str          Mounted filesystem from which to perform uninstallation
+        @param   private:bool      Whether to uninstall user private ponies rather than user shared ponies
+        @return  :byte             Exit value, see description of `mane`
+        '''
+        return LibSpike.erase(ponies, root, private)
+    
     
     def ride(self, pony, private = False):
-        return 0
+        '''
+        Execute pony after best effort
+        
+        @param   private:bool  Whether the pony is user private rather than user shared
+        @return  :byte         Exit value, see description of `mane`
+        '''
+        return LibSpike.ride(pony, private)
     
-    def read_files(self, scrolls):
-        return 0
+    
+    def read_files(self, ponies):
+        '''
+        List files installed for ponies
+        
+        @param   ponies:list<str>  Installed ponies for which to list claimed files
+        @return  :byte             Exit value, see description of `mane`
+        '''
+        return LibSpike.read_files(ponies)
+    
     
     def read_info(self, scrolls, field = None):
-        return 0
+        '''
+        List information about scrolls
+        
+        @param   scrolls:list<str>     Scrolls for which to list information
+        @param   field:str?|list<str>  Information field or fields to fetch, `None` for everything
+        @return  :byte                 Exit value, see description of `mane`
+        '''
+        return LibSpike.read_info(scrolls, field)
+    
     
     def claim(self, files, pony, recursiveness = 0, private = False, force = False):
-        return 0
+        '''
+        Claim one or more files as a part of a pony
+        
+        @param   files:list<str>    File to claim
+        @param   pony:str           The pony
+        @param   recursiveness:int  0 for not recursive, 1 for recursive, 2 for recursive at detection
+        @param   private:bool       Whether the pony is user private rather the user shared
+        @param   force:bool         Whether to override current file claim
+        @return  :byte              Exit value, see description of `mane`
+        '''
+        return LibSpike.claim(files, pony, recursiveness, private, force)
+    
     
     def disclaim(self, files, pony, recursive = False, private = False):
-        return 0
+        '''
+        Disclaim one or more files as a part of a pony
+        
+        @param   files:list<str>    File to disclaim
+        @param   pony:str           The pony
+        @param   recursive:bool     Whether to disclaim directories recursively
+        @param   private:bool       Whether the pony is user private rather the user shared
+        @return  :byte              Exit value, see description of `mane`
+        '''
+        return LibSpike.disclaim(files, pony, recursive, private)
+    
     
     def archive(self, archive, scrolls = False):
-        return 0
+        '''
+        Archive the current system installation state
+        
+        @param   archive:str   The archive file to create
+        @param   scrolls:bool  Whether to only store scroll states and not installed files
+        @return  :byte         Exit value, see description of `mane`
+        '''
+        return LibSpike.archive(archive, scrolls)
+    
     
     def rollback(self, archive, keep = False, skip = False, gradeness = 0):
-        return 0
+        '''
+        Roll back to an archived state
+        
+        @param   archive:str    Archive to roll back to
+        @param   keep:bool      Keep non-archived installed ponies rather than uninstall them
+        @param   skip:bool      Skip rollback of non-installed archived ponies
+        @param   gradeness:int  -1 for downgrades only, 1 for upgrades only, 0 for rollback regardless of version
+        @return  :byte          Exit value, see description of `mane`
+        '''
+        return LibSpike.rollback(archive, keep, skipe, gradeness)
+    
     
     def proofread(self, scrolls):
-        return 0
+        '''
+        Look for errors in a scrolls
+        
+        @param   scrolls:list<str>  Scrolls to proofread
+        @return  :byte              Exit value, see description of `mane`
+        '''
+        return LibSpike.proofread(scrolls)
+    
     
     def clean(self):
-        return 0
-
+        '''
+        Remove unneeded ponies that are installed as dependencies
+        
+        @return  :byte  Exit value, see description of `mane`
+        '''
+        return LibSpike.clean()
+    
+    
     def interactive(self):
+        '''
+        Start interactive mode with terminal graphics
+        
+        @return  :byte  Exit value, see description of `mane`
+        '''
         if not sys.stdout.isatty:
             printerr(self.execprog + ': trying to start interative mode from a pipe')
             return 15
+        return 0
+
+
+
+class LibSpike():
+    '''
+    Advanced programming interface for Spike
+    
+    Exit values:  4 - Invalid option argument
+                  5 - Root does not exist
+                  6 - Scroll does not exist
+                  7 - Pony is not installed
+                  8 - Pony conflict
+                  9 - Dependency does not exist
+                 10 - File is already claimed
+                 11 - File was claimed for another pony
+                 12 - File does not exist
+                 13 - File already exists
+                 14 - Information field is not definied
+                 16 - Compile error
+                 17 - Installation error, usually because --private or root is needed
+                 18 - Private installation is not supported
+                 19 - Non-private installation is not supported
+                 20 - Scroll error
+                 21 - Pony ride error
+                 22 - Proofread found scroll error
+                 23 - File access denied
+                255 - Unknown error
+    '''
+    
+    @staticmethod
+    def bootstrap():
+        '''
+        Update the spike and the scroll archives
+        
+        @return  :byte  Exit value, see description of `LibSpike` 
+        '''
+        return 0
+    
+    
+    @staticmethod
+    def find_scroll(patterns, installed = True, notinstalled = True):
+        '''
+        Search for a scroll
+        
+        @param   patterns:list<str>  Regular expression search patterns
+        @param   installed:bool      Look for installed packages
+        @param   uninstalled:bool    Look for not installed packages
+        @return  :byte               Exit value, see description of `LibSpike`
+        '''
+        return 0
+    
+    
+    @staticmethod
+    def find_owner(files):
+        '''
+        Search for a files owner pony, includes only installed ponies
+        
+        @param   files:list<string>  Files for which to do lookup
+        @return  :byte               Exit value, see description of `LibSpike`
+        '''
+        return 0
+    
+    
+    @staticmethod
+    def write(scrolls, root = '/', private = False, explicitness = 0, nodep = False, force = False):
+        '''
+        Install ponies from scrolls
+        
+        @param   scrolls:list<str>  Scroll to install
+        @param   root:str           Mounted filesystem to which to perform installation
+        @param   private:bool       Whether to install as user private
+        @param   explicitness:int   -1 for install as dependency, 1 for install as explicit, and 0 for explicit if not previously as dependency
+        @param   nodep:bool         Whether to ignore dependencies
+        @param   force:bool         Whether to ignore file claims
+        @return  :byte              Exit value, see description of `LibSpike`
+        '''
+        return 0
+    
+    
+    @staticmethod
+    def update(root = '/', ignores = []):
+        '''
+        Update installed ponies
+        
+        @param   root:str           Mounted filesystem to which to perform installation
+        @param   ignores:list<str>  Ponies not to update
+        @return  :byte              Exit value, see description of `LibSpike`
+        '''
+        return 0
+    
+    
+    @staticmethod
+    def erase(ponies, root = '/', private = False):
+        '''
+        Uninstall ponies
+        
+        @param   ponies:list<str>  Ponies to uninstall
+        @param   root:str          Mounted filesystem from which to perform uninstallation
+        @param   private:bool      Whether to uninstall user private ponies rather than user shared ponies
+        @return  :byte             Exit value, see description of `LibSpike`
+        '''
+        return 0
+    
+    
+    @staticmethod
+    def ride(pony, private = False):
+        '''
+        Execute pony after best effort
+        
+        @param   private:bool  Whether the pony is user private rather than user shared
+        @return  :byte         Exit value, see description of `LibSpike`
+        '''
+        return 0
+    
+    
+    @staticmethod
+    def read_files(ponies):
+        '''        List files installed for ponies
+        
+        @param   ponies:list<str>  Installed ponies for which to list claimed files
+        @return  :byte             Exit value, see description of `LibSpike`
+        '''
+        return 0
+    
+    
+    @staticmethod
+    def read_info(scrolls, field = None):
+        '''
+        List information about scrolls
+        
+        @param   scrolls:list<str>     Scrolls for which to list information
+        @param   field:str?|list<str>  Information field or fields to fetch, `None` for everything
+        @return  :byte                 Exit value, see description of `LibSpike`
+        '''
+        return 0
+    
+    
+    @staticmethod
+    def claim(files, pony, recursiveness = 0, private = False, force = False):
+        '''
+        Claim one or more files as a part of a pony
+        
+        @param   files:list<str>    File to claim        @param   pony:str           The pony
+        @param   recursiveness:int  0 for not recursive, 1 for recursive, 2 for recursive at detection
+        @param   private:bool       Whether the pony is user private rather the user shared
+        @param   force:bool         Whether to override current file claim
+        @return  :byte              Exit value, see description of `LibSpike`
+        '''
+        return 0
+    
+    
+    @staticmethod
+    def disclaim(files, pony, recursive = False, private = False):
+        '''
+        Disclaim one or more files as a part of a pony
+        
+        @param   files:list<str>    File to disclaim
+        @param   pony:str           The pony
+        @param   recursive:bool     Whether to disclaim directories recursively
+        @param   private:bool       Whether the pony is user private rather the user shared
+        @return  :byte              Exit value, see description of `LibSpike`
+        '''
+        return 0
+    
+    
+    @staticmethod
+    def archive(archive, scrolls = False):
+        '''        Archive the current system installation state
+        
+        @param   archive:str   The archive file to create
+        @param   scrolls:bool  Whether to only store scroll states and not installed files
+        @return  :byte         Exit value, see description of `LibSpike`
+        '''
+        return 0
+    
+    
+    @staticmethod
+    def rollback(archive, keep = False, skip = False, gradeness = 0):
+        '''
+        Roll back to an archived state
+        
+        @param   archive:str    Archive to roll back to
+        @param   keep:bool      Keep non-archived installed ponies rather than uninstall them
+        @param   skip:bool      Skip rollback of non-installed archived ponies
+        @param   gradeness:int  -1 for downgrades only, 1 for upgrades only, 0 for rollback regardless of version
+        @return  :byte          Exit value, see description of `LibSpike`
+        '''
+        return 0
+    
+    
+    @staticmethod
+    def proofread(scrolls):
+        '''
+        Look for errors in a scrolls
+        
+        @param   scrolls:list<str>  Scrolls to proofread
+        @return  :byte              Exit value, see description of `LibSpike`
+        '''
+        return 0
+    
+    
+    @staticmethod
+    def clean():
+        '''
+        Remove unneeded ponies that are installed as dependencies
+        
+        @return  :byte  Exit value, see description of `LibSpike`
+        '''
         return 0
 
 
