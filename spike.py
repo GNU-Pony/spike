@@ -236,7 +236,7 @@ class Spike():
                 self.test_allowed(opts.opts, allowed, longmap, True)
                 self.test_files(opts.files, 0, True)
                 opts.help()
-                exit(3)
+                exitValue = 3
             
             elif opts.opts['-c'] is not None:
                 self.test_allowed(opts.opts, allowed, longmap, True)
