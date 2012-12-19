@@ -68,6 +68,30 @@ class Spike():
         '''
         Run this method to invoke Spike as if executed from the shell
         
+        Exit values:  1 - Option use error
+                      2 - Non-option argument use error
+                      3 - -h(--help) was used
+                      4 - Invalid option argument
+                      5 - Root does not exist
+                      6 - Scroll does not exist
+                      7 - Pony is not installed
+                      8 - Pony conflict
+                      9 - Dependency does not exist
+                     10 - File is already claimed
+                     11 - File was claimed for another pony
+                     12 - File does not exist
+                     13 - File already exists
+                     14 - Information field is not definied
+                     15 - Starting interactive mode from pipe
+                     16 - Compile error
+                     17 - Installation error, usually because --private or root is needed
+                     18 - Private installation is not supported
+                     19 - Non-private installation is not supported
+                     20 - Scroll error
+                     21 - Pony ride error
+                     22 - Proofread find scroll error
+                    255 - Unknown error
+        
         @param  args:list<str>  Command line arguments, including invoked program alias ($0)
         '''
         self.execprog = args[0].split('/')[-1]
@@ -182,6 +206,7 @@ class Spike():
             exclusives.add('-' + opt)
         exclusives.add('--restore-archive')
         self.test_exclusiveness(opts.opts, exclusives, longmap, True);
+        exclusives = set()
         
         for opt in opts.opts:
             if opt != '-i': # --ignore
@@ -199,118 +224,192 @@ class Spike():
                 break
         
         
-        if opts.opts['-v'] is not None:
-            self.test_allowed(opts.opts, allowed, longmap, True)
-            self.print_version()
+        exitValue = 0
+        
+        try:
+            if opts.opts['-v'] is not None:
+                self.test_allowed(opts.opts, allowed, longmap, True)
+                self.test_files(opts.files, 0, True)
+                self.print_version()
             
-        elif opts.opts['-h'] is not None:
-            self.test_allowed(opts.opts, allowed, longmap, True)
-            opts.help()
-            exit(2)
+            elif opts.opts['-h'] is not None:
+                self.test_allowed(opts.opts, allowed, longmap, True)
+                self.test_files(opts.files, 0, True)
+                opts.help()
+                exit(3)
             
-        elif opts.opts['-c'] is not None:
-            self.test_allowed(opts.opts, allowed, longmap, True)
-            self.print_copyright()
+            elif opts.opts['-c'] is not None:
+                self.test_allowed(opts.opts, allowed, longmap, True)
+                self.test_files(opts.files, 0, True)
+                self.print_copyright()
             
-        elif opts.opts['-B'] is not None:
-            self.test_allowed(opts.opts, allowed, longmap, True)
-            pass # --bootstrap
+            elif opts.opts['-B'] is not None:
+                self.test_allowed(opts.opts, allowed, longmap, True)
+                self.test_files(opts.files, 0, True)
+                exitValue = self.bootstrap()
             
-        elif opts.opts['-F'] is not None:
-            self.test_allowed(opts.opts, allowed, longmap, True)
-            allowed.add('-o')
-            allowed.add('-w')
-            if opts.opts['-w'] is not None:
-                if opts.opts['-w'][0] not in ('yes', 'no'):
-                    printerr(self.execprog + ': only \'yes\' and \'no\' are allowed for -w(--written)')
-                    exit(1)
-            pass # --find [-o(--owner)] [-w(--written)]
+            elif opts.opts['-F'] is not None:
+                exclusives.add('-o')
+                exclusives.add('-w')
+                self.test_exclusiveness(opts.opts, exclusives, longmap, True);
+                self.test_allowed(opts.opts, allowed, longmap, True)
+                allowed.add('-o')
+                allowed.add('-w')
+                if opts.opts['-w'] is not None:
+                    if opts.opts['-w'][0] not in ('yes', 'no'):
+                        printerr(self.execprog + ': only \'yes\' and \'no\' are allowed for -w(--written)')
+                        exit(4)
+                    exitValue = self.find_scroll(opts.files,
+                                                 installed    = opts.opts['-w'][0] == 'yes',
+                                                 notinstalled = opts.opts['-w'][0] == 'no')
+                elif opts.opts['-o'] is not None:
+                    self.test_files(opts.files, 2, True)
+                    exitValue = self.find_owner(opts.files)
+                else:
+                    exitValue = self.find_scroll(opts.files, installed = True, notinstalled = True)
+                    
+            elif opts.opts['-W'] is not None:
+                exclusives.add('--asdep')
+                exclusives.add('--asexplicit')
+                self.test_exclusiveness(opts.opts, exclusives, longmap, True);
+                allowed.add('--pinpal')
+                allowed.add('-u')
+                allowed.add('--asdep')
+                allowed.add('--asexplicit')
+                allowed.add('--nodep')
+                allowed.add('--force')
+                self.test_allowed(opts.opts, allowed, longmap, True)
+                self.test_files(opts.files, 2, True)
+                exitValue = self.write(opt.files,
+                                       root         = opts.opts['--pinpal'][0] if opts.opts['--pinpal'] is not None else '/',
+                                       private      = opts.opts['-u'] is not None,
+                                       explicitness = 1  if opts.opts['--asexplict'] is not None else
+                                                      -1 if opts.opts['--asdep']     is not None else 0
+                                       nodep        = opts.opts['--nodep'] is not None,
+                                       force        = opts.opts['--force'] is not None)
+                
+            elif opts.opts['-U'] is not None:
+                allowed.add('--pinpal')
+                allowed.add('-i')
+                self.test_allowed(opts.opts, allowed, longmap, True)
+                self.test_files(opts.files, 0, True)
+                exitValue = self.update(root    = opts.opts['--pinpal'][0] if opts.opts['--pinpal'] is not None else '/',
+                                        ignores = opts.opts['-i'] if opts.opts['-i'] is not None else [])
+                
+            elif opts.opts['-E'] is not None:
+                allowed.add('--pinpal')
+                allowed.add('-u')
+                self.test_allowed(opts.opts, allowed, longmap, True)
+                self.test_files(opts.files, 2, True)
+                exitValue = self.erase(opt.files,
+                                       root    = opts.opts['--pinpal'][0] if opts.opts['--pinpal'] is not None else '/',
+                                       private = opts.opts['-u'] is not None)
+                
+            elif opts.opts['-X'] is not None:
+                allowed.add('-u')
+                self.test_allowed(opts.opts, allowed, longmap, True)
+                self.test_files(opts.files, 1, True)
+                exitValue = self.ride(opt.files[0],
+                                      private = opts.opts['-u'] is not None)
+                
+            elif opts.opts['-R'] is not None:
+                exclusives.add('-l')
+                exclusives.add('-f')
+                self.test_exclusiveness(opts.opts, exclusives, longmap, True);
+                allowed.add('-l')
+                allowed.add('-f')
+                self.test_allowed(opts.opts, allowed, longmap, True)
+                self.test_files(opts.files, 1, True)
+                if opts.opts['-l'] is not None:
+                    exitValue = self.read_files(opt.files)
+                else:
+                    exitValue = self.read_info(opt.files,
+                                               field = opts.opts['-f'][0] if opts.opts['-f'] is not None else None)
+                    
+            elif opts.opts['-C'] is not None:
+                exclusives.add('--recursive')
+                exclusives.add('--entire')
+                self.test_exclusiveness(opts.opts, exclusives, longmap, True);
+                allowed.add('--recursive')
+                allowed.add('--entire')
+                allowed.add('-u')
+                allowed.add('--force')
+                self.test_allowed(opts.opts, allowed, longmap, True)
+                self.test_files(opts.files, 3, True)
+                exitValue = self.claim(opt.files[:-1], opt.files[-1],
+                                       recursiveness = 1 if opts.opts['--recursive'] is not None else
+                                                       2 if opts.opts['--entire']    is not None else 0,
+                                       private       = opts.opts['-u'] is not None,
+                                       force         = opts.opts['--force'] is not None)
+                
+            elif opts.opts['-D'] is not None:
+                allowed.add('--recursive')
+                allowed.add('-u')
+                self.test_allowed(opts.opts, allowed, longmap, True)
+                self.test_files(opts.files, 3, True)
+                exitValue = self.disclaim(opt.files[:-1], opt.files[-1],
+                                          recursive = opts.opts['--recursive'] is not None,
+                                          private   = opts.opts['-u'] is not None)
+                
+            elif opts.opts['-A'] is not None:
+                allowed.add('-s')
+                self.test_allowed(opts.opts, allowed, longmap, True)
+                self.test_files(opts.files, 0, True)
+                exitValue = self.archive(opts.opts['-A'][0], scrolls = opts.opts['-s'] is not None)
+                
+            elif opts.opts['--restore-archive'] is not None:
+                exclusives.add('--shared')
+                exclusives.add('--full')
+                exclusives.add('--old')
+                self.test_exclusiveness(opts.opts, exclusives, longmap, True);
+                exclusives = set()
+                exclusives.add('--downgrade')
+                exclusives.add('--upgrade')
+                self.test_exclusiveness(opts.opts, exclusives, longmap, True);
+                allowed.add('--shared')
+                allowed.add('--full')
+                allowed.add('--old')
+                allowed.add('--downgrade')
+                allowed.add('--upgrade')
+                self.test_allowed(opts.opts, allowed, longmap, True)
+                self.test_files(opts.files, 0, True)
+                exitValue = self.rollback(opts.opts['--restore-archive'][0],
+                                          keep      = opts.opts['--full'] is None,
+                                          skip      = opts.opts['--shared'] is not None,
+                                          gradeness = -1 if opts.opts['--downgrade'] is not None else
+                                                      1  if opts.opts['--upgrade']   is not None else 0)
+                
+            elif opts.opts['-P'] is not None:
+                self.test_allowed(opts.opts, allowed, longmap, True)
+                self.test_files(opts.files, 2, True)
+                exitValue = self.proofread(opts.files)
             
-        elif opts.opts['-W'] is not None:
-            exclusives = {'--asdep' : None, '--asexplicit' : None}
-            self.test_exclusiveness(opts.opts, exclusives, longmap, True);
-            allowed.add('--pinpal')
-            allowed.add('-u')
-            allowed.add('--asdep')
-            allowed.add('--asexplicit')
-            allowed.add('--nodep')
-            allowed.add('--fore')
-            self.test_allowed(opts.opts, allowed, longmap, True)
-            pass # --write [--pinpal] [-u(--private)] [--asdep | --asexplicit] [--nodep] [--force]
+            elif opts.opts['-N'] is not None:
+                self.test_allowed(opts.opts, allowed, longmap, True)
+                self.test_files(opts.files, 0, True)
+                exitValue = self.clean()
             
-        elif opts.opts['-U'] is not None:
-            allowed.add('--pinpal')
-            allowed.add('-i')
-            self.test_allowed(opts.opts, allowed, longmap, True)
-            pass # --update [--pinpal]  [-i(--ignore)]...
+            elif opts.opts['-I'] is not None:
+                self.test_allowed(opts.opts, allowed, longmap, True)
+                self.test_files(opts.files, 0, True)
+                exitValue = self.interactive()
             
-        elif opts.opts['-E'] is not None:
-            allowed.add('--pinpal')
-            allowed.add('-u')
-            self.test_allowed(opts.opts, allowed, longmap, True)
-            pass # --erase [--pinpal] [-u(--private)]...
+            else:
+                self.test_allowed(opts.opts, allowed, longmap, True)
+                self.test_files(opts.files, 0, True)
+                exitValue = self.interactive()
+                # TODO verify action
+                # ! = always
+                # y = for now
+                # n = no
+                # / = never
+        
+        except:
+            exitValue = 255
+            # TODO print error
             
-        elif opts.opts['-X'] is not None:
-            allowed.add('-u')
-            self.test_allowed(opts.opts, allowed, longmap, True)
-            pass # --ride [-u(--private)]...
-            
-        elif opts.opts['-R'] is not None:
-            exclusives = {}
-            self.test_exclusiveness(opts.opts, exclusives, longmap, True);
-            allowed.add('-l')
-            allowed.add('-f')
-            self.test_allowed(opts.opts, allowed, longmap, True)
-            pass # --read [-l(--list) | -f(--info)]
-            
-        elif opts.opts['-C'] is not None:
-            exclusives = {'--recursive' : None, '--entire' : None}
-            self.test_exclusiveness(opts.opts, exclusives, longmap, True);
-            allowed.add('--recursive')
-            allowed.add('--entire')
-            allowed.add('-u')
-            allowed.add('--force')
-            pass # --claim [--recursive | --entire] [-u(--private)] [--force]
-            
-        elif opts.opts['-D'] is not None:
-            allowed.add('--recursive')
-            allowed.add('-u')
-            self.test_allowed(opts.opts, allowed, longmap, True)
-            pass # --disclaim [--recursive] [-u(--private)]
-            
-        elif opts.opts['-A'] is not None:
-            allowed.add('-s')
-            self.test_allowed(opts.opts, allowed, longmap, True)
-            pass # --archive [-s(--scrolls)]
-            
-        elif opts.opts['--restore-archive'] is not None:
-            exclusives = {'--shared' : None, '--full' : None, '--old' : None}
-            self.test_exclusiveness(opts.opts, exclusives, longmap, True);
-            exclusives = {'--downgrade' : None, '--upgrade' : None}
-            self.test_exclusiveness(opts.opts, exclusives, longmap, True);
-            allowed.add('--shared')
-            allowed.add('--full')
-            allowed.add('--old')
-            allowed.add('--downgrade')
-            allowed.add('--upgrade')
-            self.test_allowed(opts.opts, allowed, longmap, True)
-            pass # --restore-archive [--shared | --full | --old] [--downgrade | --upgrade]
-            
-        elif opts.opts['-P'] is not None:
-            self.test_allowed(opts.opts, allowed, longmap, True)
-            pass # --proofread
-            
-        elif opts.opts['-N'] is not None:
-            self.test_allowed(opts.opts, allowed, longmap, True)
-            pass # --clean
-            
-        elif opts.opts['-I'] is not None:
-            self.test_allowed(opts.opts, allowed, longmap, True)
-            pass # --interactive
-            
-        else:
-            self.test_allowed(opts.opts, allowed, longmap, True)
-            pass # --interactive
+        exit(exitValue)
+    
     
     
     def test_exclusiveness(self, opts, exclusives, longmap, do_exit = False):
@@ -350,7 +449,7 @@ class Spike():
         @param   opts:dict<str,list<str>>  Current options
         @param   allowed:set<str>          Allowed options
         @param   longmap:dict<str,str>     Map from short to long
-        @param   do_exit:bool              Exit program on conflict
+        @param   do_exit:bool              Exit program on incorrect usage
         @return  :bool                     Whether only allowed options was used
         '''
         for opt in opts:
@@ -363,6 +462,34 @@ class Spike():
                     exit(1)
                 return False
         return True
+    
+    
+    def test_files(self, files, mode, do_exit = False):
+        '''
+        Test the correctness of the number of used non-option arguments
+        
+        @param   files:list<str>    Non-option arguments
+        @param   mode:int           Correctness mode: 0 - no arguments
+                                                      1 - one argument
+                                                      2 - atleast one argument
+                                                      3 - atleast two arguments
+                                                      n - atleast n − 1 arguments
+                                                     −n - exactly n arguments
+        @param   do_exit:bool       Exit program on incorrectness
+        @return  :bool              Whether the usage was correct
+        '''
+        rc = True
+        if mode == 0:
+            rc = len(files) == 0
+        elif mode == 1:
+            rc = len(files) == 1
+        elif mode > 1:
+            rc = len(files) >= (mode - 1)
+        else:
+            rc = len(files) == -mode
+        if do_exit and not rc:
+            exit(1)
+        return rc
     
     
     def print_version(self):
@@ -393,6 +520,58 @@ class Spike():
               'You should have received a copy of the GNU General Public License\n'
               'along with this program.  If not, see <http://www.gnu.org/licenses/>.')
     
+    
+    def bootstrap(self):
+        return 0
+    
+    def find_scroll(self, patterns, installed = False, notinstalled = False):
+        return 0
+    
+    def find_owner(self, patterns):
+        return 0
+    
+    def write(self, scrolls, root = '/', private = False, explicitness = 0, nodep = False, force = False):
+        return 0
+    
+    def update(self, root = '/', ignores = []):
+        return 0
+    
+    def erase(self, root = '/', private = False):
+        return 0
+    
+    def ride(self, pony, private = False):
+        return 0
+    
+    def read_files(self, scrolls):
+        return 0
+    
+    def read_info(self, scrolls, field = None):
+        return 0
+    
+    def claim(self, files, pony, recursiveness = 0, private = False, force = False):
+        return 0
+    
+    def disclaim(self, files, pony, recursive = False, private = False):
+        return 0
+    
+    def archive(self, archive, scrolls = False):
+        return 0
+    
+    def rollback(self, archive, keep = False, skip = False, gradeness = 0):
+        return 0
+    
+    def proofread(self, scrolls):
+        return 0
+    
+    def clean(self):
+        return 0
+
+    def interactive(self):
+        if not sys.stdout.isatty:
+            printerr(self.execprog + ': trying to start interative mode from a pipe')
+            return 15
+        return 0
+
 
 
 class Owlowiscious(Spike):
