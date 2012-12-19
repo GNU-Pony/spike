@@ -61,6 +61,7 @@ class Spike():
         Constructor
         '''
         self.version = SPIKE_VERSION
+        self.execprog = 'spike'
 
     
     def mane(self, args):
@@ -69,6 +70,8 @@ class Spike():
         
         @param  args:list<str>  Command line arguments, including invoked program alias ($0)
         '''
+        self.execprog = args[0].split('/')[-1]
+        
         usage = 'spike [command [option]... [FILE... SCROLL | SCROLL...]]'
         usage = usage.replace('spike',   '\033[35m' 'spike'   '\033[39m')
         usage = usage.replace('command', '\033[33m' 'command' '\033[39m')
@@ -146,7 +149,7 @@ class Spike():
         opts.add_argumentless([      '--upgrade'],                    help = 'Do only perform pony upgrades')
         
         if not opts.parse(args):
-            printerr(args[0] + ': use of unrecognised option')
+            printerr(self.execprog + ': use of unrecognised option')
             exit(1)
         
         longmap = {}
@@ -186,7 +189,7 @@ class Spike():
                     option = opt
                     if option in longmap:
                         option += '(' + longmap[option] + ')'
-                    printerr('%s: %s is used multiple times' % (sys.argv[0], option))
+                    printerr('%s: %s is used multiple times' % (self.execprog, option))
                     exit(1)
         
         allowed = set()
@@ -219,7 +222,7 @@ class Spike():
             allowed.add('-w')
             if opts.opts['-w'] is not None:
                 if opts.opts['-w'][0] not in ('yes', 'no'):
-                    printerr(sys.argv[0] + ': only \'yes\' and \'no\' are allowed for -w(--written)')
+                    printerr(self.execprog + ': only \'yes\' and \'no\' are allowed for -w(--written)')
                     exit(1)
             pass # --find [-o(--owner)] [-w(--written)]
             
@@ -327,7 +330,7 @@ class Spike():
                 used.append((opt, longmap[opt] if opt in longmap else None))
         
         if len(used) > 1:
-            msg = sys.argv[0] + ': conflicting options:'
+            msg = self.execprog + ': conflicting options:'
             for opt in used:
                 if opt[1] is None:
                     msg += ' ' + opt[0]
@@ -352,7 +355,7 @@ class Spike():
         '''
         for opt in opts:
             if (opts[opt] is not None) and (opt not in allowed):
-                msg = sys.argv[0] + ': option used out of context: ' + opt
+                msg = self.execprog + ': option used out of context: ' + opt
                 if opt in longmap:
                     msg += '(' + longmap(opt) + ')'
                 printerr(msg)
