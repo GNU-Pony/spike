@@ -22,14 +22,14 @@ spike --find SCROLL... [--owner | --written=yes|no]
 spike --erase SCROLL... [--pinpal ROOT] [--private]
 --> uninstall package
 
-spike --claim FILE... [--recursive | --entire] SCROLL
+spike --claim FILE... [--recursive | --entire] [--force] [--private] SCROLL
 --> make FILE a part of SCROLL, and all subfiles if --recursive
 --> if --entire is on, --recursive is emulated at lookup
 
-spike --disclaim FILE... [--recursive] SCROLL
+spike --disclaim FILE... [--recursive] [--private] SCROLL
 --> remove FILE from SCROLL, and all subfiles if --rescursive
 
-spike --update [--ignore SCROLL]...
+spike --update [--pinpal ROOT] [--ignore SCROLL]...
 --> install updated packages
 
 spike --archive ARCHIVE [--scrolls]
@@ -39,7 +39,7 @@ spike --archive ARCHIVE [--scrolls]
 
 spike --restore ARCHIVE [--shared | --full | --old] [--downgrade | --upgrade]
 --> restore an archived state, either only shared packages,
---> full restore (default) which removed unarchived packages,
+--> full restore (default) which removes unarchived packages,
 --> or only archived packages that is currently not installed;
 --> and either downgrades only, upgrades only, or (default)
 --> regardless of version.
@@ -52,6 +52,9 @@ spike --help
 
 spike --version
 --> display version information
+
+spike --copyright
+--> display copyright information
 
 
 
@@ -67,6 +70,7 @@ spike --version
     --recursive
     --entire
 -D  --disclaim
+-U  --update
 -u  --private
 -o  --owner
 -l  --list
@@ -81,7 +85,7 @@ spike --version
 -f  --info
 -I  --interactive
     --force
-    --archive
+-A  --archive
     --restore-archive
     --scrolls
     --downgrade
@@ -89,3 +93,4 @@ spike --version
     --shared
     --full
     --old
+-c  --copyright
