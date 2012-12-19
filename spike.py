@@ -22,6 +22,36 @@ import sys
 import os
 
 
+SPIKE_VERSION = '0.1'
+'''
+This version of spike
+'''
+
+
+def print(text = '', end = '\n'):
+    '''
+    Hack to enforce UTF-8 in output (in the future, if you see anypony not using utf-8 in
+    programs by default, report them to Princess Celestia so she can banish them to the moon)
+    
+    @param  text:str  The text to print (empty string is default)
+    @param  end:str   The appendix to the text to print (line breaking is default)
+    '''
+    sys.stdout.buffer.write((str(text) + end).encode('utf-8'))
+    sys.stdout.buffer.flush()
+
+
+def printerr(text = '', end = '\n'):
+    '''
+    stderr equivalent to print()
+    
+    @param  text:str  The text to print (empty string is default)
+    @param  end:str   The appendix to the text to print (line breaking is default)
+    '''
+    sys.stderr.buffer.write((str(text) + end).encode('utf-8'))
+    sys.stderr.buffer.flush()
+
+
+
 class Spike():
     '''
     Spike is your number one package manager
@@ -30,7 +60,7 @@ class Spike():
         '''
         Constructor
         '''
-        pass
+        self.version = SPIKE_VERSION
 
     
     def mane(self, args):
@@ -70,12 +100,11 @@ class Spike():
         opts.add_argumentless(['-c', '--copyright'],                  help = 'Print copyright information')
         
         opts.add_argumentless(['-B', '--bootstrap'],                  help = 'Update spike and scroll repositories')
-        opts.add_argumentless(['-P', '--proofread'],                  help = 'Verify that a scroll is correct')
         opts.add_argumentless(['-F', '--find'],                       help = 'Find a scroll either by name or by ownership\n'
                                                              'slaves: [--owner | --written=]')
         opts.add_argumentless(['-W', '--write'],                      help = 'Install a pony (package) from scroll\n'
                                                              'slaves: [--pinpal=] [--private] [--asdep | --asexplicit] [--nodep] [--force]')
-        opts.add_argumentless(['-U', '--upgrade'],                    help = 'Upgrade to new versions of the installed ponies\n'
+        opts.add_argumentless(['-U', '--update'],                     help = 'Update to new versions of the installed ponies\n'
                                                              'slaves: [--pinpal=] [--ignore=]...')
         opts.add_argumentless(['-E', '--erase'],                      help = 'Uninstall a pony\n'
                                                              'slaves: [--pinpal=] [--private]')
@@ -92,6 +121,7 @@ class Spike():
         opts.add_argumented(  ['--restore-archive'], arg = 'ARCHIVE', help = 'Rollback to an archived state of the system\n'
                                                              'slaves: [--shared | --full | --old] [--downgrade | --upgrade]')
         opts.add_argumentless(['-N', '--clean'],                      help = 'Uninstall unneeded ponies')
+        opts.add_argumentless(['-P', '--proofread'],                  help = 'Verify that a scroll is correct')
         opts.add_argumentless(['-I', '--interactive'],                help = 'Start in interative graphical terminal mode\n'
                                                                              '(supports installation and uninstallation only)')
         
@@ -108,16 +138,258 @@ class Spike():
         opts.add_argumented(  ['-f', '--info'],      arg = 'FIELD',   help = 'Retrieve a specific scroll information field')
         opts.add_argumentless([      '--recursive'],                  help = 'Recursively claim or disclaim directories')
         opts.add_argumentless([      '--entire'],                     help = 'Recursively claim directories and their future content')
-        opts.add_argumentless([      '--scrolls'],                    help = 'Do only archive scrolls, no installed files')
+        opts.add_argumentless(['-s', '--scrolls'],                    help = 'Do only archive scrolls, no installed files')
         opts.add_argumentless([      '--shared'],                     help = 'Reinstall only ponies that are currently installed and archived')
         opts.add_argumentless([      '--full'],                       help = 'Uninstall ponies that are not archived')
         opts.add_argumentless([      '--old'],                        help = 'Reinstall only ponies that are currently not installed')
         opts.add_argumentless([      '--downgrade'],                  help = 'Do only perform pony downgrades')
         opts.add_argumentless([      '--upgrade'],                    help = 'Do only perform pony upgrades')
         
-        opts.help()
-
-
+        if not opts.parse(args):
+            printerr(args[0] + ': use of unrecognised option')
+            exit(1)
+        
+        longmap = {}
+        longmap['-v'] = '--version'
+        longmap['-h'] = '--help'
+        longmap['-c'] = '--copyright'
+        longmap['-B'] = '--bootstrap'
+        longmap['-F'] = '--find'
+        longmap['-W'] = '--write'
+        longmap['-U'] = '--update'
+        longmap['-E'] = '--erase'
+        longmap['-X'] = '--ride'
+        longmap['-R'] = '--read'
+        longmap['-C'] = '--claim'
+        longmap['-D'] = '--disclaim'
+        longmap['-A'] = '--archive'
+        longmap['-N'] = '--clean'
+        longmap['-P'] = '--proofread'
+        longmap['-I'] = '--interactive'
+        longmap['-o'] = '--owner'
+        longmap['-w'] = '--written'
+        longmap['-u'] = '--private'
+        longmap['-i'] = '--ignore'
+        longmap['-l'] = '--list'
+        longmap['-f'] = '--info'
+        longmap['-s'] = '--scrolls'
+        
+        exclusives = set()
+        for opt in 'vhcBFWUEXRCDANPI':
+            exclusives.add('-' + opt)
+        exclusives.add('--restore-archive')
+        self.test_exclusiveness(opts.opts, exclusives, longmap, True);
+        
+        for opt in opts.opts:
+            if opt != '-i': # --ignore
+                if (opts.opts[opt] is not None) and (len(opts.opts[opt]) > 1):
+                    option = opt
+                    if option in longmap:
+                        option += '(' + longmap[option] + ')'
+                    printerr('%s: %s is used multiple times' % (sys.argv[0], option))
+                    exit(1)
+        
+        allowed = set()
+        for opt in exclusives:
+            if opts.opts[opt] is not None:
+                allowed.add(opt)
+                break
+        
+        
+        if opts.opts['-v'] is not None:
+            self.test_allowed(opts.opts, allowed, longmap, True)
+            self.print_version()
+            
+        elif opts.opts['-h'] is not None:
+            self.test_allowed(opts.opts, allowed, longmap, True)
+            opts.help()
+            exit(2)
+            
+        elif opts.opts['-c'] is not None:
+            self.test_allowed(opts.opts, allowed, longmap, True)
+            self.print_copyright()
+            
+        elif opts.opts['-B'] is not None:
+            self.test_allowed(opts.opts, allowed, longmap, True)
+            pass # --bootstrap
+            
+        elif opts.opts['-F'] is not None:
+            self.test_allowed(opts.opts, allowed, longmap, True)
+            allowed.add('-o')
+            allowed.add('-w')
+            if opts.opts['-w'] is not None:
+                if opts.opts['-w'][0] not in ('yes', 'no'):
+                    printerr(sys.argv[0] + ': only \'yes\' and \'no\' are allowed for -w(--written)')
+                    exit(1)
+            pass # --find [-o(--owner)] [-w(--written)]
+            
+        elif opts.opts['-W'] is not None:
+            exclusives = {'--asdep' : None, '--asexplicit' : None}
+            self.test_exclusiveness(opts.opts, exclusives, longmap, True);
+            allowed.add('--pinpal')
+            allowed.add('-u')
+            allowed.add('--asdep')
+            allowed.add('--asexplicit')
+            allowed.add('--nodep')
+            allowed.add('--fore')
+            self.test_allowed(opts.opts, allowed, longmap, True)
+            pass # --write [--pinpal] [-u(--private)] [--asdep | --asexplicit] [--nodep] [--force]
+            
+        elif opts.opts['-U'] is not None:
+            allowed.add('--pinpal')
+            allowed.add('-i')
+            self.test_allowed(opts.opts, allowed, longmap, True)
+            pass # --update [--pinpal]  [-i(--ignore)]...
+            
+        elif opts.opts['-E'] is not None:
+            allowed.add('--pinpal')
+            allowed.add('-u')
+            self.test_allowed(opts.opts, allowed, longmap, True)
+            pass # --erase [--pinpal] [-u(--private)]...
+            
+        elif opts.opts['-X'] is not None:
+            allowed.add('-u')
+            self.test_allowed(opts.opts, allowed, longmap, True)
+            pass # --ride [-u(--private)]...
+            
+        elif opts.opts['-R'] is not None:
+            exclusives = {}
+            self.test_exclusiveness(opts.opts, exclusives, longmap, True);
+            allowed.add('-l')
+            allowed.add('-f')
+            self.test_allowed(opts.opts, allowed, longmap, True)
+            pass # --read [-l(--list) | -f(--info)]
+            
+        elif opts.opts['-C'] is not None:
+            exclusives = {'--recursive' : None, '--entire' : None}
+            self.test_exclusiveness(opts.opts, exclusives, longmap, True);
+            allowed.add('--recursive')
+            allowed.add('--entire')
+            allowed.add('-u')
+            allowed.add('--force')
+            pass # --claim [--recursive | --entire] [-u(--private)] [--force]
+            
+        elif opts.opts['-D'] is not None:
+            allowed.add('--recursive')
+            allowed.add('-u')
+            self.test_allowed(opts.opts, allowed, longmap, True)
+            pass # --disclaim [--recursive] [-u(--private)]
+            
+        elif opts.opts['-A'] is not None:
+            allowed.add('-s')
+            self.test_allowed(opts.opts, allowed, longmap, True)
+            pass # --archive [-s(--scrolls)]
+            
+        elif opts.opts['--restore-archive'] is not None:
+            exclusives = {'--shared' : None, '--full' : None, '--old' : None}
+            self.test_exclusiveness(opts.opts, exclusives, longmap, True);
+            exclusives = {'--downgrade' : None, '--upgrade' : None}
+            self.test_exclusiveness(opts.opts, exclusives, longmap, True);
+            allowed.add('--shared')
+            allowed.add('--full')
+            allowed.add('--old')
+            allowed.add('--downgrade')
+            allowed.add('--upgrade')
+            self.test_allowed(opts.opts, allowed, longmap, True)
+            pass # --restore-archive [--shared | --full | --old] [--downgrade | --upgrade]
+            
+        elif opts.opts['-P'] is not None:
+            self.test_allowed(opts.opts, allowed, longmap, True)
+            pass # --proofread
+            
+        elif opts.opts['-N'] is not None:
+            self.test_allowed(opts.opts, allowed, longmap, True)
+            pass # --clean
+            
+        elif opts.opts['-I'] is not None:
+            self.test_allowed(opts.opts, allowed, longmap, True)
+            pass # --interactive
+            
+        else:
+            self.test_allowed(opts.opts, allowed, longmap, True)
+            pass # --interactive
+    
+    
+    def test_exclusiveness(self, opts, exclusives, longmap, do_exit = False):
+        '''
+        Test for option conflicts
+        
+        @param   opts:dict<str,list<str>>  Current options
+        @param   exclusives:set<str>       Exclusive options
+        @param   longmap:dict<str,str>     Map from short to long
+        @param   do_exit:bool              Exit program on conflict
+        @return  :bool                     Whether at most one exclusive option was used
+        '''
+        used = []
+        
+        for opt in opts:
+            if (opts[opt] is not None) and (opt in exclusives):
+                used.append((opt, longmap[opt] if opt in longmap else None))
+        
+        if len(used) > 1:
+            msg = sys.argv[0] + ': conflicting options:'
+            for opt in used:
+                if opt[1] is None:
+                    msg += ' ' + opt[0]
+                else:
+                    msg += ' ' + opt[0] + '(' + opt[1] + ')'
+            printerr(msg)
+            if do_exit:
+                exit(1)
+            return False
+        return True;
+    
+    
+    def test_allowed(self, opts, allowed, longmap, do_exit = False):
+        '''
+        Test for out of context option usage
+        
+        @param   opts:dict<str,list<str>>  Current options
+        @param   allowed:set<str>          Allowed options
+        @param   longmap:dict<str,str>     Map from short to long
+        @param   do_exit:bool              Exit program on conflict
+        @return  :bool                     Whether only allowed options was used
+        '''
+        for opt in opts:
+            if (opts[opt] is not None) and (opt not in allowed):
+                msg = sys.argv[0] + ': option used out of context: ' + opt
+                if opt in longmap:
+                    msg += '(' + longmap(opt) + ')'
+                printerr(msg)
+                if do_exit:
+                    exit(1)
+                return False
+        return True
+    
+    
+    def print_version(self):
+        '''
+        Prints spike fellowed by a blank spacs and the version of spike to stdout
+        '''
+        print('spike ' + self.version)
+    
+    
+    def print_copyright(self):
+        '''
+        Prints spike copyright notice to stdout
+        '''
+        print('spike – a package manager running on top of git\n'
+              '\n'
+              'Copyright © 2012  Mattias Andrée (maandree@kth.se)\n'
+              '\n'
+              'This program is free software: you can redistribute it and/or modify\n'
+              'it under the terms of the GNU General Public License as published by\n'
+              'the Free Software Foundation, either version 3 of the License, or\n'
+              '(at your option) any later version.\n'
+              '\n'
+              'This program is distributed in the hope that it will be useful,\n'
+              'but WITHOUT ANY WARRANTY; without even the implied warranty of\n'
+              'MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n'
+              'GNU General Public License for more details.\n'
+              '\n'
+              'You should have received a copy of the GNU General Public License\n'
+              'along with this program.  If not, see <http://www.gnu.org/licenses/>.')
+    
 
 
 class Owlowiscious(Spike):

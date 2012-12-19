@@ -87,7 +87,7 @@ spike --copyright
     --force
 -A  --archive
     --restore-archive
-    --scrolls
+-s  --scrolls
     --downgrade
     --upgrade
     --shared
