@@ -1,4 +1,4 @@
-spike [--interative]
+spike [--interative] [--shred]
 --> start interactive graphical terminal mode
 
 spike --bootstrap
@@ -10,16 +10,16 @@ spike --proofread SCROLL...
 spike --ride SCROLL [--private]
 --> execute package in best possible way
 
-spike --read SCROLL... [--list | --info=FIELD]
+spike --read SCROLL... [--list | --info=FIELD...]
 --> get scroll information
 
-spike --write SCROLL... [--pinpal ROOT | --private] [--asdep | --asexplicit] [--nodep] [--force]
+spike --write SCROLL... [--pinpal ROOT | --private] [--asdep | --asexplicit] [--nodep] [--force] [--shred]
 --> install package
 
 spike --find SCROLL... [--owner | --written=yes|no]
 --> find a scroll either by name (default) or by ownership
 
-spike --erase SCROLL... [--pinpal ROOT | --private]
+spike --erase SCROLL... [--pinpal ROOT | --private] [--shred]
 --> uninstall package
 
 spike --claim FILE... [--recursive | --entire] [--force] [--private] SCROLL
@@ -29,7 +29,7 @@ spike --claim FILE... [--recursive | --entire] [--force] [--private] SCROLL
 spike --disclaim FILE... [--recursive] [--private] SCROLL
 --> remove FILE from SCROLL, and all subfiles if --rescursive
 
-spike --update [--pinpal ROOT] [--ignore SCROLL]...
+spike --update [--pinpal ROOT] [--ignore SCROLL]... [--shred]
 --> install updated packages
 
 spike --archive ARCHIVE [--scrolls]
@@ -37,14 +37,14 @@ spike --archive ARCHIVE [--scrolls]
 --> if --scrolls is on, only the scroll versions are
 --> and file claims are stored and used at restore
 
-spike --restore ARCHIVE [--shared | --full | --old] [--downgrade | --upgrade]
+spike --restore-archive ARCHIVE [--shared | --full | --old] [--downgrade | --upgrade] [--shred]
 --> restore an archived state, either only shared packages,
 --> full restore (default) which removes unarchived packages,
 --> or only archived packages that is currently not installed;
 --> and either downgrades only, upgrades only, or (default)
 --> regardless of version.
 
-spike --clean
+spike --clean [--shred]
 --> uninstall unneeded package
 
 spike --help
@@ -94,3 +94,5 @@ spike --copyright
     --full
     --old
 -c  --copyright
+    --shred
+

@@ -69,7 +69,8 @@ class Spike():
         '''
         Run this method to invoke Spike as if executed from the shell
         
-        Exit values:  1 - Option use error
+        Exit values:  0 - Successful
+                      1 - Option use error
                       2 - Non-option argument use error
                       3 - -h(--help) was used
                       4 - Invalid option argument
@@ -132,15 +133,15 @@ class Spike():
         opts.add_argumentless(['-F', '--find'],                       help = 'Find a scroll either by name or by ownership\n'
                                                              'slaves: [--owner | --written=]')
         opts.add_argumentless(['-W', '--write'],                      help = 'Install a pony (package) from scroll\n'
-                                                             'slaves: [--pinpal= | --private] [--asdep | --asexplicit] [--nodep] [--force]')
+                                                             'slaves: [--pinpal= | --private] [--asdep | --asexplicit] [--nodep] [--force] [--shred]')
         opts.add_argumentless(['-U', '--update'],                     help = 'Update to new versions of the installed ponies\n'
-                                                             'slaves: [--pinpal=] [--ignore=]...')
+                                                             'slaves: [--pinpal=] [--ignore=]... [--shred]')
         opts.add_argumentless(['-E', '--erase'],                      help = 'Uninstall a pony\n'
-                                                             'slaves: [--pinpal= | --private]')
+                                                             'slaves: [--pinpal= | --private] [--shred]')
         opts.add_argumented(  ['-X', '--ride'],      arg = 'SCROLL',  help = 'Execute a scroll after best effort\n'
                                                              'slaves: [--private]')
         opts.add_argumentless(['-R', '--read'],                       help = 'Get scroll information\n'
-                                                             'slaves: [--list | --info=]')
+                                                             'slaves: [--list | --info=...]')
         opts.add_argumentless(['-C', '--claim'],                      help = 'Claim one or more files as owned by a pony\n'
                                                              'slaves: [--recursive | --entire] [--private] [--force]')
         opts.add_argumentless(['-D', '--disclaim'],                   help = 'Disclaim one or more files as owned by a pony\n'
@@ -148,11 +149,13 @@ class Spike():
         opts.add_argumented(  ['-A', '--archive'],   arg = 'ARCHIVE', help = 'Create an archive of everything that is currently installed.\n'
                                                              'slaves: [--scrolls]')
         opts.add_argumented(  ['--restore-archive'], arg = 'ARCHIVE', help = 'Rollback to an archived state of the system\n'
-                                                             'slaves: [--shared | --full | --old] [--downgrade | --upgrade]')
-        opts.add_argumentless(['-N', '--clean'],                      help = 'Uninstall unneeded ponies')
+                                                             'slaves: [--shared | --full | --old] [--downgrade | --upgrade] [--shred]')
+        opts.add_argumentless(['-N', '--clean'],                      help = 'Uninstall unneeded ponies\n'
+                                                             'slaves: [--shred]')
         opts.add_argumentless(['-P', '--proofread'],                  help = 'Verify that a scroll is correct')
         opts.add_argumentless(['-I', '--interactive'],                help = 'Start in interative graphical terminal mode\n'
-                                                                             '(supports installation and uninstallation only)')
+                                                                             '(supports installation and uninstallation only)\n'
+                                                                             'slaves: [--shred]')
         
         opts.add_argumentless(['-o', '--owner'],                      help = 'Find owner pony for file')
         opts.add_argumented(  ['-w', '--written'],   arg = 'boolean', help = 'Search only for installed ("yes") or not installed ("no") ponies')
@@ -173,6 +176,7 @@ class Spike():
         opts.add_argumentless([      '--old'],                        help = 'Reinstall only ponies that are currently not installed')
         opts.add_argumentless([      '--downgrade'],                  help = 'Do only perform pony downgrades')
         opts.add_argumentless([      '--upgrade'],                    help = 'Do only perform pony upgrades')
+        opts.add_argumentless([      '--shred'],                      help = 'Preform secure removal with `shred` when removing old files')
         
         if not opts.parse(args):
             printerr(self.execprog + ': use of unrecognised option')
@@ -211,7 +215,7 @@ class Spike():
         exclusives = set()
         
         for opt in opts.opts:
-            if opt != '-i': # --ignore
+            if (opt != '-i') and (opt != '-f'): # --ignore, --info
                 if (opts.opts[opt] is not None) and (len(opts.opts[opt]) > 1):
                     option = opt
                     if option in longmap:
@@ -284,6 +288,7 @@ class Spike():
                 allowed.add('--asexplicit')
                 allowed.add('--nodep')
                 allowed.add('--force')
+                allowed.add('--shred')
                 self.test_allowed(opts.opts, allowed, longmap, True)
                 self.test_files(opts.files, 2, True)
                 exitValue = self.write(opt.files,
@@ -292,15 +297,18 @@ class Spike():
                                        explicitness = 1  if opts.opts['--asexplict'] is not None else
                                                       -1 if opts.opts['--asdep']     is not None else 0
                                        nodep        = opts.opts['--nodep'] is not None,
-                                       force        = opts.opts['--force'] is not None)
+                                       force        = opts.opts['--force'] is not None,
+                                       shred        = opts.opts['--shred'] is not None)
                 
             elif opts.opts['-U'] is not None:
                 allowed.add('--pinpal')
                 allowed.add('-i')
+                allowed.add('--shred')
                 self.test_allowed(opts.opts, allowed, longmap, True)
                 self.test_files(opts.files, 0, True)
                 exitValue = self.update(root    = opts.opts['--pinpal'][0] if opts.opts['--pinpal'] is not None else '/',
-                                        ignores = opts.opts['-i'] if opts.opts['-i'] is not None else [])
+                                        ignores = opts.opts['-i'] if opts.opts['-i'] is not None else [],
+                                        shred   = opts.opts['--shred'] is not None)
                 
             elif opts.opts['-E'] is not None:
                 exclusives.add('--pinpal')
@@ -308,11 +316,13 @@ class Spike():
                 self.test_exclusiveness(opts.opts, exclusives, longmap, True)
                 allowed.add('--pinpal')
                 allowed.add('-u')
+                allowed.add('--shred')
                 self.test_allowed(opts.opts, allowed, longmap, True)
                 self.test_files(opts.files, 2, True)
                 exitValue = self.erase(opt.files,
                                        root    = opts.opts['--pinpal'][0] if opts.opts['--pinpal'] is not None else '/',
-                                       private = opts.opts['-u'] is not None)
+                                       private = opts.opts['-u'] is not None,
+                                       shred   = opts.opts['--shred'] is not None)
                 
             elif opts.opts['-X'] is not None:
                 allowed.add('-u')
@@ -332,8 +342,7 @@ class Spike():
                 if opts.opts['-l'] is not None:
                     exitValue = self.read_files(opt.files)
                 else:
-                    exitValue = self.read_info(opt.files,
-                                               field = opts.opts['-f'][0] if opts.opts['-f'] is not None else None)
+                    exitValue = self.read_info(opt.files, field = opts.opts['-f'])
                     
             elif opts.opts['-C'] is not None:
                 exclusives.add('--recursive')
@@ -380,13 +389,15 @@ class Spike():
                 allowed.add('--old')
                 allowed.add('--downgrade')
                 allowed.add('--upgrade')
+                allowed.add('--shred')
                 self.test_allowed(opts.opts, allowed, longmap, True)
                 self.test_files(opts.files, 0, True)
                 exitValue = self.rollback(opts.opts['--restore-archive'][0],
                                           keep      = opts.opts['--full'] is None,
                                           skip      = opts.opts['--shared'] is not None,
                                           gradeness = -1 if opts.opts['--downgrade'] is not None else
-                                                      1  if opts.opts['--upgrade']   is not None else 0)
+                                                      1  if opts.opts['--upgrade']   is not None else 0,
+                                          shred     = opts.opts['--shred'] is not None)
                 
             elif opts.opts['-P'] is not None:
                 self.test_allowed(opts.opts, allowed, longmap, True)
@@ -394,19 +405,22 @@ class Spike():
                 exitValue = self.proofread(opts.files)
             
             elif opts.opts['-N'] is not None:
+                allowed.add('--shred')
                 self.test_allowed(opts.opts, allowed, longmap, True)
                 self.test_files(opts.files, 0, True)
-                exitValue = self.clean()
+                exitValue = self.clean(shred = opts.opts['--shred'] is not None)
             
             elif opts.opts['-I'] is not None:
+                allowed.add('--shred')
                 self.test_allowed(opts.opts, allowed, longmap, True)
                 self.test_files(opts.files, 0, True)
-                exitValue = self.interactive()
+                exitValue = self.interactive(shred = opts.opts['--shred'] is not None)
             
             else:
+                allowed.add('--shred')
                 self.test_allowed(opts.opts, allowed, longmap, True)
                 self.test_files(opts.files, 0, True)
-                exitValue = self.interactive()
+                exitValue = self.interactive(shred = opts.opts['--shred'] is not None)
                 # TODO verify action
                 # ! = always
                 # y = for now
@@ -562,7 +576,7 @@ class Spike():
         return LibSpike.find_owner(files)
     
     
-    def write(self, scrolls, root = '/', private = False, explicitness = 0, nodep = False, force = False):
+    def write(self, scrolls, root = '/', private = False, explicitness = 0, nodep = False, force = False, shred = False):
         '''
         Install ponies from scrolls
         
@@ -572,32 +586,35 @@ class Spike():
         @param   explicitness:int   -1 for install as dependency, 1 for install as explicit, and 0 for explicit if not previously as dependency
         @param   nodep:bool         Whether to ignore dependencies
         @param   force:bool         Whether to ignore file claims
+        @param   shred:bool         Whether to preform secure removal when possible
         @return  :byte              Exit value, see description of `mane`
         '''
-        return LibSpike.write(scrolls, root, private, explicitness, nodep, force)
+        return LibSpike.write(scrolls, root, private, explicitness, nodep, force, shred)
     
     
-    def update(self, root = '/', ignores = []):
+    def update(self, root = '/', ignores = [], shred = False):
         '''
         Update installed ponies
         
         @param   root:str           Mounted filesystem to which to perform installation
         @param   ignores:list<str>  Ponies not to update
+        @param   shred:bool         Whether to preform secure removal when possible
         @return  :byte              Exit value, see description of `mane`
         '''
-        return LibSpike.update(root, ignore)
+        return LibSpike.update(root, ignore, shred)
     
     
-    def erase(self, ponies, root = '/', private = False):
+    def erase(self, ponies, root = '/', private = False, shred = False):
         '''
         Uninstall ponies
         
         @param   ponies:list<str>  Ponies to uninstall
         @param   root:str          Mounted filesystem from which to perform uninstallation
         @param   private:bool      Whether to uninstall user private ponies rather than user shared ponies
+        @param   shred:bool        Whether to preform secure removal when possible
         @return  :byte             Exit value, see description of `mane`
         '''
-        return LibSpike.erase(ponies, root, private)
+        return LibSpike.erase(ponies, root, private, shred)
     
     
     def ride(self, pony, private = False):
@@ -669,7 +686,7 @@ class Spike():
         return LibSpike.archive(archive, scrolls)
     
     
-    def rollback(self, archive, keep = False, skip = False, gradeness = 0):
+    def rollback(self, archive, keep = False, skip = False, gradeness = 0, shred = False):
         '''
         Roll back to an archived state
         
@@ -677,9 +694,10 @@ class Spike():
         @param   keep:bool      Keep non-archived installed ponies rather than uninstall them
         @param   skip:bool      Skip rollback of non-installed archived ponies
         @param   gradeness:int  -1 for downgrades only, 1 for upgrades only, 0 for rollback regardless of version
+        @param   shred:bool     Whether to preform secure removal when possible
         @return  :byte          Exit value, see description of `mane`
         '''
-        return LibSpike.rollback(archive, keep, skipe, gradeness)
+        return LibSpike.rollback(archive, keep, skipe, gradeness, shred)
     
     
     def proofread(self, scrolls):
@@ -692,20 +710,22 @@ class Spike():
         return LibSpike.proofread(scrolls)
     
     
-    def clean(self):
+    def clean(self, shred = False):
         '''
         Remove unneeded ponies that are installed as dependencies
         
-        @return  :byte  Exit value, see description of `mane`
+        @param   shred:bool  Whether to preform secure removal when possible
+        @return  :byte        Exit value, see description of `mane`
         '''
-        return LibSpike.clean()
+        return LibSpike.clean(shred)
     
     
-    def interactive(self):
+    def interactive(self, shred = False):
         '''
         Start interactive mode with terminal graphics
         
-        @return  :byte  Exit value, see description of `mane`
+        @param   shred:bool  Whether to preform secure removal when possible
+        @return  :byte       Exit value, see description of `mane`
         '''
         if not sys.stdout.isatty:
             printerr(self.execprog + ': trying to start interative mode from a pipe')
@@ -718,7 +738,8 @@ class LibSpike():
     '''
     Advanced programming interface for Spike
     
-    Exit values:  4 - Invalid option argument
+    Exit values:  0 - Successful
+                  4 - Invalid option argument
                   5 - Root does not exist
                   6 - Scroll does not exist
                   7 - Pony is not installed
@@ -741,9 +762,14 @@ class LibSpike():
     '''
     
     @staticmethod
-    def bootstrap():
+    def bootstrap(aggregator):
         '''
         Update the spike and the scroll archives
+        
+        @param   aggregator:(str,int)→void
+                     Feed a directory path and 0 when a directory is enqueued for bootstraping.
+                     Feed a directory path and 1 when a directory bootstrap process is beginning.
+                     Feed a directory path and 2 when a directory bootstrap process has ended.
         
         @return  :byte  Exit value, see description of `LibSpike` 
         '''
@@ -751,9 +777,12 @@ class LibSpike():
     
     
     @staticmethod
-    def find_scroll(patterns, installed = True, notinstalled = True):
+    def find_scroll(aggregator, patterns, installed = True, notinstalled = True):
         '''
         Search for a scroll
+        
+        @param   aggregator:(str)→void
+                     Feed a scroll when one matching one of the patterns has been found.
         
         @param   patterns:list<str>  Regular expression search patterns
         @param   installed:bool      Look for installed packages
@@ -764,9 +793,13 @@ class LibSpike():
     
     
     @staticmethod
-    def find_owner(files):
+    def find_owner(aggregator, files):
         '''
         Search for a files owner pony, includes only installed ponies
+        
+        @param   aggregator:(str,str?)→void
+                     Feed a file path and a scroll when an owner has been found.
+                     Feed a file path and `None` when it as been determined that this is no owner.
         
         @param   files:list<string>  Files for which to do lookup
         @return  :byte               Exit value, see description of `LibSpike`
@@ -775,9 +808,26 @@ class LibSpike():
     
     
     @staticmethod
-    def write(scrolls, root = '/', private = False, explicitness = 0, nodep = False, force = False):
+    def write(aggregator, scrolls, root = '/', private = False, explicitness = 0, nodep = False, force = False, shred = False):
         '''
         Install ponies from scrolls
+        
+        @param   aggregator:(str?,int,[*])→(void|bool|str)
+                     Feed a scroll (`None` only at state 2 and 5) and a state (can be looped) during the process of a scroll.
+                     The states are: 0 - proofreading
+                                     1 - scroll added because of dependency
+                                     2 - resolving conflicts
+                                     3 - scroll added because of dependency
+                                     4 - scroll removed because due to being replaced
+                                     5 - verify installation. Return: accepted:bool
+                                     6 - select provider pony. Additional parameters: options:list<str>
+                                                               Return: select provider:str? `None` if aborted
+                                     7 - fetching source. Additional parameters: source:str, progress state:int, progress end:int
+                                     8 - verifying source. Additional parameters: progress state:int, progress end:int
+                                     9 - compiling
+                                    10 - stripping symbols. Additional parameters: file index:int, file count:int (can be 0)
+                                    11 - file conflict check: Additional parameters: progress state:int, progress end:int
+                                    12 - installing files: Additional parameters: progress state:int, progress end:int
         
         @param   scrolls:list<str>  Scroll to install
         @param   root:str           Mounted filesystem to which to perform installation
@@ -785,31 +835,37 @@ class LibSpike():
         @param   explicitness:int   -1 for install as dependency, 1 for install as explicit, and 0 for explicit if not previously as dependency
         @param   nodep:bool         Whether to ignore dependencies
         @param   force:bool         Whether to ignore file claims
+        @param   shred:bool         Whether to preform secure removal when possible
         @return  :byte              Exit value, see description of `LibSpike`
         '''
         return 0
     
     
     @staticmethod
-    def update(root = '/', ignores = []):
+    def update(aggregator, root = '/', ignores = [], shred = False):
         '''
         Update installed ponies
         
+        @param   aggregator         Same as for `write`
         @param   root:str           Mounted filesystem to which to perform installation
         @param   ignores:list<str>  Ponies not to update
+        @param   shred:bool         Whether to preform secure removal when possible
         @return  :byte              Exit value, see description of `LibSpike`
         '''
         return 0
     
     
     @staticmethod
-    def erase(ponies, root = '/', private = False):
+    def erase(aggregator, ponies, root = '/', private = False, shred = False):
         '''
         Uninstall ponies
+        
+        TODO aggregator
         
         @param   ponies:list<str>  Ponies to uninstall
         @param   root:str          Mounted filesystem from which to perform uninstallation
         @param   private:bool      Whether to uninstall user private ponies rather than user shared ponies
+        @param   shred:bool        Whether to preform secure removal when possible
         @return  :byte             Exit value, see description of `LibSpike`
         '''
         return 0
@@ -827,8 +883,12 @@ class LibSpike():
     
     
     @staticmethod
-    def read_files(ponies):
-        '''        List files installed for ponies
+    def read_files(aggregator, ponies):
+        '''
+        List files installed for ponies
+        
+        @param   aggregator:(str,str)→void
+                     Feed the pony and the file when a file is detected
         
         @param   ponies:list<str>  Installed ponies for which to list claimed files
         @return  :byte             Exit value, see description of `LibSpike`
@@ -837,9 +897,13 @@ class LibSpike():
     
     
     @staticmethod
-    def read_info(scrolls, field = None):
+    def read_info(aggregator, scrolls, field = None):
         '''
         List information about scrolls
+        
+        @param   aggregator:(str,str,str)→void
+                     Feed the scroll, the field name and the information in the field when a scroll's information is read,
+                     all (desired) fields for a scroll will come once, in an uninterrupted sequence.
         
         @param   scrolls:list<str>     Scrolls for which to list information
         @param   field:str?|list<str>  Information field or fields to fetch, `None` for everything
@@ -849,9 +913,12 @@ class LibSpike():
     
     
     @staticmethod
-    def claim(files, pony, recursiveness = 0, private = False, force = False):
+    def claim(aggregator, files, pony, recursiveness = 0, private = False, force = False):
         '''
         Claim one or more files as a part of a pony
+        
+        @param   aggregator:(str,str)→void
+                     Feed a file and it's owner when a file is already claimed
         
         @param   files:list<str>    File to claim        @param   pony:str           The pony
         @param   recursiveness:int  0 for not recursive, 1 for recursive, 2 for recursive at detection
@@ -877,8 +944,12 @@ class LibSpike():
     
     
     @staticmethod
-    def archive(archive, scrolls = False):
-        '''        Archive the current system installation state
+    def archive(aggregator, archive, scrolls = False):
+        '''
+        Archive the current system installation state
+        
+        @param   aggregator:(str,int,int,int,int)→void
+                     Feed a scroll, scroll index, scroll count, scroll progress statte and scroll progress end, continuously during the process
         
         @param   archive:str   The archive file to create
         @param   scrolls:bool  Whether to only store scroll states and not installed files
@@ -888,23 +959,31 @@ class LibSpike():
     
     
     @staticmethod
-    def rollback(archive, keep = False, skip = False, gradeness = 0):
+    def rollback(aggregator, archive, keep = False, skip = False, gradeness = 0, shred = False):
         '''
         Roll back to an archived state
+        
+        @param   aggregator:(str,int,int,int,int)→void
+                     Feed a scroll, scroll index, scroll count, scroll progress statte and scroll progress end, continuously during the process
         
         @param   archive:str    Archive to roll back to
         @param   keep:bool      Keep non-archived installed ponies rather than uninstall them
         @param   skip:bool      Skip rollback of non-installed archived ponies
         @param   gradeness:int  -1 for downgrades only, 1 for upgrades only, 0 for rollback regardless of version
+        @param   shred:bool     Whether to preform secure removal when possible
         @return  :byte          Exit value, see description of `LibSpike`
         '''
         return 0
     
     
     @staticmethod
-    def proofread(scrolls):
+    def proofread(aggregator, scrolls):
         '''
         Look for errors in a scrolls
+        
+        @param   aggregator:(str,int,[*])→void
+                     Feed a scroll, 0, scroll index:int, scroll count:int when a scroll proofreading begins
+                     Feed a scroll, 1, error message:str when a error is found
         
         @param   scrolls:list<str>  Scrolls to proofread
         @return  :byte              Exit value, see description of `LibSpike`
@@ -913,11 +992,16 @@ class LibSpike():
     
     
     @staticmethod
-    def clean():
+    def clean(aggregator, shred = False):
         '''
         Remove unneeded ponies that are installed as dependencies
         
-        @return  :byte  Exit value, see description of `LibSpike`
+        @param   aggregator:(str,int,int)→void
+                     Feed a scroll, removal progress state and removal progress end state, continuously during the progress,
+                     this beings by feeding the state 0 when a scroll is enqueued, when all is enqueued the removal begins.
+        
+        @param   shred:bool  Whether to preform secure removal when possible
+        @return  :byte       Exit value, see description of `LibSpike`
         '''
         return 0
 
