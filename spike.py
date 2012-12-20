@@ -860,7 +860,9 @@ class LibSpike():
         '''
         Uninstall ponies
         
-        TODO aggregator
+        @param   aggregator:(str,int,int)→void
+                     Feed a scroll, removal progress state and removal progress end state, continuously during the progress,
+                     this beings by feeding the state 0 when a scroll is cleared for removal, when all is enqueued the removal begins.
         
         @param   ponies:list<str>  Ponies to uninstall
         @param   root:str          Mounted filesystem from which to perform uninstallation
