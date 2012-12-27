@@ -1,0 +1,172 @@
+pkgname:str
+	The name of the packages, must only contain lower case
+	letter, digits, plus signs, underscores, dots and hyphens.
+	The namy may not start with a hyphen.
+
+	Default prefixes:
+		lib32-		i?86 library for 64-bits
+		bin32-		i?86 binary for 64-bits
+		python-		Python 3 modules
+		python2-	Python 2 modules
+		haskell-	Haskell modules
+		java-		Java modules
+		issue9-		Google Go modules (go is reserved for Go! as it predates Go)
+
+	Default surfixes:
+		-git		git repository download
+		-cvs		CVS repository download
+		-svn		SVN repository download
+		-hg		Mercurial repository download
+		-darcs		Darcs repository download
+		-bzr		Bazaar repository download
+		-old		Old version of a library
+		-compat		Old version of a binary with conflict avoidance
+
+pkgver:str
+	The version of the software as released from the author.
+	It may only same characters as the package name, with the
+	exception for hyphens.
+
+pkgrel:int=1
+	The release number of the scroll, reset to 1 when `pkgver`
+	is updated. May only contain digits.
+
+epoch:int=0
+	Increase by 1 if the package version is lower than the
+	previous. That is, if the new package versioning system
+	breaks version comparison logic.
+
+pkgdesc:str
+	Brief description of the package, keep it on one line and
+	try not to use the package's name.
+
+upstream:str
+	The URL that is associated with the software being packaged.
+	Typically the project’s website.
+
+arch:list<str>
+	List of known architecture compatibilities. The architecture's
+	name for compatible, but prepended with a exclamation mark for
+	not compatible. The architecture names are in lowercase.
+	If architecture independent, the only architecture should
+	be `any`.
+
+freedom:or-flag:SOFTWARE,MEDIA
+	SOFTWARE should be on if the software and all required resource
+	files are free, or if the packages does not contain any software.
+	MEDIA should be on if the package contain only free media files
+	that are not a requirement for the software, or if no such media
+	exists in the package.
+
+license:list<str>
+	Licences that applies to the package, the part of the package that
+	the license applies to may be specified. If so, the license and the
+	that text should be separated by a colon.
+
+conflicts:list<str>=[]
+	Packages that cannot be installed at the same time.
+
+replaces:list<str>=[]
+	Packages that the package replaces.
+
+provides:list<str>=[]
+	Virtual packages that the package provides, can be used to allow
+	selection of a package to provide a feature that multiple packages
+	provides.
+
+extension:str?=None
+	Package that the package extends, meaning that the package is
+	meaningless without that package and should be uninstalled when
+	that package is uninstalled.
+
+variant:str?=None
+	Package that the package is an variant of, may or may not be
+	installed at the same time.
+
+patch:str?=None
+	Package that the package patches when that package is built.
+
+patchbefore:list<str>=[]
+	Other patches the patch must be applied before.
+
+patchafter:list<str>=[]
+	Other patches that must be applied before the patch.
+
+groups:list<str>=[]
+	Package groups that the package contains to, symbol names that
+	allow installation of multiple packages my specifying one name.
+
+depends:list<str>=[]
+	Packages required by the package at runtime.
+
+makedepends:list<str>=[]
+	Packages required by the package at maketime.
+
+checkdepends:list<str>=[]
+	Packages required by the package at checktime.
+
+optdepends:list<str>=[]
+	Optional packages that add functionality to the package at runtime.
+
+noextract:list<str>=[]
+	Sources that should not be extracted.
+
+source:list<str>
+	Source file URL:s to download.
+
+sha512sums:list<str>=[]
+	Source file checksums in 512 bit SHA2
+
+backup:list<str>=[]
+	Filenames of files that should be backed up, this is commonly
+	used for files in /etc.
+
+options:list<str>=[]
+	Override user configurations, options prepended by an
+	exclamation mark are turned off, others are turned on.
+
+	strip	     Strip symbols from binaries and libraries
+	docs	     Keep files installed to /usr{,/share,/local/share}/doc
+	info	     Keep files installed to /usr{,/local}/share/info
+	man	     Keep files installed to /usr{,/local}/share/man
+	licenses     Keep files installed to /usr{,/local}/share/licenses
+	changelogs   Keep files installed to /usr{,/local}/share/changelogs
+	libtool	     Leave .la files in packages
+	docs=	     Uncompress .pdf, .ps and .dvi files /usr{,/share,/local/share}/doc
+	docs=gz	     Compress .pdf, .ps and .dvi files /usr{,/share,/local/share}/doc with gzip
+	docs=xz	     Compress .pdf, .ps and .dvi files /usr{,/share,/local/share}/doc with xz
+	info=	     Uncompress files in /usr{,/local}/share/info
+	info=gz	     Compress files in /usr{,/local}/share/info with gzip
+	info=xz	     Compress files in /usr{,/local}/share/info with xz
+	man=	     Uncompress files in /usr{,/local}/share/man
+	man=gz	     Compress files in /usr{,/local}/share/man with gzip
+	man=xz	     Compress files in /usr{,/local}/share/man with xz
+	upx	     Compress binary executable files using UPX
+
+
+ride():void
+	Execute installed package.
+
+build(startdir:str, srcdir:str, pkgdir:str):void
+	Build package.
+
+check(startdir:str, srcdir:str, pkgdir:str):void
+	Check files after building.
+
+package(startdir:str, srcdir:str, pkgdir:str):void
+	Install files into `pkgdir` before installing to the system.
+
+patch_build(startdir:str, srcdir:str, pkgdir:str):void
+	Apply patch to target during the target's build().
+
+patch_check(startdir:str, srcdir:str, pkgdir:str):void
+	Apply patch to target during the target's check().
+
+patch_package(startdir:str, srcdir:str, pkgdir:str):void
+	Apply patch to target during the target's package().
+
+
+Package name, except for in `pkgname` have a range of targeted
+versions using in the format `(<|<=|>|>=|=|<>)[epoch:]pkgver` or
+`>[=][epoch:]pkgver<[=][epoch:]pkgver`.
+
