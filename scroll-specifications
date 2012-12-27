@@ -66,6 +66,9 @@ license:list<str>
 private:excl-flag:UNSUPPORTED,SUPPORTED,MANDITORY=UNSUPPORTED
 	Specify --private support status.
 
+interactive:bool=False
+	Specify whether installation is interactive, this should be avoided.
+
 conflicts:list<str>=[]
 	Packages that cannot be installed at the same time.
 
