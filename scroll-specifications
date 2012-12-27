@@ -165,6 +165,24 @@ patch_check(startdir:str, srcdir:str, pkgdir:str):void
 patch_package(startdir:str, srcdir:str, pkgdir:str):void
 	Apply patch to target during the target's package().
 
+pre_install(tmpdir:str, installedfiles:list<str>):void
+	Run before files are installed in a fresh installation
+
+post_install(tmpdir:str, installedfiles:list<str>):void
+	Run after files are installed in a fresh installation
+
+pre_upgrade(tmpdir:str, installedfiles:list<str>):void
+	Run before upgraded files are installed
+
+post_upgrade(tmpdir:str, installedfiles:list<str>):void
+	Run after upgraded files are installed
+
+pre_uninstall(tmpdir:str, installedfiles:list<str>):void
+	Run before uninstallation of files
+
+post_uninstall(tmpdir:str, installedfiles:list<str>):void
+	Run after uninstallation of files
+
 
 Package name, except for in `pkgname` have a range of targeted
 versions using in the format `(<|<=|>|>=|=|<>)[epoch:]pkgver` or
