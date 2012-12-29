@@ -12,3 +12,8 @@ Spike runs on top of git to reduce the amount of code to
 reduce code. Using git provides package integrity, and
 simple bootstrapping.
 
+Spike supports state archiving to so system administrators
+can make one installation and deploy it on multiple computers,
+as well as providing a simple way to roll back incase a
+system update breaks the system.
+
