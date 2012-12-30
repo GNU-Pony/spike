@@ -21,6 +21,7 @@ pkgname:str
 		-bzr		Bazaar repository download
 		-old		Old version of a library
 		-compat		Old version of a binary with conflict avoidance
+		-lts		Long time support
 
 pkgver:str
 	The version of the software as released from the author.
