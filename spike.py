@@ -295,7 +295,7 @@ class Spike():
                                        root         = opts.opts['--pinpal'][0] if opts.opts['--pinpal'] is not None else '/',
                                        private      = opts.opts['-u'] is not None,
                                        explicitness = 1  if opts.opts['--asexplict'] is not None else
-                                                      -1 if opts.opts['--asdep']     is not None else 0
+                                                      -1 if opts.opts['--asdep']     is not None else 0,
                                        nodep        = opts.opts['--nodep'] is not None,
                                        force        = opts.opts['--force'] is not None,
                                        shred        = opts.opts['--shred'] is not None)
@@ -427,9 +427,9 @@ class Spike():
                 # n = no
                 # / = never
         
-        except:
+        except Error as err:
             exitValue = 255
-            # TODO print error
+            print("%s: %s", self.execprog, str(err))
             
         exit(exitValue)
     
