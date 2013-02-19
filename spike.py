@@ -28,6 +28,12 @@ SPIKE_VERSION = '0.1'
 This version of spike
 '''
 
+SPIKE_PATH = '${SPIKE_PATH}'
+'''
+Spike's location
+'''
+
+
 
 def print(text = '', end = '\n'):
     '''
@@ -730,6 +736,7 @@ class Spike():
         if not sys.stdout.isatty:
             printerr(self.execprog + ': trying to start interative mode from a pipe')
             return 15
+        # TODO interactive mode
         return 0
 
 
