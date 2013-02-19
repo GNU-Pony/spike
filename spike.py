@@ -557,7 +557,26 @@ class Spike():
         
         @return  :byte  Exit value, see description of `mane` 
         '''
-        return LibSpike.bootstrap()
+        class Agg:
+            def __init__(self):
+                self.dirs = {}
+                self.next = 0
+                self.pos = 0
+            def __call__(self, directory, state):
+                if directory not in self.dirs:
+                    self.dirs[directory] = self.next
+                    self.next++
+                p = self.dirs[directory]
+                if p > self.pos:
+                    print('\033[%iBm', p - self.pos)
+                elif p < self.pos:
+                    print('\033[%iAm', self.pos - p)
+                s = '\033[01;3%im%s' % {0 : (3, 'WAIT'), 1 : (4, 'WORK'), 2 : (2, 'DONE')}[state]
+                print('[%s\033[00m] %s\n', s, directory)
+                self.pos = p + 1
+        
+        print('\033[01;34m::\033[00m Bootstrapping')
+        return LibSpike.bootstrap(Agg())
     
     
     def find_scroll(self, patterns, installed = True, notinstalled = True):
@@ -569,7 +588,13 @@ class Spike():
         @param   uninstalled:bool    Look for not installed packages
         @return  :byte               Exit value, see description of `mane`
         '''
-        return LibSpike.find_scroll(pattern, installed, notinstalled)
+        class Agg:
+            def __init__(self):
+                pass
+            def __call__(self, found):
+                print('%s\n', found)
+        
+        return LibSpike.find_scroll(Agg(), pattern, installed, notinstalled)
     
     
     def find_owner(self, files):
@@ -579,7 +604,16 @@ class Spike():
         @param   files:list<string>  Files for which to do lookup
         @return  :byte               Exit value, see description of `mane`
         '''
-        return LibSpike.find_owner(files)
+        class Agg:
+            def __init__(self):
+                pass
+            def __call__(self, filepath, owner):
+                if owner is None:
+                    print('%s is owner by %s\n', filepath, owner)
+                else:
+                    print('%s has not owner\n', filepath)
+        
+        return LibSpike.find_owner(Agg(), files)
     
     
     def write(self, scrolls, root = '/', private = False, explicitness = 0, nodep = False, force = False, shred = False):
@@ -778,7 +812,7 @@ class LibSpike():
                      Feed a directory path and 1 when a directory bootstrap process is beginning.
                      Feed a directory path and 2 when a directory bootstrap process has ended.
         
-        @return  :byte  Exit value, see description of `LibSpike` 
+        @return  :byte  Exit value, see description of `LibSpike`
         '''
         return 0
     
@@ -806,7 +840,7 @@ class LibSpike():
         
         @param   aggregator:(str,str?)→void
                      Feed a file path and a scroll when an owner has been found.
-                     Feed a file path and `None` when it as been determined that this is no owner.
+                     Feed a file path and `None` when it as been determined that their is no owner.
         
         @param   files:list<string>  Files for which to do lookup
         @return  :byte               Exit value, see description of `LibSpike`
@@ -1302,6 +1336,9 @@ class ArgParser():
         print()
 
 
+
+if not SPIKE_PATH.endswith('/'):
+    SPIKE_PATH += '/'
 
 linuxvt = ('TERM' in os.environ) and (os.environ['TERM'] == 'linux')
 if __name__ == '__main__': # sic
