@@ -578,8 +578,9 @@ class Spike():
                 elif p < self.pos:
                     print('\033[%iAm', self.pos - p)
                 s = '\033[01;3%im%s' % {0 : (3, 'WAIT'), 1 : (4, 'WORK'), 2 : (2, 'DONE')}[state]
-                print('[%s\033[00m] %s\n', s, directory)
+                print('[%s\033[00m] %s\n' % (s, directory))
                 self.pos = p + 1
+        
         print('\033[01;34m::\033[00m Bootstrapping')
         return LibSpike.bootstrap(Agg())
     
@@ -601,7 +602,7 @@ class Spike():
             def __init__(self):
                 pass
             def __call__(self, found):
-                print('%s\n', found)
+                print('%s\n' % found)
         
         return LibSpike.find_scroll(Agg(), pattern, installed, notinstalled)
     
@@ -623,9 +624,9 @@ class Spike():
                 pass
             def __call__(self, filepath, owner):
                 if owner is None:
-                    print('%s is owner by %s\n', filepath, owner)
+                    print('%s is owner by %s\n' % (filepath, owner))
                 else:
-                    print('%s has not owner\n', filepath)
+                    print('%s has not owner\n' % filepath)
         
         return LibSpike.find_owner(Agg(), files)
     
@@ -643,7 +644,31 @@ class Spike():
         @param   shred:bool         Whether to preform secure removal when possible
         @return  :byte              Exit value, see description of `mane`
         '''
-        return LibSpike.write(scrolls, root, private, explicitness, nodep, force, shred)
+        class Agg:
+            '''
+            aggregator:(str?,int,[*])→(void|bool|str)
+                Feed a scroll (`None` only at state 2 and 5) and a state (can be looped) during the process of a scroll.
+                The states are: 0 - proofreading
+                                1 - scroll added because of dependency
+                                2 - resolving conflicts
+                                3 - scroll added because of dependency
+                                4 - scroll removed because due to being replaced
+                                5 - verify installation. Return: accepted:bool
+                                6 - select provider pony. Additional parameters: options:list<str>
+                                                          Return: select provider:str? `None` if aborted
+                                7 - fetching source. Additional parameters: source:str, progress state:int, progress end:int
+                                8 - verifying source. Additional parameters: progress state:int, progress end:int
+                                9 - compiling
+                               10 - stripping symbols. Additional parameters: file index:int, file count:int (can be 0)
+                               11 - file conflict check: Additional parameters: progress state:int, progress end:int
+                               12 - installing files: Additional parameters: progress state:int, progress end:int
+            '''
+            def __init__(self):
+                pass
+            def __call__(self):
+                return None # TODO interaction not implemented
+                
+        return LibSpike.write(Agg(), scrolls, root, private, explicitness, nodep, force, shred)
     
     
     def update(self, root = '/', ignores = [], shred = False):
@@ -655,7 +680,31 @@ class Spike():
         @param   shred:bool         Whether to preform secure removal when possible
         @return  :byte              Exit value, see description of `mane`
         '''
-        return LibSpike.update(root, ignore, shred)
+        class Agg:
+            '''
+            aggregator:(str?,int,[*])→(void|bool|str)
+                Feed a scroll (`None` only at state 2 and 5) and a state (can be looped) during the process of a scroll.
+                The states are: 0 - proofreading
+                                1 - scroll added because of dependency
+                                2 - resolving conflicts
+                                3 - scroll added because of dependency
+                                4 - scroll removed because due to being replaced
+                                5 - verify installation. Return: accepted:bool
+                                6 - select provider pony. Additional parameters: options:list<str>
+                                                          Return: select provider:str? `None` if aborted
+                                7 - fetching source. Additional parameters: source:str, progress state:int, progress end:int
+                                8 - verifying source. Additional parameters: progress state:int, progress end:int
+                                9 - compiling
+                               10 - stripping symbols. Additional parameters: file index:int, file count:int (can be 0)
+                               11 - file conflict check: Additional parameters: progress state:int, progress end:int
+                               12 - installing files: Additional parameters: progress state:int, progress end:int
+            '''
+            def __init__(self):
+                pass
+            def __call__(self):
+                return None # TODO interaction not implemented
+        
+        return LibSpike.update(Agg(), root, ignore, shred)
     
     
     def erase(self, ponies, root = '/', private = False, shred = False):
@@ -668,7 +717,36 @@ class Spike():
         @param   shred:bool        Whether to preform secure removal when possible
         @return  :byte             Exit value, see description of `mane`
         '''
-        return LibSpike.erase(ponies, root, private, shred)
+        class Agg:
+            '''
+            aggregator:(str,int,int)→void
+                Feed a scroll, removal progress state and removal progress end state, continuously during the progress,
+                this begins by feeding the state 0 when a scroll is cleared for removal, when all is enqueued the removal begins.
+            '''
+            def __init__(self):
+                self.scrolls = {}
+                self.next = 0
+                self.pos = 0
+            def __call__(self, scroll, progress, end):
+                if directory not in self.dirs:
+                    self.dirs[directory] = self.next
+                    self.next++
+                p = self.dirs[directory]
+                if p > self.pos:
+                    print('\033[%iBm', p - self.pos)
+                elif p < self.pos:
+                    print('\033[%iAm', self.pos - p)
+                s = '\033[01;3%im%s'
+                if progress == 0:
+                    s %= (3, 'WAIT')
+                elif progress == end:
+                    s %= (2, 'DONE')
+                else:
+                    s %= (1, '%2.1i' % progress * 100 / end)
+                print('[%s\033[00m] %s\n' % (s, directory))
+                self.pos = p + 1
+        
+        return LibSpike.erase(Agg(), ponies, root, private, shred)
     
     
     def ride(self, pony, private = False):
@@ -688,7 +766,17 @@ class Spike():
         @param   ponies:list<str>  Installed ponies for which to list claimed files
         @return  :byte             Exit value, see description of `mane`
         '''
-        return LibSpike.read_files(ponies)
+        class Agg:
+            '''
+            aggregator:(str,str)→void
+                Feed the pony and the file when a file is detected
+            '''
+            def __init__(self):
+                pass
+            def __call__(self, owner, filename):
+                print('%s: %s' % (owner, filename))
+        
+        return LibSpike.read_files(Agg(), ponies)
     
     
     def read_info(self, scrolls, field = None):
@@ -699,7 +787,18 @@ class Spike():
         @param   field:str?|list<str>  Information field or fields to fetch, `None` for everything
         @return  :byte                 Exit value, see description of `mane`
         '''
-        return LibSpike.read_info(scrolls, field)
+        class Agg:
+            '''
+            aggregator:(str,str,str)→void
+                Feed the scroll, the field name and the information in the field when a scroll's information is read,
+                all (desired) fields for a scroll will come once, in an uninterrupted sequence.
+            '''
+            def __init__(self):
+                pass
+            def __call__(self, scroll, meta, info):
+                print('%s: %s: %s' % (scroll, meta, info))
+        
+        return LibSpike.read_info(Agg(), scrolls, field)
     
     
     def claim(self, files, pony, recursiveness = 0, private = False, force = False):
@@ -713,7 +812,17 @@ class Spike():
         @param   force:bool         Whether to override current file claim
         @return  :byte              Exit value, see description of `mane`
         '''
-        return LibSpike.claim(files, pony, recursiveness, private, force)
+        class Agg:
+            '''
+            aggregator:(str,str)→void
+                Feed a file and it's owner when a file is already claimed
+            '''
+            def __init__(self):
+                pass
+            def __call__(self, filename, owner):
+                print('%s is already claimed by %s' % (filename, owner))
+        
+        return LibSpike.claim(Agg(), files, pony, recursiveness, private, force)
     
     
     def disclaim(self, files, pony, recursive = False, private = False):
@@ -737,7 +846,35 @@ class Spike():
         @param   scrolls:bool  Whether to only store scroll states and not installed files
         @return  :byte         Exit value, see description of `mane`
         '''
-        return LibSpike.archive(archive, scrolls)
+        class Agg:
+            '''
+            aggregator:(str,int,int,int,int)→void
+                Feed a scroll, scroll index, scroll count, scroll progress state and scroll progress end, continuously during the process
+            '''
+            def __init__(self):
+                self.scrolls = {}
+                self.next = 0
+                self.pos = 0
+            def __call__(self, scroll, scrolli, scrolln, progess, end):
+                if directory not in self.dirs:
+                    self.dirs[directory] = self.next
+                    self.next++
+                p = self.dirs[directory]
+                if p > self.pos:
+                    print('\033[%iBm', p - self.pos)
+                elif p < self.pos:
+                    print('\033[%iAm', self.pos - p)
+                s = '\033[01;3%im%s'
+                if progress == 0:
+                    s %= (3, 'WAIT')
+                elif progress == end:
+                    s %= (2, 'DONE')
+                else:
+                    s %= (1, '%2.1i' % progress * 100 / end)
+                print('[%s\033[00m] (%i/%i) %s\n' % (s, scrolli, scrolln, scroll))
+                self.pos = p + 1
+        
+        return LibSpike.archive(Agg(), archive, scrolls)
     
     
     def rollback(self, archive, keep = False, skip = False, gradeness = 0, shred = False):
@@ -751,7 +888,35 @@ class Spike():
         @param   shred:bool     Whether to preform secure removal when possible
         @return  :byte          Exit value, see description of `mane`
         '''
-        return LibSpike.rollback(archive, keep, skipe, gradeness, shred)
+        class Agg:
+            '''
+            aggregator:(str,int,int,int,int)→void
+                Feed a scroll, scroll index, scroll count, scroll progress state and scroll progress end, continuously during the process
+            '''
+            def __init__(self):
+                self.scrolls = {}
+                self.next = 0
+                self.pos = 0
+            def __call__(self, scroll, scrolli, scrolln, progess, end):
+                if directory not in self.dirs:
+                    self.dirs[directory] = self.next
+                    self.next++
+                p = self.dirs[directory]
+                if p > self.pos:
+                    print('\033[%iBm', p - self.pos)
+                elif p < self.pos:
+                    print('\033[%iAm', self.pos - p)
+                s = '\033[01;3%im%s'
+                if progress == 0:
+                    s %= (3, 'WAIT')
+                elif progress == end:
+                    s %= (2, 'DONE')
+                else:
+                    s %= (1, '%2.1i' % progress * 100 / end)
+                print('[%s\033[00m] (%i/%i) %s\n' % (s, scrolli, scrolln, scroll))
+                self.pos = p + 1
+        
+        return LibSpike.rollback(Agg(), archive, keep, skipe, gradeness, shred)
     
     
     def proofread(self, scrolls):
@@ -901,7 +1066,23 @@ class LibSpike():
         '''
         Update installed ponies
         
-        @param   aggregator         Same as for `write`
+        @param   aggregator:(str?,int,[*])→(void|bool|str)
+                     Feed a scroll (`None` only at state 2 and 5) and a state (can be looped) during the process of a scroll.
+                     The states are: 0 - proofreading
+                                     1 - scroll added because of dependency
+                                     2 - resolving conflicts
+                                     3 - scroll added because of dependency
+                                     4 - scroll removed because due to being replaced
+                                     5 - verify installation. Return: accepted:bool
+                                     6 - select provider pony. Additional parameters: options:list<str>
+                                                               Return: select provider:str? `None` if aborted
+                                     7 - fetching source. Additional parameters: source:str, progress state:int, progress end:int
+                                     8 - verifying source. Additional parameters: progress state:int, progress end:int
+                                     9 - compiling
+                                    10 - stripping symbols. Additional parameters: file index:int, file count:int (can be 0)
+                                    11 - file conflict check: Additional parameters: progress state:int, progress end:int
+                                    12 - installing files: Additional parameters: progress state:int, progress end:int
+        
         @param   root:str           Mounted filesystem to which to perform installation
         @param   ignores:list<str>  Ponies not to update
         @param   shred:bool         Whether to preform secure removal when possible
@@ -917,7 +1098,7 @@ class LibSpike():
         
         @param   aggregator:(str,int,int)→void
                      Feed a scroll, removal progress state and removal progress end state, continuously during the progress,
-                     this beings by feeding the state 0 when a scroll is cleared for removal, when all is enqueued the removal begins.
+                     this begins by feeding the state 0 when a scroll is cleared for removal, when all is enqueued the removal begins.
         
         @param   ponies:list<str>  Ponies to uninstall
         @param   root:str          Mounted filesystem from which to perform uninstallation
@@ -977,7 +1158,8 @@ class LibSpike():
         @param   aggregator:(str,str)→void
                      Feed a file and it's owner when a file is already claimed
         
-        @param   files:list<str>    File to claim        @param   pony:str           The pony
+        @param   files:list<str>    File to claim
+        @param   pony:str           The pony
         @param   recursiveness:int  0 for not recursive, 1 for recursive, 2 for recursive at detection
         @param   private:bool       Whether the pony is user private rather the user shared
         @param   force:bool         Whether to override current file claim
@@ -1006,7 +1188,7 @@ class LibSpike():
         Archive the current system installation state
         
         @param   aggregator:(str,int,int,int,int)→void
-                     Feed a scroll, scroll index, scroll count, scroll progress statte and scroll progress end, continuously during the process
+                     Feed a scroll, scroll index, scroll count, scroll progress state and scroll progress end, continuously during the process
         
         @param   archive:str   The archive file to create
         @param   scrolls:bool  Whether to only store scroll states and not installed files
@@ -1021,7 +1203,7 @@ class LibSpike():
         Roll back to an archived state
         
         @param   aggregator:(str,int,int,int,int)→void
-                     Feed a scroll, scroll index, scroll count, scroll progress statte and scroll progress end, continuously during the process
+                     Feed a scroll, scroll index, scroll count, scroll progress state and scroll progress end, continuously during the process
         
         @param   archive:str    Archive to roll back to
         @param   keep:bool      Keep non-archived installed ponies rather than uninstall them
@@ -1055,7 +1237,7 @@ class LibSpike():
         
         @param   aggregator:(str,int,int)→void
                      Feed a scroll, removal progress state and removal progress end state, continuously during the progress,
-                     this beings by feeding the state 0 when a scroll is enqueued, when all is enqueued the removal begins.
+                     this begins by feeding the state 0 when a scroll is enqueued, when all is enqueued the removal begins.
         
         @param   shred:bool  Whether to preform secure removal when possible
         @return  :byte       Exit value, see description of `LibSpike`
