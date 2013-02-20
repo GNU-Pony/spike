@@ -558,6 +558,12 @@ class Spike():
         @return  :byte  Exit value, see description of `mane` 
         '''
         class Agg:
+            '''
+            aggregator:(str,int)→void
+                Feed a directory path and 0 when a directory is enqueued for bootstraping.
+                Feed a directory path and 1 when a directory bootstrap process is beginning.
+                Feed a directory path and 2 when a directory bootstrap process has ended.
+            '''
             def __init__(self):
                 self.dirs = {}
                 self.next = 0
@@ -574,7 +580,6 @@ class Spike():
                 s = '\033[01;3%im%s' % {0 : (3, 'WAIT'), 1 : (4, 'WORK'), 2 : (2, 'DONE')}[state]
                 print('[%s\033[00m] %s\n', s, directory)
                 self.pos = p + 1
-        
         print('\033[01;34m::\033[00m Bootstrapping')
         return LibSpike.bootstrap(Agg())
     
@@ -589,6 +594,10 @@ class Spike():
         @return  :byte               Exit value, see description of `mane`
         '''
         class Agg:
+            '''
+            aggregator:(str)→void
+                Feed a scroll when one matching one of the patterns has been found.
+            '''
             def __init__(self):
                 pass
             def __call__(self, found):
@@ -605,6 +614,11 @@ class Spike():
         @return  :byte               Exit value, see description of `mane`
         '''
         class Agg:
+            '''
+            aggregator:(str,str?)→void
+                Feed a file path and a scroll when an owner has been found.
+                Feed a file path and `None` when it as been determined that their is no owner.
+            '''
             def __init__(self):
                 pass
             def __call__(self, filepath, owner):
