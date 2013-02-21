@@ -581,7 +581,6 @@ class Spike():
                 print('[%s\033[00m] %s\n' % (s, directory))
                 self.pos = p + 1
         
-        print('\033[01;34m::\033[00m Bootstrapping')
         return LibSpike.bootstrap(Agg())
     
     
@@ -665,8 +664,8 @@ class Spike():
             '''
             def __init__(self):
                 pass
-            def __call__(self):
-                return None # TODO interaction not implemented
+            def __call__(self, scroll, state, *args):
+                return None # TODO printing not implemented
                 
         return LibSpike.write(Agg(), scrolls, root, private, explicitness, nodep, force, shred)
     
@@ -701,8 +700,8 @@ class Spike():
             '''
             def __init__(self):
                 pass
-            def __call__(self):
-                return None # TODO interaction not implemented
+            def __call__(self, scroll, state, *args):
+                return None # TODO printing not implemented
         
         return LibSpike.update(Agg(), root, ignore, shred)
     
@@ -926,7 +925,24 @@ class Spike():
         @param   scrolls:list<str>  Scrolls to proofread
         @return  :byte              Exit value, see description of `mane`
         '''
-        return LibSpike.proofread(scrolls)
+        class Agg:
+            '''
+            aggregator:(str,int,[*])→void
+                Feed a scroll, 0, scroll index:int, scroll count:int when a scroll proofreading begins
+                Feed a scroll, 1, error message:str when a error is found
+            '''
+            def __init__(self):
+                pass
+            def __call__(self, scroll, err, *args):
+                if err == 0:
+                    index = args[0]
+                    count = args[1]
+                    print('(%i/%i) %s' % (index, count, scroll))
+                else:
+                    message = args[0]
+                    print('Error: %s: %s' % (scroll, message))
+        
+        return LibSpike.proofread(Agg(), scrolls)
     
     
     def clean(self, shred = False):
@@ -936,7 +952,36 @@ class Spike():
         @param   shred:bool  Whether to preform secure removal when possible
         @return  :byte        Exit value, see description of `mane`
         '''
-        return LibSpike.clean(shred)
+        class Agg:
+            '''
+            aggregator:(str,int,int)→void
+                Feed a scroll, removal progress state and removal progress end state, continuously during the progress,
+                this begins by feeding the state 0 when a scroll is enqueued, when all is enqueued the removal begins.
+            '''
+            def __init__(self):
+                self.scrolls = {}
+                self.next = 0
+                self.pos = 0
+            def __call__(self, scroll, progress, end):
+                if directory not in self.dirs:
+                    self.dirs[directory] = self.next
+                    self.next++
+                p = self.dirs[directory]
+                if p > self.pos:
+                    print('\033[%iBm', p - self.pos)
+                elif p < self.pos:
+                    print('\033[%iAm', self.pos - p)
+                s = '\033[01;3%im%s'
+                if progress == 0:
+                    s %= (3, 'WAIT')
+                elif progress == end:
+                    s %= (2, 'DONE')
+                else:
+                    s %= (1, '%2.1i' % progress * 100 / end)
+                print('[%s\033[00m] %s\n' % (s, directory))
+                self.pos = p + 1
+        
+        return LibSpike.clean(Agg(), shred)
     
     
     def interactive(self, shred = False):
@@ -1303,7 +1348,7 @@ class ArgParser():
         Add option that takes no arguments
         
         @param  alternatives:list<str>  Option names
-        @param  help:str?                Short description, use `None` to hide the option
+        @param  help:str?               Short description, use `None` to hide the option
         '''
         self.__arguments.append((ARGUMENTLESS, alternatives, None, help))
         stdalt = alternatives[0]
@@ -1317,7 +1362,7 @@ class ArgParser():
         
         @param  alternatives:list<str>  Option names
         @param  arg:str                 The name of the takes argument, one word
-        @param  help:str?                Short description, use `None` to hide the option
+        @param  help:str?               Short description, use `None` to hide the option
         '''
         self.__arguments.append((ARGUMENTED, alternatives, arg, help))
         stdalt = alternatives[0]
@@ -1331,7 +1376,7 @@ class ArgParser():
         
         @param  alternatives:list<str>  Option names
         @param  arg:str                 The name of the takes arguments, one word
-        @param  help:str?                Short description, use `None` to hide the option
+        @param  help:str?               Short description, use `None` to hide the option
         '''
         self.__arguments.append((VARIADIC, alternatives, arg, help))
         stdalt = alternatives[0]
@@ -1537,6 +1582,7 @@ if not SPIKE_PATH.endswith('/'):
     SPIKE_PATH += '/'
 
 linuxvt = ('TERM' in os.environ) and (os.environ['TERM'] == 'linux')
+
 if __name__ == '__main__': # sic
     spike = Spike()
     spike.mane(sys.argv)
