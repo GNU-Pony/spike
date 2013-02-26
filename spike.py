@@ -648,11 +648,12 @@ class Spike():
             aggregator:(str?,int,[*])→(void|bool|str)
                 Feed a scroll (`None` only at state 2 and 5) and a state (can be looped) during the process of a scroll.
                 The states are: 0 - proofreading
-                                1 - scroll added because of dependency
+                                1 - scroll added because of being updated
                                 2 - resolving conflicts
-                                3 - scroll added because of dependency
-                                4 - scroll removed because due to being replaced
-                                5 - verify installation. Return: accepted:bool
+                                3 - scroll added because of dependency. Additional parameters: requirers:list<str>
+                                4 - scroll removed because due to being replaced. Additional parameters: replacer:str
+                                5 - verify installation. Additional parameters: freshinstalls:list<str>, reinstalls:list<str>, update:list<str>, skipping:list<str>
+                                                         Return: accepted:bool
                                 6 - select provider pony. Additional parameters: options:list<str>
                                                           Return: select provider:str? `None` if aborted
                                 7 - fetching source. Additional parameters: source:str, progress state:int, progress end:int
@@ -663,9 +664,107 @@ class Spike():
                                12 - installing files: Additional parameters: progress state:int, progress end:int
             '''
             def __init__(self):
-                pass
+                self.updateadd = []
+                self.depadd = {}
+                self.replaceremove = {}
+                self.skipping = []
+                self.scrls = [[0, {}]] * 6
+                self.scrls[0] = self.scrls[1]
             def __call__(self, scroll, state, *args):
-                return None # TODO printing not implemented
+                if state == 0:
+                    print('Proofreading: %s' % scroll)
+                elif state == 1:
+                    self.updateadd.append(scroll)
+                elif state == 2:
+                    print('Resolving conflicts')
+                elif state == 3:
+                    if scroll in self.depadd:
+                        self.depadd[scroll] += args[0]
+                    else:
+                        self.depadd[scroll] = args[0]
+                elif state == 4:
+                    if scroll in self.replaceremove:
+                        self.replaceremove[scroll] += args[0]
+                    else:
+                        self.replaceremove[scroll] = args[0]
+                elif state == 5:
+                    self.skipping = args[3]
+                    if len(self.skipping) > 0:
+                        for re in self.skipping:
+                            print('Skipping %s' % re)
+                    elif len(args[0]) > 0:
+                        for fresh in args[2]:
+                            print('Installing%s' % fresh)
+                    elif len(args[1]) > 0:
+                        for re in args[2]:
+                            print('Reinstalling %s' % re)
+                    elif len(args[2]) > 0:
+                        for update in args[2]:
+                            print('Explicitly updating %s' % update)
+                    elif len(self.updateadd) > 0:
+                        for update in self.updateadd:
+                            print('Updating %s' % update)
+                    elif len(self.depadd) > 0:
+                        for dep in self.depadd:
+                            print('Adding %s, required by: %s' % (dep, ', '.join(self.depadd[dep])))
+                    elif len(self.replaceremove) > 0:
+                        for replacee in self.replaceremove:
+                            print('Replacing %s with %s' % (replacee, ', '.join(self.replaceremove[replacee])))
+                    print('\033[01mContinue? (y/n)\033[00m')
+                    return input().lower().startswith('y')
+                elif state == 6:
+                    print('\033[01mSelect provider for virtual package: %s\033[00m' % scroll)
+                    i = 0
+                    for prov in args[0]:
+                        i += 1
+                        print('%i: %s' % (i, prov))
+                    print('> ', end='')
+                    sel = input()
+                    try:
+                        sel = int(sel)
+                        if 1 <= sel <= len(args):
+                            return args[0][sel - 1]
+                    except:
+                        if sel in args[0]:
+                            return sel
+                else:
+                    if scroll not in self.scrls[state - 7][1]:
+                        self.scrls[state - 7][0] += 1
+                        self.scrls[state - 7][1][scroll] = self.scrls[state - 7][0]
+                    (scrli, scrln) = (self.scrls[state - 7][1][scroll], self.scrls[state - 7][0])
+                    if scrli != scrln:
+                        if state != 9:
+                            print('\033[%iAm', scrln - scrli)
+                    if state == 7:
+                        (source, progress, end) = args
+                        bar = '[\033[01;3%im%s\033[00m]'
+                        bar %= (2, 'DONE') if progress == end else (3, '%2.1f' % (progress / end))
+                        print('[%s] (%i/%i) Downloading %s: %s' % (bar, scrli, scrln, scroll, source))
+                    elif state == 8:
+                        (progress, end) = args
+                        bar = '[\033[01;3%im%s\033[00m]'
+                        bar %= (2, 'DONE') if progress == end else (3, '%2.1f' % (progress / end))
+                        print('[%s] (%i/%i) Verifing %s' % (bar, scrli, scrln, scroll))
+                    elif state == 9:
+                        print('(%i/%i) Compiling %s' % (scrli + 1, scrln, scroll))
+                    elif state == 10:
+                        (filei, filen) = args
+                        if filei == 0:
+                            print('(%i/%i) Stripping symbols for %s' % (scrli, scrln, scroll))
+                    elif state == 11:
+                        (progress, end) = args
+                        bar = '[\033[01;3%im%s\033[00m]'
+                        bar %= (2, 'DONE') if progress == end else (3, '%2.1f' % (progress / end))
+                        print('[%s] (%i/%i) Checking file conflicts for %s' % (bar, scrli, scrln, scroll))
+                    elif state == 12:
+                        (progress, end) = args
+                        bar = '[\033[01;3%im%s\033[00m]'
+                        bar %= (2, 'DONE') if progress == end else (3, '%2.1f' % (progress / end))
+                        print('[%s] (%i/%i) Installing %s' % (bar, scrli, scrln, scroll))
+                    if scrli != scrln:
+                        if state != 9:
+                            print('\033[%iBm', scrln - (scrli + 1))
+                return None
                 
         return LibSpike.write(Agg(), scrolls, root, private, explicitness, nodep, force, shred)
     
@@ -684,11 +783,12 @@ class Spike():
             aggregator:(str?,int,[*])→(void|bool|str)
                 Feed a scroll (`None` only at state 2 and 5) and a state (can be looped) during the process of a scroll.
                 The states are: 0 - proofreading
-                                1 - scroll added because of dependency
+                                1 - scroll added because of being updated
                                 2 - resolving conflicts
-                                3 - scroll added because of dependency
-                                4 - scroll removed because due to being replaced
-                                5 - verify installation. Return: accepted:bool
+                                3 - scroll added because of dependency. Additional parameters: requirers:list<str>
+                                4 - scroll removed because due to being replaced. Additional parameters: replacer:str
+                                5 - verify installation. Additional parameters: freshinstalls:list<str>, reinstalls:list<str>, update:list<str>, skipping:list<str>
+                                                         Return: accepted:bool
                                 6 - select provider pony. Additional parameters: options:list<str>
                                                           Return: select provider:str? `None` if aborted
                                 7 - fetching source. Additional parameters: source:str, progress state:int, progress end:int
@@ -699,9 +799,107 @@ class Spike():
                                12 - installing files: Additional parameters: progress state:int, progress end:int
             '''
             def __init__(self):
-                pass
+                self.updateadd = []
+                self.depadd = {}
+                self.replaceremove = {}
+                self.skipping = []
+                self.scrls = [[0, {}]] * 6
+                self.scrls[0] = self.scrls[1]
             def __call__(self, scroll, state, *args):
-                return None # TODO printing not implemented
+                if state == 0:
+                    print('Proofreading: %s' % scroll)
+                elif state == 1:
+                    self.updateadd.append(scroll)
+                elif state == 2:
+                    print('Resolving conflicts')
+                elif state == 3:
+                    if scroll in self.depadd:
+                        self.depadd[scroll] += args[0]
+                    else:
+                        self.depadd[scroll] = args[0]
+                elif state == 4:
+                    if scroll in self.replaceremove:
+                        self.replaceremove[scroll] += args[0]
+                    else:
+                        self.replaceremove[scroll] = args[0]
+                elif state == 5:
+                    self.skipping = args[3]
+                    if len(self.skipping) > 0:
+                        for re in self.skipping:
+                            print('Skipping %s' % re)
+                    elif len(args[0]) > 0:
+                        for fresh in args[2]:
+                            print('Installing%s' % fresh)
+                    elif len(args[1]) > 0:
+                        for re in args[2]:
+                            print('Reinstalling %s' % re)
+                    elif len(args[2]) > 0:
+                        for update in args[2]:
+                            print('Explicitly updating %s' % update)
+                    elif len(self.updateadd) > 0:
+                        for update in self.updateadd:
+                            print('Updating %s' % update)
+                    elif len(self.depadd) > 0:
+                        for dep in self.depadd:
+                            print('Adding %s, required by: %s' % (dep, ', '.join(self.depadd[dep])))
+                    elif len(self.replaceremove) > 0:
+                        for replacee in self.replaceremove:
+                            print('Replacing %s with %s' % (replacee, ', '.join(self.replaceremove[replacee])))
+                    print('\033[01mContinue? (y/n)\033[00m')
+                    return input().lower().startswith('y')
+                elif state == 6:
+                    print('\033[01mSelect provider for virtual package: %s\033[00m' % scroll)
+                    i = 0
+                    for prov in args[0]:
+                        i += 1
+                        print('%i: %s' % (i, prov))
+                    print('> ', end='')
+                    sel = input()
+                    try:
+                        sel = int(sel)
+                        if 1 <= sel <= len(args):
+                            return args[0][sel - 1]
+                    except:
+                        if sel in args[0]:
+                            return sel
+                else:
+                    if scroll not in self.scrls[state - 7][1]:
+                        self.scrls[state - 7][0] += 1
+                        self.scrls[state - 7][1][scroll] = self.scrls[state - 7][0]
+                    (scrli, scrln) = (self.scrls[state - 7][1][scroll], self.scrls[state - 7][0])
+                    if scrli != scrln:
+                        if state != 9:
+                            print('\033[%iAm', scrln - scrli)
+                    if state == 7:
+                        (source, progress, end) = args
+                        bar = '[\033[01;3%im%s\033[00m]'
+                        bar %= (2, 'DONE') if progress == end else (3, '%2.1f' % (progress / end))
+                        print('[%s] (%i/%i) Downloading %s: %s' % (bar, scrli, scrln, scroll, source))
+                    elif state == 8:
+                        (progress, end) = args
+                        bar = '[\033[01;3%im%s\033[00m]'
+                        bar %= (2, 'DONE') if progress == end else (3, '%2.1f' % (progress / end))
+                        print('[%s] (%i/%i) Verifing %s' % (bar, scrli, scrln, scroll))
+                    elif state == 9:
+                        print('(%i/%i) Compiling %s' % (scrli + 1, scrln, scroll))
+                    elif state == 10:
+                        (filei, filen) = args
+                        if filei == 0:
+                            print('(%i/%i) Stripping symbols for %s' % (scrli, scrln, scroll))
+                    elif state == 11:
+                        (progress, end) = args
+                        bar = '[\033[01;3%im%s\033[00m]'
+                        bar %= (2, 'DONE') if progress == end else (3, '%2.1f' % (progress / end))
+                        print('[%s] (%i/%i) Checking file conflicts for %s' % (bar, scrli, scrln, scroll))
+                    elif state == 12:
+                        (progress, end) = args
+                        bar = '[\033[01;3%im%s\033[00m]'
+                        bar %= (2, 'DONE') if progress == end else (3, '%2.1f' % (progress / end))
+                        print('[%s] (%i/%i) Installing %s' % (bar, scrli, scrln, scroll))
+                    if scrli != scrln:
+                        if state != 9:
+                            print('\033[%iBm', scrln - (scrli + 1))
+                return None
         
         return LibSpike.update(Agg(), root, ignore, shred)
     
@@ -741,7 +939,7 @@ class Spike():
                 elif progress == end:
                     s %= (2, 'DONE')
                 else:
-                    s %= (1, '%2.1i' % progress * 100 / end)
+                    s %= (1, '%2.1f' % progress * 100 / end)
                 print('[%s\033[00m] %s\n' % (s, directory))
                 self.pos = p + 1
         
@@ -869,7 +1067,7 @@ class Spike():
                 elif progress == end:
                     s %= (2, 'DONE')
                 else:
-                    s %= (1, '%2.1i' % progress * 100 / end)
+                    s %= (1, '%2.1f' % progress * 100 / end)
                 print('[%s\033[00m] (%i/%i) %s\n' % (s, scrolli, scrolln, scroll))
                 self.pos = p + 1
         
@@ -911,7 +1109,7 @@ class Spike():
                 elif progress == end:
                     s %= (2, 'DONE')
                 else:
-                    s %= (1, '%2.1i' % progress * 100 / end)
+                    s %= (1, '%2.1f' % progress * 100 / end)
                 print('[%s\033[00m] (%i/%i) %s\n' % (s, scrolli, scrolln, scroll))
                 self.pos = p + 1
         
@@ -977,7 +1175,7 @@ class Spike():
                 elif progress == end:
                     s %= (2, 'DONE')
                 else:
-                    s %= (1, '%2.1i' % progress * 100 / end)
+                    s %= (1, '%2.1f' % progress * 100 / end)
                 print('[%s\033[00m] %s\n' % (s, directory))
                 self.pos = p + 1
         
@@ -1080,11 +1278,12 @@ class LibSpike():
         @param   aggregator:(str?,int,[*])→(void|bool|str)
                      Feed a scroll (`None` only at state 2 and 5) and a state (can be looped) during the process of a scroll.
                      The states are: 0 - proofreading
-                                     1 - scroll added because of dependency
+                                     1 - scroll added because of being updated
                                      2 - resolving conflicts
-                                     3 - scroll added because of dependency
-                                     4 - scroll removed because due to being replaced
-                                     5 - verify installation. Return: accepted:bool
+                                     3 - scroll added because of dependency. Additional parameters: requirers:list<str>
+                                     4 - scroll removed because due to being replaced. Additional parameters: replacer:str
+                                     5 - verify installation. Additional parameters: freshinstalls:list<str>, reinstalls:list<str>, update:list<str>, skipping:list<str>
+                                                              Return: accepted:bool
                                      6 - select provider pony. Additional parameters: options:list<str>
                                                                Return: select provider:str? `None` if aborted
                                      7 - fetching source. Additional parameters: source:str, progress state:int, progress end:int
@@ -1114,11 +1313,12 @@ class LibSpike():
         @param   aggregator:(str?,int,[*])→(void|bool|str)
                      Feed a scroll (`None` only at state 2 and 5) and a state (can be looped) during the process of a scroll.
                      The states are: 0 - proofreading
-                                     1 - scroll added because of dependency
+                                     1 - scroll added because of being updated
                                      2 - resolving conflicts
-                                     3 - scroll added because of dependency
-                                     4 - scroll removed because due to being replaced
-                                     5 - verify installation. Return: accepted:bool
+                                     3 - scroll added because of dependency. Additional parameters: requirers:list<str>
+                                     4 - scroll removed because due to being replaced. Additional parameters: replacer:str
+                                     5 - verify installation. Additional parameters: freshinstalls:list<str>, reinstalls:list<str>, update:list<str>, skipping:list<str>
+                                                              Return: accepted:bool
                                      6 - select provider pony. Additional parameters: options:list<str>
                                                                Return: select provider:str? `None` if aborted
                                      7 - fetching source. Additional parameters: source:str, progress state:int, progress end:int
