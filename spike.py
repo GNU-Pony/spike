@@ -1191,6 +1191,49 @@ class Spike():
         return 0
 
 
+class Gitcord():
+    '''
+    Gitcord has awesome magic for manipulating the realms (git repositories)
+    '''
+    
+    def __init__(directory):
+        '''
+        Constructor
+        
+        @param  directory:str  The git repository (or any subdirectory that is not a repository itself), or the parent folder of a new repository
+        '''
+        self.dir = directory
+    
+    
+    def updateBransh():
+        '''
+        Update the current bransh in the repository
+        
+        @return  :bool  Whether the spell casting was successful
+        '''
+        pass
+    
+    
+    def changeBransh(bransh):
+        '''
+        Change current bransh in the repository
+        
+        @param   bransh:str  The new current bransh
+        @return  :bool       Whether the spell casting was successful
+        '''
+        pass
+    
+    
+    def clone(repository, directory):
+        '''
+        Change current bransh in the repository
+        
+        @param   repository:str  The URL of the repository to clone
+        @param   directory:str   The directory of the local clone
+        @return  :bool           Whether the spell casting was successful
+        '''
+        pass
+
 
 class LibSpike():
     '''
