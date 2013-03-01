@@ -427,11 +427,6 @@ class Spike():
                 self.test_allowed(opts.opts, allowed, longmap, True)
                 self.test_files(opts.files, 0, True)
                 exitValue = self.interactive(shred = opts.opts['--shred'] is not None)
-                # TODO verify action
-                # ! = always
-                # y = for now
-                # n = no
-                # / = never
         
         except Error as err:
             exitValue = 255
