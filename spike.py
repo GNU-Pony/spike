@@ -1233,6 +1233,47 @@ class Gitcord():
         @return  :bool           Whether the spell casting was successful
         '''
         pass
+    
+
+    def createRepository(directory):
+        '''
+        Create a new repository
+        
+        @param   directory:str   The directory of the local repository
+        @return  :bool           Whether the spell casting was successful
+        '''
+        pass
+    
+    
+    def removeFile(filename):
+        '''
+        Remove a file from the repository
+        
+        @param   filename:str  The file to remove
+        @return  :bool         Whether the spell casting was successful
+        '''
+        pass
+    
+    
+    def stageFile(filename):
+        '''
+        Add a new file for stage changes made to a file to the repository
+        
+        @param   filename:str  The file to stage
+        @return  :bool         Whether the spell casting was successful
+        '''
+        pass
+    
+    
+    def commit(message, signoff): ## TODO the user should be able to select a message to use and whether to sign off
+        '''
+        Commit changes in the repository
+        
+        @param   message:str  The commit message
+        @param   signoff:str  Whether to add a sign-off tag to the commit message
+        @return  :bool        Whether the spell casting was successful
+        '''
+        pass
 
 
 class LibSpike():
