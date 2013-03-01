@@ -1229,7 +1229,7 @@ class LibSpike():
                      Feed a directory path and 1 when a directory bootstrap process is beginning.
                      Feed a directory path and 2 when a directory bootstrap process has ended.
         
-        @return  :byte  Exit value, see description of `LibSpike`
+        @return  :byte  Exit value, see description of `LibSpike`, the possible ones are: 0 (TODO)
         '''
         return 0
     
@@ -1245,7 +1245,7 @@ class LibSpike():
         @param   patterns:list<str>  Regular expression search patterns
         @param   installed:bool      Look for installed packages
         @param   uninstalled:bool    Look for not installed packages
-        @return  :byte               Exit value, see description of `LibSpike`
+        @return  :byte               Exit value, see description of `LibSpike`, the possible ones are: 0 (TODO)
         '''
         return 0
     
@@ -1260,7 +1260,7 @@ class LibSpike():
                      Feed a file path and `None` when it as been determined that their is no owner.
         
         @param   files:list<string>  Files for which to do lookup
-        @return  :byte               Exit value, see description of `LibSpike`
+        @return  :byte               Exit value, see description of `LibSpike`, the possible ones are: 0 (TODO)
         '''
         return 0
     
@@ -1295,7 +1295,7 @@ class LibSpike():
         @param   nodep:bool         Whether to ignore dependencies
         @param   force:bool         Whether to ignore file claims
         @param   shred:bool         Whether to preform secure removal when possible
-        @return  :byte              Exit value, see description of `LibSpike`
+        @return  :byte              Exit value, see description of `LibSpike`, the possible ones are: 0 (TODO)
         '''
         return 0
     
@@ -1326,7 +1326,7 @@ class LibSpike():
         @param   root:str           Mounted filesystem to which to perform installation
         @param   ignores:list<str>  Ponies not to update
         @param   shred:bool         Whether to preform secure removal when possible
-        @return  :byte              Exit value, see description of `LibSpike`
+        @return  :byte              Exit value, see description of `LibSpike`, the possible ones are: 0 (TODO)
         '''
         return 0
     
@@ -1344,7 +1344,7 @@ class LibSpike():
         @param   root:str          Mounted filesystem from which to perform uninstallation
         @param   private:bool      Whether to uninstall user private ponies rather than user shared ponies
         @param   shred:bool        Whether to preform secure removal when possible
-        @return  :byte             Exit value, see description of `LibSpike`
+        @return  :byte             Exit value, see description of `LibSpike`, the possible ones are: 0 (TODO)
         '''
         return 0
     
@@ -1355,7 +1355,7 @@ class LibSpike():
         Execute pony after best effort
         
         @param   private:bool  Whether the pony is user private rather than user shared
-        @return  :byte         Exit value, see description of `LibSpike`
+        @return  :byte         Exit value, see description of `LibSpike`, the possible ones are: 0 (TODO)
         '''
         return 0
     
@@ -1369,7 +1369,7 @@ class LibSpike():
                      Feed the pony and the file when a file is detected
         
         @param   ponies:list<str>  Installed ponies for which to list claimed files
-        @return  :byte             Exit value, see description of `LibSpike`
+        @return  :byte             Exit value, see description of `LibSpike`, the possible ones are: 0 (TODO)
         '''
         return 0
     
@@ -1385,7 +1385,7 @@ class LibSpike():
         
         @param   scrolls:list<str>     Scrolls for which to list information
         @param   field:str?|list<str>  Information field or fields to fetch, `None` for everything
-        @return  :byte                 Exit value, see description of `LibSpike`
+        @return  :byte                 Exit value, see description of `LibSpike`, the possible ones are: 0 (TODO)
         '''
         return 0
     
@@ -1403,7 +1403,7 @@ class LibSpike():
         @param   recursiveness:int  0 for not recursive, 1 for recursive, 2 for recursive at detection
         @param   private:bool       Whether the pony is user private rather the user shared
         @param   force:bool         Whether to override current file claim
-        @return  :byte              Exit value, see description of `LibSpike`
+        @return  :byte              Exit value, see description of `LibSpike`, the possible ones are: 0 (TODO)
         '''
         return 0
     
@@ -1417,7 +1417,7 @@ class LibSpike():
         @param   pony:str           The pony
         @param   recursive:bool     Whether to disclaim directories recursively
         @param   private:bool       Whether the pony is user private rather the user shared
-        @return  :byte              Exit value, see description of `LibSpike`
+        @return  :byte              Exit value, see description of `LibSpike`, the possible ones are: 0 (TODO)
         '''
         return 0
     
@@ -1432,7 +1432,7 @@ class LibSpike():
         
         @param   archive:str   The archive file to create
         @param   scrolls:bool  Whether to only store scroll states and not installed files
-        @return  :byte         Exit value, see description of `LibSpike`
+        @return  :byte         Exit value, see description of `LibSpike`, the possible ones are: 0 (TODO)
         '''
         return 0
     
@@ -1450,7 +1450,7 @@ class LibSpike():
         @param   skip:bool      Skip rollback of non-installed archived ponies
         @param   gradeness:int  -1 for downgrades only, 1 for upgrades only, 0 for rollback regardless of version
         @param   shred:bool     Whether to preform secure removal when possible
-        @return  :byte          Exit value, see description of `LibSpike`
+        @return  :byte          Exit value, see description of `LibSpike`, the possible ones are: 0 (TODO)
         '''
         return 0
     
@@ -1465,7 +1465,7 @@ class LibSpike():
                      Feed a scroll, 1, error message:str when a error is found
         
         @param   scrolls:list<str>  Scrolls to proofread
-        @return  :byte              Exit value, see description of `LibSpike`
+        @return  :byte              Exit value, see description of `LibSpike`, the possible ones are: 0 (TODO)
         '''
         return 0
     
@@ -1480,7 +1480,7 @@ class LibSpike():
                      this begins by feeding the state 0 when a scroll is enqueued, when all is enqueued the removal begins.
         
         @param   shred:bool  Whether to preform secure removal when possible
-        @return  :byte       Exit value, see description of `LibSpike`
+        @return  :byte       Exit value, see description of `LibSpike`, the possible ones are: 0 (TODO)
         '''
         return 0
 
