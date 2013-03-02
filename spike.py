@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
 import sys
 import os
+from subprocess import Popen, PIPE
 
 
 
@@ -1205,13 +1206,33 @@ class Gitcord():
         self.dir = directory
     
     
+    
+    def __exec(command):
+        '''
+        Execute an exterminal command and wait for it to finish, and print output to stderr
+        
+        @param   command:list<str>  The command
+        @return  :int               Exit value
+        '''
+        proc = None
+        try:
+            proc = Popen(command, cwd=self.dir, stdout=sys.stderr, stdin=sys.stdin, stderr=sys.stderr)
+            return proc.returncode
+        except:
+            if proc is not None:
+                return proc.returncode == 0 ? 255 : proc.returncode
+            else:
+                return 255
+        
+    
+    
     def updateBransh():
         '''
         Update the current bransh in the repository
         
         @return  :bool  Whether the spell casting was successful
         '''
-        pass
+        return 0 == __exec(['git', 'pull'])
     
     
     def changeBransh(bransh):
@@ -1221,7 +1242,7 @@ class Gitcord():
         @param   bransh:str  The new current bransh
         @return  :bool       Whether the spell casting was successful
         '''
-        pass
+        return 0 == __exec(['git', 'checkout', bransh])
     
     
     def clone(repository, directory):
@@ -1232,9 +1253,9 @@ class Gitcord():
         @param   directory:str   The directory of the local clone
         @return  :bool           Whether the spell casting was successful
         '''
-        pass
+        return 0 == __exec(['git', 'clone', repository, directory])
     
-
+    
     def createRepository(directory):
         '''
         Create a new repository
@@ -1242,7 +1263,10 @@ class Gitcord():
         @param   directory:str   The directory of the local repository
         @return  :bool           Whether the spell casting was successful
         '''
-        pass
+        # TODO create dir and pushd into it
+        rc = 0 == __exec(['git', 'init'])
+        # TODO popd
+        return rc
     
     
     def removeFile(filename):
@@ -1252,7 +1276,7 @@ class Gitcord():
         @param   filename:str  The file to remove
         @return  :bool         Whether the spell casting was successful
         '''
-        pass
+        return 0 == __exec(['git', 'rm', '--force', filename])
     
     
     def stageFile(filename):
@@ -1262,7 +1286,7 @@ class Gitcord():
         @param   filename:str  The file to stage
         @return  :bool         Whether the spell casting was successful
         '''
-        pass
+        return 0 == __exec(['git', 'add', '--force', filename])
     
     
     def commit(message, signoff): ## TODO the user should be able to select a message to use and whether to sign off
@@ -1273,7 +1297,11 @@ class Gitcord():
         @param   signoff:str  Whether to add a sign-off tag to the commit message
         @return  :bool        Whether the spell casting was successful
         '''
-        pass
+        cmd = ['git', 'commit']
+        if signoff:
+            cmd += ['--signoff']
+        cmd += ['--message', message]
+        return 0 == __exec(cmd)
 
 
 class LibSpike():
