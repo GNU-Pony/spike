@@ -1223,7 +1223,7 @@ class Gitcord():
                 return proc.returncode == 0 ? 255 : proc.returncode
             else:
                 return 255
-        
+    
     
     
     def updateBransh():
@@ -1263,9 +1263,13 @@ class Gitcord():
         @param   directory:str   The directory of the local repository
         @return  :bool           Whether the spell casting was successful
         '''
-        # TODO create dir and pushd into it
+        lastdir = self.dir
+        if not self.dir.endswith('/'):
+            self.dir += '/'
+        self.dir += directory
+        os.makedirs(self.dir)
         rc = 0 == __exec(['git', 'init'])
-        # TODO popd
+        self.dir = lastdir
         return rc
     
     
