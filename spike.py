@@ -100,6 +100,8 @@ class Spike():
                      21 - Pony ride error
                      22 - Proofread found scroll error
                      23 - File access denied
+                     24 - Cannot pull git repository
+                     25 - Cannot push git repository
                     255 - Unknown error
         
         @param  args:list<str>  Command line arguments, including invoked program alias ($0)
@@ -1206,7 +1208,6 @@ class Gitcord():
         self.dir = directory
     
     
-    
     def __exec(command):
         '''
         Execute an exterminal command and wait for it to finish, and print output to stderr
@@ -1223,7 +1224,6 @@ class Gitcord():
                 return proc.returncode == 0 ? 255 : proc.returncode
             else:
                 return 255
-    
     
     
     def updateBransh():
@@ -1332,6 +1332,8 @@ class LibSpike():
                  21 - Pony ride error
                  22 - Proofread found scroll error
                  23 - File access denied
+                 24 - Cannot pull git repository
+                 25 - Cannot push git repository
                 255 - Unknown error
     '''
     
