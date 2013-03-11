@@ -1413,7 +1413,7 @@ class LibSpike():
         repositories = set()
         
         if not os.path.exists(SPIKE_PATH + '/.git/frozen.spike'):
-            repositories.add(os.path.realpath(SPIKE_PATH + '/.git/frozen.spike'))
+            repositories.add(os.path.realpath(SPIKE_PATH))
             update.append(SPIKE_PATH)
             aggregator(SPIKE_PATH, 0)
         
