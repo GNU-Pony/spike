@@ -106,7 +106,7 @@ class Spike():
                      22 - Proofread found scroll error
                      23 - File access denied
                      24 - Cannot pull git repository
-                     25 - Cannot push git repository
+                     25 - Cannot checkout git repository
                     255 - Unknown error
         
         @param  args:list<str>  Command line arguments, including invoked program alias ($0)
@@ -1338,7 +1338,7 @@ class LibSpike():
                  22 - Proofread found scroll error
                  23 - File access denied
                  24 - Cannot pull git repository
-                 25 - Cannot push git repository
+                 25 - Cannot checkout git repository
                 255 - Unknown error
     '''
     
