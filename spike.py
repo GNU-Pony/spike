@@ -1446,7 +1446,7 @@ class LibSpike():
         
         @param   patterns:list<str>  Regular expression search patterns
         @param   installed:bool      Look for installed packages
-        @param   uninstalled:bool    Look for not installed packages
+        @param   notinstalled:bool   Look for not installed packages
         @return  :byte               Exit value, see description of `LibSpike`, the possible ones are: 0 (TODO)
         '''
         return 0
