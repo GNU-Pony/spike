@@ -34,6 +34,11 @@ SPIKE_PATH = '${SPIKE_PATH}'
 Spike's location
 '''
 
+SPIKE_PROGNAME = 'spike'
+'''
+The program name of Spike
+'''
+
 
 
 def print(text = '', end = '\n'):
@@ -1337,6 +1342,58 @@ class LibSpike():
                 255 - Unknown error
     '''
     
+    
+    @staticmethod
+    def __parse_filename(filename):
+        '''
+        Parse a filename encoded with environment variables
+        
+        @param   filename:str  The encoded file name
+        @return  :str          The target file name, None if the environment variables are not declared
+        '''
+        if '$' in filename:
+            buf = ''
+            esc = False
+            var = None
+            for c in filename:
+                if esc:
+                    buf += c
+                    esc = False
+                elif var is not None:
+                    if c == '/':
+                        var = os.environ[var] if var in os.environ else ''
+                        if len(var) == 0:
+                            return None
+                        buf += var + c
+                        var = None
+                    else:
+                        var += c
+                elif c == '$':
+                    var = ''
+                elif c == '\\':
+                    esc = True
+                else:
+                    buf += c
+            return buf
+        return filename
+    
+    
+    @staticmethod
+    def get_confs(conffile):
+        '''
+        Get a filename for a configuration file for Spike
+        
+        @param   conffile:str  Configuration file
+        @return  :list<str>    File names
+        '''
+        rc = set()
+        for dir in ('$XDG_CONFIG_HOME/', '$HOME/.config/', '$HOME/.', '$confdir', '/etc/'):
+            file = __parse_filename(dir + SPIKE_PROGNAME + '/' + conffile)
+            if (file is not None) and os.path.exists(file):
+                rc.add(os.path.realpath(file))
+        return list(rc)
+    
+    
     @staticmethod
     def bootstrap(aggregator):
         '''
@@ -1347,8 +1404,35 @@ class LibSpike():
                      Feed a directory path and 1 when a directory bootstrap process is beginning.
                      Feed a directory path and 2 when a directory bootstrap process has ended.
         
-        @return  :byte  Exit value, see description of `LibSpike`, the possible ones are: 0 (TODO)
+        @return  :byte  Exit value, see description of `LibSpike`, the possible ones are: 0, 12, 24
         '''
+        if not os.path.exists(SPIKE_PATH):
+            return 12
+        
+        update = []
+        repositories = set()
+        
+        if not os.path.exists(SPIKE_PATH + '/.git/frozen.spike'):
+            repositories.add(os.path.realpath(SPIKE_PATH + '/.git/frozen.spike'))
+            update.append(SPIKE_PATH)
+            aggregator(SPIKE_PATH, 0)
+        
+        for file in [SPIKE_PATH + '/repositories'] + get_confs('repositories'):
+            if os.path.isdir(file):
+                for repo in os.listdir(file):
+                    repo = os.path.realpath(file + '/' + repo)
+                    if repo not in repositories:
+                        repositories.add(repo) 
+                        if not os.path.exists(repo + '/.git/frozen.spike'):
+                            update.append(SPIKE_PATH)
+                            aggregator(SPIKE_PATH, 0)
+        
+        for repo in update:
+            aggregator(repo, 1)
+            if not Gitcord(repo).updateBransh():
+                return 24
+            aggregator(repo, 2)
+        
         return 0
     
     
