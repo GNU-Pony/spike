@@ -4,13 +4,29 @@
 import sys
 import os
 
+INITIALS_LEN = 5
+
 
 def fetch(db, values):
     return []
 
 def make(db, pairs):
-    pairs = sort(pairs, key = lambda x : x[0])
-    pass
+    for pair in sort(pairs, key = lambda x : x[0]):
+        pos = 0
+        initials = ''
+        (path, package) = pair
+        while '/' in path[pos : -1]:
+            pos = path.find('/') + 1
+            initials += path[pos]
+        while len(initials) < INITIALS_LEN:
+            pos += 1
+            if pos == len(initials):
+                break
+            initials += path[pos]
+        if len(initials) > INITIALS_LEN:
+            initials += initials[:INITIALS_LEN]
+        elif len(initials) < INITIALS_LEN:
+            initials += '\0'
 
 
 if len(sys.args) == 1:
