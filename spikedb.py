@@ -4,7 +4,7 @@
 import sys
 import os
 
-INITIALS_LEN = 5
+INITIALS_LEN = 4
 
 
 def fetch(db, values):
@@ -27,6 +27,7 @@ def make(db, pairs):
             initials += initials[:INITIALS_LEN]
         elif len(initials) < INITIALS_LEN:
             initials += '\0'
+        initials = ''.join([chr(ord(c) & 15) for c in initials])
 
 
 if len(sys.args) == 1:
