@@ -37,7 +37,19 @@ def fetch(db, maxlen, values):
         buckets[ivalue].append(value)
     rc = []
     with open(db, 'rb') as file:
-        pass
+        offset = 0
+        position = 0
+        masterseek = file.read(3 * (1 << (INITIALS_LEN << 2)))
+        for initials in sort(buckets.keys()):
+            if position >= initials:
+                position = 0
+                offset = 0
+            amount = 0
+            while position <= initials:
+                offset += amount
+                amount = [int(b) for b in list(masterseek[3 * position : 3 * (position + 1)])]
+                amount = (amount[0] << 16) + (amount[1] << 8) + amount[2]
+                position += 1
     return rc
 
 
@@ -64,8 +76,7 @@ def make(db, maxlen, pairs):
         if ivalue not in buckets:
             buckets[ivalue] = []
         buckets[ivalue].append(pair)
-    offset = 0
-    offsets = []
+    counts = []
     with open(db, 'wb') as file:
         wbuf = [0] * (1 << (INITIALS_LEN << 2))
         for i in range(3):
@@ -80,12 +91,11 @@ def make(db, maxlen, pairs):
                 package = bytes([b & 255 for b in [package >> 16, package >> 8, package]])
                 file.write(filepath)
                 file.write(package)
-            offset += len(bucket)
-            offsets.append((initials, offset))
+            counts.append((initials, len(bucket)))
         file.flush()
-        for (initials, offset) in offsets:
+        for (initials, count) in counts:
             file.seek(offset = 3 * initials, whence = 0) # 0 means from the start of the stream
-            wbuf = bytes([b & 255 for b in [offset >> 16, offset >> 8, offset]])
+            wbuf = bytes([b & 255 for b in [count >> 16, count >> 8, count]])
             file.write(wbuf)
         file.flush()
 
