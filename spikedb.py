@@ -18,7 +18,7 @@ if len(sys.args) == 1:
         data.append(input())
     except:
         pass
-    make('testdb', [(comb[:comb.find(' ')], comb[comb.find(' ') + 1:]) for comb in data])
+    make('testdb', [(comb[comb.find(' ') + 1:], comb[:comb.find(' ')]  ) for comb in data])
 else:
     for pair in fetch('testdb', sort([os.path.realpath(f) for f in sys.args[1:]])):
         print('%s --> %s' % pair)
