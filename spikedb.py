@@ -26,8 +26,6 @@ def make(db, pairs): # keep in mind that it we sould not depend on sort() using 
             initials += path[pos]
         if len(initials) > INITIALS_LEN:
             initials += initials[:INITIALS_LEN]
-        elif len(initials) < INITIALS_LEN:
-            initials += '\0'
         initials = [(ord(c) & 15) for c in initials]
         ivalue = 0
         for initial in initials:
