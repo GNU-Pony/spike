@@ -10,10 +10,10 @@ INITIALS_LEN = 4
 # TODO paths should be db separated into groups by the binary logarithm of the length of their paths
 
 
-def fetch(db, values):
+def fetch(db, maxlen, values):
     return []
 
-def make(db, pairs): # keep in mind that it we sould not depend on sort() using a stabil sort
+def make(db, maxlen, pairs): # keep in mind that it we sould not depend on sort() using a stabil sort
     buckets = {}
     for pair in sort(pairs, key = lambda x : x[0]):
         pos = 0
@@ -47,8 +47,8 @@ if len(sys.args) == 1:
         data.append(input())
     except:
         pass
-    make('testdb', [(comb[comb.find(' ') + 1:], comb[:comb.find(' ')]  ) for comb in data])
+    make('testdb', 50, [(comb[comb.find(' ') + 1:], comb[:comb.find(' ')]  ) for comb in data])
 else:
-    for pair in fetch('testdb', sort([os.path.realpath(f) for f in sys.args[1:]])):
+    for pair in fetch('testdb', 50, sort([os.path.realpath(f) for f in sys.args[1:]])):
         print('%s --> %s' % pair)
 
