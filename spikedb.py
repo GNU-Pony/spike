@@ -9,6 +9,7 @@ def fetch(db, values):
     return []
 
 def make(db, pairs):
+    pairs = sort(pairs, key = lambda x : x[0])
     pass
 
 
