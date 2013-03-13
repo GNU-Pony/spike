@@ -52,8 +52,20 @@ def fetch(db, maxlen, values):
                 amount = [int(b) for b in list(masterseek[3 * position : 3 * (position + 1)])]
                 amount = (amount[0] << 16) + (amount[1] << 8) + amount[2]
                 position += 1
-            file.seek(offset = masterseeklen + offset * (maxlen + 3), whence = 0) # 0 means from the start of the stream
+            fileoffset = masterseeklen + offset * (maxlen + 3)
+            bucket = buckets[initials]
+            start = findInFile(bucket[0], maxlen, file, fileoffset, amount, maxlen + 3)
+            end = findInFile(bucket[-1], maxlen, file, fileoffset, amount, maxlen + 3)
+            start = (start - fileoffset) / (maxlen + 3)
+            end = (end - fileoffset) / (maxlen + 3)
+            # TODO
     return rc
+
+def findInFile(word, length, file, offset, count, size):
+    word = word + '\0' * (length - len(word.encode('utf-8')))
+    word = word.encode('utf-8')
+    # TODO
+    return 0
 
 
 def make(db, maxlen, pairs):
@@ -89,7 +101,7 @@ def make(db, maxlen, pairs):
             bucket = buckets[initials]
             for pair in bucket:
                 (filepath, package) = pair
-                filepath = filepath + '\0' * (maxlen - len(filepath))
+                filepath = filepath + '\0' * (maxlen - len(filepath.encode('utf8')))
                 filepath = filepath.encode('utf8')
                 package = bytes([b & 255 for b in [package >> 16, package >> 8, package]])
                 file.write(filepath)
