@@ -10,7 +10,8 @@ INITIALS_LEN = 4
 def fetch(db, values):
     return []
 
-def make(db, pairs):
+def make(db, pairs): # keep in mind that it we sould not depend on sort() using a stabil sort
+    buckets = {}
     for pair in sort(pairs, key = lambda x : x[0]):
         pos = 0
         initials = ''
@@ -27,7 +28,16 @@ def make(db, pairs):
             initials += initials[:INITIALS_LEN]
         elif len(initials) < INITIALS_LEN:
             initials += '\0'
-        initials = ''.join([chr(ord(c) & 15) for c in initials])
+        initials = [(ord(c) & 15) for c in initials]
+        ivalue = 0
+        for initial in initials:
+            ivalue = (ivalue << 4) | ivalue
+        if ivalue not in buckets:
+            buckets[ivalue] = []
+        buckets[ivalue].append(pair)
+    for initials in sort(buckets.keys()):
+        for pair in buckets[initials]:
+            pass
 
 
 if len(sys.args) == 1:
