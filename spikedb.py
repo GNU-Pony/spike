@@ -6,6 +6,9 @@ import os
 
 INITIALS_LEN = 4
 
+# TODO insert and remove is needed
+# TODO paths should be db separated into groups by the binary logarithm of the length of their paths
+
 
 def fetch(db, values):
     return []
