@@ -1,11 +1,13 @@
-/_/
+_/
 
 *.pyc
+__pycache__/
 
 *~
 \#*\#
 .\#*
 *.bak
+*.swp
 
-/__pycache__/
+/testdb*
 
