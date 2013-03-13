@@ -38,22 +38,28 @@ def make(db, maxlen, pairs): # keep in mind that it we sould not depend on sort(
         buckets[ivalue].append(pair)
     offset = 0
     offsets = []
-    # TODO write bytes([0, 0, 0] * (1 << (INITIALS_LEN << 2))) to file
-    for initials in sort(buckets.keys()):
-        bucket = buckets[initials]
-        for pair in bucket:
-            (filepath, package) = pair
-            filepath = filepath + '\0' * (maxlen - len(filepath))
-            filepath = filepath.encode('utf8')
-            package = bytes([b & 255 for b in [package >> 16, package >> 8, package]])
-            # TODO write `filepath` to file
-            # TODO write `package` to file
-        offset += len(bucket)
-        offsets.append((initials, offset))
-    for (initials, offset) in offsets:
-        # TODO seek file to 3 * initials
-        # TODO write bytes([b & 255 for b in [offset >> 16, offset >> 8, offset]])
-        pass
+    with open(db, 'wb') as file:
+        wbuf = [0] * (1 << (INITIALS_LEN << 2))
+        for i in range(3):
+            file.write(zbuf)
+        wbuf = None
+        for initials in sort(buckets.keys()):
+            bucket = buckets[initials]
+            for pair in bucket:
+                (filepath, package) = pair
+                filepath = filepath + '\0' * (maxlen - len(filepath))
+                filepath = filepath.encode('utf8')
+                package = bytes([b & 255 for b in [package >> 16, package >> 8, package]])
+                file.write(filepath)
+                file.write(package)
+            offset += len(bucket)
+            offsets.append((initials, offset))
+        file.flush()
+        for (initials, offset) in offsets:
+            file.seek(offset = 3 * initials, whence = 0) # 0 means from the start of the stream
+            wbuf = bytes([b & 255 for b in [offset >> 16, offset >> 8, offset]])
+            file.write(wbuf)
+        file.flush()
 
 
 
