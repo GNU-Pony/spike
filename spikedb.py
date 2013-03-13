@@ -39,17 +39,20 @@ def fetch(db, maxlen, values):
     with open(db, 'rb') as file:
         offset = 0
         position = 0
-        masterseek = file.read(3 * (1 << (INITIALS_LEN << 2)))
+        amount = 0
+        masterseeklen = 3 * (1 << (INITIALS_LEN << 2))
+        masterseek = file.read(masterseeklen)
         for initials in sort(buckets.keys()):
             if position >= initials:
                 position = 0
                 offset = 0
-            amount = 0
+                amount = 0
             while position <= initials:
                 offset += amount
                 amount = [int(b) for b in list(masterseek[3 * position : 3 * (position + 1)])]
                 amount = (amount[0] << 16) + (amount[1] << 8) + amount[2]
                 position += 1
+            file.seek(offset = masterseeklen + offset * (maxlen + 3), whence = 0) # 0 means from the start of the stream
     return rc
 
 
