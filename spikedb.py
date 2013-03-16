@@ -10,12 +10,12 @@ INITIALS_LEN = 4
 # TODO paths should be db separated into groups by the binary logarithm of the length of their paths
 
 
-# keep in mind that it we sould not depend on sort() using a stabil sort
+# keep in mind that it we sould not depend on sorted() using a stabil sort
 
 
 def fetch(db, maxlen, values):
     buckets = {}
-    for path in sort(values):
+    for path in sorted(values):
         pos = 0
         initials = ''
         while '/' in path[pos : -1]:
@@ -42,7 +42,7 @@ def fetch(db, maxlen, values):
         amount = 0
         masterseeklen = 3 * (1 << (INITIALS_LEN << 2))
         masterseek = file.read(masterseeklen)
-        for initials in sort(buckets.keys()):
+        for initials in sorted(buckets.keys()):
             if position >= initials:
                 position = 0
                 offset = 0
@@ -70,7 +70,7 @@ def findInFile(word, length, file, offset, count, size):
 
 def make(db, maxlen, pairs):
     buckets = {}
-    for pair in sort(pairs, key = lambda x : x[0]):
+    for pair in sorted(pairs, key = lambda x : x[0]):
         pos = 0
         initials = ''
         (path, package) = pair
@@ -97,7 +97,7 @@ def make(db, maxlen, pairs):
         for i in range(3):
             file.write(zbuf)
         wbuf = None
-        for initials in sort(buckets.keys()):
+        for initials in sorted(buckets.keys()):
             bucket = buckets[initials]
             for pair in bucket:
                 (filepath, package) = pair
@@ -124,6 +124,6 @@ if len(sys.args) == 1:
         pass
     make('testdb', 50, [(comb[comb.find(' ') + 1:], hash(comb[:comb.find(' ')]) & 0xFFFFFF) for comb in data])
 else:
-    for pair in fetch('testdb', 50, sort([os.path.realpath(f)[:50] for f in sys.args[1:]])):
+    for pair in fetch('testdb', 50, sorted([os.path.realpath(f)[:50] for f in sys.args[1:]])):
         print('%s --> %s' % pair)
 
