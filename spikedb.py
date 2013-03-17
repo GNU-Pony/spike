@@ -13,6 +13,16 @@ INITIALS_LEN = 4
 # keep in mind that it we sould not depend on sorted() using a stabil sort
 
 
+def unique(sorted):
+    rc = []
+    last = None
+    for element in sorted:
+        if element != last:
+            last = element
+            rc.append(element)
+    return rc
+
+
 def binsearch(list, item, min, max):
     mid = 0
     while min <= max:
@@ -28,8 +38,7 @@ def binsearch(list, item, min, max):
     return ~mid
 
 
-def multibinsearch(list, items):
-    rc = []
+def multibinsearch(rc, list, items):
     count = len(items)
     if count > 0:
         minomax = [(0, count - 1, 0, len(list) - 1)]
@@ -46,13 +55,35 @@ def multibinsearch(list, items):
         max = count - 1
         lmax = binsearch(list, items[max], lmin, lmax)
         rc.append((max, lmax))
-    return rc
 
+
+class Blocklist():
+    def __init__(self, file, lbdevblock, offset, blocksize, itemsize, length):
+        self.file = file
+        self.lbdevblock = lbdevblock
+        self.devblock = 1 << lbdevblock
+        self.offset = offset
+        self.blocksize = blocksize
+        self.itemsize = itemsize
+        self.position = -1
+        self.length = length
+        self.buffer = None
+    
+    def __getitem__(self, index):
+        pos = index * self.blocksize + self.offset
+        if self.position != pos >> self.lbdevblock:
+            self.position = pos >> self.lbdevblock
+            self.buffer = self.file.read(self.devblock)
+        pos &= self.devblock - 1
+        return self.buffer[pos : pos + itemsize]
+    
+    def __len__(self):
+        return self.length
 
 
 def fetch(db, maxlen, values):
     buckets = {}
-    for path in sorted(values):
+    for path in unique(sorted(values)):
         pos = 0
         initials = ''
         while '/' in path[pos : -1]:
@@ -91,18 +122,10 @@ def fetch(db, maxlen, values):
                 position += 1
             fileoffset = masterseeklen + offset * (maxlen + 3)
             bucket = buckets[initials]
-            start = findInFile(bucket[0], maxlen, file, fileoffset, amount, maxlen + 3)
-            end = findInFile(bucket[-1], maxlen, file, fileoffset, amount, maxlen + 3)
-            start = (start - fileoffset) / (maxlen + 3)
-            end = (end - fileoffset) / (maxlen + 3)
-            # TODO
+            bucket = [(word + '\0' * (maxlen - len(word.encode('utf-8')))).encode('utf-8') for word in bucket]
+            list = Blocklist(file, 13, fileoffset, maxlen + 3, maxlen, amount)
+            multibinsearch(rc, list, bucket)
     return rc
-
-def findInFile(word, length, file, offset, count, size):
-    word = word + '\0' * (length - len(word.encode('utf-8')))
-    word = word.encode('utf-8')
-    # TODO
-    return 0
 
 
 def make(db, maxlen, pairs):
