@@ -1387,7 +1387,7 @@ class LibSpike():
         @return  :list<str>    File names
         '''
         rc = set()
-        for dir in ('$XDG_CONFIG_HOME/', '$HOME/.config/', '$HOME/.', '$vardir/', '/var/', '$confdir/', '/etc/'):
+        for dir in ('$XDG_CONFIG_HOME/', '$HOME/.config/', '$HOME/.', SPIKE_PATH + '/', '$vardir/', '/var/', '$confdir/', '/etc/'):
             file = __parse_filename(dir + SPIKE_PROGNAME + '/' + conffile)
             if (file is not None) and os.path.exists(file):
                 rc.add(os.path.realpath(file))
