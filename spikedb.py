@@ -141,7 +141,14 @@ class Blocklist():
         return self.length
 
 
-def fetch(db, maxlen, values):
+def fetch(rc, db, maxlen, values):
+    '''
+    @param   rc:append((str, bytes))→void  Sink to which to append found results
+    @param   db:str                        The database file
+    @param   maxlen:int                    The length of values
+    @param   values:list<string>           Values for which to search
+    @return                                `rc` is returned
+    '''
     buckets = {}
     for path in unique(sorted(values)):
         pos = 0
@@ -163,7 +170,6 @@ def fetch(db, maxlen, values):
         if ivalue not in buckets:
             buckets[ivalue] = []
         buckets[ivalue].append(value)
-    rc = []
     with open(db, 'rb') as file:
         offset = 0
         position = 0
@@ -249,8 +255,9 @@ if len(sys.args) == 1:
         data.append(input())
     except:
         pass
-    make('testdb', 50, [(comb[comb.find(' ') + 1:], hash(comb[:comb.find(' ')]) & 0xFFFFFF) for comb in data])
+    make(rc, 'testdb', 50, [(comb[comb.find(' ') + 1:], hash(comb[:comb.find(' ')]) & 0xFFFFFF) for comb in data])
 else:
-    for pair in fetch('testdb', 50, sorted([os.path.realpath(f)[:50] for f in sys.args[1:]])):
+    rc = []
+    for pair in fetch('testdb', 50, sorted(rc, [os.path.realpath(f)[:50] for f in sys.args[1:]])):
         print('%s --> %s' % pair)
 
