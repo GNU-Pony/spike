@@ -53,6 +53,19 @@ def binsearch(list, item, min, max):
     return ~mid
 
 
+def __blocksize(file):
+    '''
+    Gets the block size of the device a file is placed in
+    
+    @param   file:str  The filename of the file, do not need to be the canonical path
+    @return  :int      The block size, fall back to a regular value if not possible to determine
+    '''
+    try:
+        return os.stat(os.path.realpath(file)).st_size
+    except:
+        return 8 << 10
+
+
 def multibinsearch(rc, list, items):
     '''
     Find the indices of multiple items in a list, with time complexity 𝓞(log n + m) and memory complexity 𝓞(log m) 
@@ -143,11 +156,13 @@ class Blocklist():
 
 def fetch(rc, db, maxlen, values):
     '''
+    Looks up values in a file
+    
     @param   rc:append((str, bytes))→void  Sink to which to append found results
     @param   db:str                        The database file
     @param   maxlen:int                    The length of values
-    @param   values:list<string>           Values for which to search
-    @return                                `rc` is returned
+    @param   values:list<string>           Keys for which to search
+    @return                                `rc` is returned, filled with `(key:str, value:bytes)`-pairs
     '''
     buckets = {}
     for path in unique(sorted(values)):
@@ -170,6 +185,7 @@ def fetch(rc, db, maxlen, values):
         if ivalue not in buckets:
             buckets[ivalue] = []
         buckets[ivalue].append(value)
+    devblocksize = __blocksize(db)
     with open(db, 'rb') as file:
         offset = 0
         position = 0
@@ -189,7 +205,7 @@ def fetch(rc, db, maxlen, values):
             fileoffset = masterseeklen + offset * (maxlen + 3)
             bucket = buckets[initials]
             bbucket = [(word + '\0' * (maxlen - len(word.encode('utf-8')))).encode('utf-8') for word in bucket]
-            list = Blocklist(file, 13, fileoffset, maxlen + 3, maxlen, amount)
+            list = Blocklist(file, devblocksize, fileoffset, maxlen + 3, maxlen, amount)
             class Agg():
                 def __init__(self, sink, keyMap, valueMap):
                     self.sink = sink
