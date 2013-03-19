@@ -118,6 +118,20 @@ class Blocklist():
         pos &= self.devblock - 1
         return self.buffer[pos : pos + itemsize]
     
+    def getValue(self, index):
+        '''
+        Gets the associated value to an element by index
+        
+        @param   index:int  The index of the element
+        @return  :bytes     The associated value
+        '''
+        pos = index * self.blocksize + self.offset
+        if self.position != pos >> self.lbdevblock:
+            self.position = pos >> self.lbdevblock
+            self.buffer = self.file.read(self.devblock)
+        pos &= self.devblock - 1
+        return self.buffer[pos + itemsize : pos + blocksize]
+    
     def __len__(self):
         '''
         Gets the number of elements
@@ -168,9 +182,16 @@ def fetch(db, maxlen, values):
                 position += 1
             fileoffset = masterseeklen + offset * (maxlen + 3)
             bucket = buckets[initials]
-            bucket = [(word + '\0' * (maxlen - len(word.encode('utf-8')))).encode('utf-8') for word in bucket]
+            bbucket = [(word + '\0' * (maxlen - len(word.encode('utf-8')))).encode('utf-8') for word in bucket]
             list = Blocklist(file, 13, fileoffset, maxlen + 3, maxlen, amount)
-            multibinsearch(rc, list, bucket)
+            class Agg():
+                def __init__(self, sink, keyMap, valueMap):
+                    self.sink = sink
+                    self.keyMap = keyMap;
+                    self.valueMap = valueMap;
+                def append(self, item):
+                    self.sink.append((self.keyMap[item[0]], self.valueMap.getValue(item[1])))
+            multibinsearch(Agg(rc, bucket, list), list, bbucket)
     return rc
 
 
