@@ -20,13 +20,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
 import sys
 import os
+import grp as groupmodule
+import pwd as usermodule
 from subprocess import Popen, PIPE
 
 
 
+_dragonsuite_directory_stack = []
+
 class DragonSuite():
     '''
-    A collection of utilities mimicing standard commands, however not full-blown
+    A collection of utilities mimicing standard unix commands, however not full-blown
     '''
     
     @staticmethod
@@ -53,9 +57,9 @@ class DragonSuite():
         @return  :str|list<str>     The filename strip, or if multiple, a list of stripped filenames
         '''
         if isinstance(path, str):
-            return path[path.rfind('/') + 1:] if '/' in path else path
+            return path[path.rfind(os.sep) + 1:] if os.sep in path else path
         else:
-            return [(p[p.rfind('/') + 1:] if '/' in p else p) for p in path]
+            return [(p[p.rfind(os.sep) + 1:] if os.sep in p else p) for p in path]
     
     
     @staticmethod
@@ -67,9 +71,9 @@ class DragonSuite():
         @return  :str|list<str>     The filename strip, or if multiple, a list of stripped filenames
         '''
         def _dirname(p):
-            if '/' in p[:-1]:
-                rc = p[:p[:-1].rfind('/')]
-                return rc[:-1] if p.endswith('/') else rc
+            if os.sep in p[:-1]:
+                rc = p[:p[:-1].rfind(os.sep)]
+                return rc[:-1] if p.endswith(os.sep) else rc
             else:
                 return '.'
         if isinstance(path, str):
@@ -169,5 +173,416 @@ class DragonSuite():
                 item = [item[i] for i in f]
             rc.append(od.join(item))
         return rc
+    
+    
+    @staticmethod
+    def cat(files, encoding = None):
+        '''
+        Read one or more files a create a list of all their combined LF lines in order
+        
+        @param   files:str|itr<str>  The file or files to read
+        @param   encoding:str?       The encoding to use, default if `None`
+        @return  :list<str>          All lines in all files
+        '''
+        rc = []
+        mode = 'r' if encoding is None else 'rb'
+        fs = [files] if isinstance(files, str) else files
+        for f in fs:
+            with open(f, mode):
+                if encoding is None:
+                    rc += f.read().split('\n')
+                else:
+                    rc += f.read().encode(encoding, 'replace').split('\n')
+        return rc
+    
+    
+    @staticmethod
+    def pwd():
+        '''
+        Gets the current working directory
+        
+        @return  :str  The current working directory
+        '''
+        return os.getcwd()
+    
+    
+    @staticmethod
+    def cd(path):
+        '''
+        Changes the current working directory
+        
+        @param  path:str  The new current working directory
+        '''
+        os.chdir(path)
+    
+    
+    @staticmethod
+    def pushd(path):
+        '''
+        Stores the current working directory in a stack change it
+        
+        @param  path:str  The new current working directory
+        '''
+        _dragonsuite_directory_stack.append(os.getcwd())
+        os.chdir(path)
+    
+    
+    @staticmethod
+    def popd():
+        '''
+        Changes the current working directory to the one in the top of the `pushd` stack and pop it
+        '''
+        os.chdir(_dragonsuite_directory_stack.pop())
+    
+    
+    @staticmethod
+    def umask(mask = 0o22):
+        '''
+        Sets the current umask and return the previous umask
+        
+        @param   mask:int  The new umask
+        @return  :int      The previous umask
+        '''
+        return os.umask(mask)
+    
+    
+    @staticmethod
+    def comm(list1, list2, mode):
+        '''
+        Compare two list
+        
+        @param   list1:itr<¿E?>  The first list
+        @param   list2:itr<¿E?>  The second list
+        @param   mode:int        0: Keep elements that do not appear in both lists
+                                 1: Keep elements that only appear in the first list
+                                 2: Keep elements that only appear in the second list
+                                 3: Keep elements that only appear in both lists
+        @return  :list<¿E?>      The result it will be sorted and contain no duplicates
+        '''
+        items = [(e, 1) for e in list1] + [(e, 2) for e in list2]
+        items = sorted(rc, key = lambda x : x[0])
+        last = items[0]
+        (rc, tmp) = ([], [])
+        for item in items:
+            if item[0] == last[0]:
+                tmp.pop()
+                tmp.append((item[0], item[1] | last[1]))
+            else:
+                tmp.append(item)
+        mode0 = mode == 0;
+        for item in tmp:
+            if item[1] == mode:
+                rc.append(item[0])
+            elif mode0 and item[1] != 3:
+                rc.append(item[0])
+        return rc
+    
+    
+    @staticmethod
+    def unset(var):
+        '''
+        Deletes an environment variable
+        
+        @param  var:str  The environment variable
+        '''
+        os.unsetenv(var)
+        if var in os.environ:
+            del os.environ[var]
+    
+    
+    @staticmethod
+    def export(var, value):
+        '''
+        Sets an environment variable
+        
+        @param  var:str     The environment variable
+        @param  value:str?  The environment variable's new value, deletes it if `None`
+        '''
+        if value is None:
+            unset(var)
+        else:
+            os.putenv(var, value)
+            if var not in os.environ or os.environ[var] != value:
+                os.environ[var] = value
+    
+    
+    @staticmethod
+    def get(var, default = ''):
+        '''
+        Gets an environment variable
+        
+        @param   var:str       The environment variable
+        @param   default:str?  Default value to use if not defined
+        @return  :str?         The environment variable's value
+        '''
+        return os.getenv(var, default)
+    
+    
+    @staticmethod
+    def chmod(path, mode, mask = ~0):
+        '''
+        Changes the protection bits of one or more files
+        
+        @param  path:str|itr<str>  The file or files
+        @param  mode:int           The desired protection bits
+        @param  mask:int           The portions of `mode` to apply
+        '''
+        for p in ([path] if isinstance(path, str) else path):
+            if mask == ~0:
+                os.lchmod(p, mode)
+            else:
+                cur = os.stat(path).st_mode
+                os.lchmod(p, mode | (cur & ~mask))
+    
+    
+    @staticmethod
+    def chown(path, owner = -1, group = -1):
+        '''
+        Changes the owner or group of one or more files
+        
+        @param  path:str|itr<str>  The file or files
+        @param  owner:int|str      The new owner, `-1` for ignored
+        @param  group:int|str      The new group, `-1` for ignored, `-2` to select by owner
+        '''
+        o = owner if isinstance(owner, int) else usermodule.getpwnam(owner).pw_uid
+        g = group if isinstance(group, int) else groupmodule.getgrnam(group).gr_gid
+        for p in ([path] if isinstance(path, str) else path):
+            if g == -2:
+                x = usermodule.getpwuid(os.stat(path).st_uid).pw_gid
+                os.lchown(p, o, x)
+            else:
+                os.lchown(p, o, g)
+    
+    
+    @staticmethod
+    def chgrp(path, group):
+        '''
+        Changes the group of one or more files
+        
+        @param  path:str|itr<str>  The file or files
+        @param  group:int|str      The new group
+        '''
+        chown(path, group = group)
+    
+    
+    @staticmethod
+    def ln(source, link, hard = False):
+        '''
+        Create a symbolic or hard link
+        
+        @param  source:str  The target of the new link
+        @param  link:str    The path of the new link
+        @param  hard:bool   Whether to create a hard link
+        '''
+        if hard:
+            os.link(source, link)
+        else:
+            os.symlink(source, link)
+    
+    
+    @staticmethod
+    def touch(path, settime = False):
+        '''
+        Create one or more files if missing
+        
+        @param  path:str|itr<str>  The file of files
+        @param  settime:bool       Whether to set the timestamps on the files if they already exists
+        '''
+        for p in ([path] if isinstance(path, str) else path):
+            if os.path.exists(p):
+                if settime:
+                    os.utime(p, None)
+            else:
+                open(p, 'a').close()
+    
+    
+    @staticmethod
+    def rm(path, recursive = False, directories = False):
+        '''
+        Remove one or more file
+        
+        @param  path:str|itr<str>  Files to remove
+        @param  recursive:bool     Remove directories recursively
+        @param  directories:bool   Attempt to remove directories with rmdir, this is forced for recursive removes
+        '''
+        for p in ([path] if isinstance(path, str) else path):
+            if not recursive:
+                if dirs and os.path.isdir(p):
+                    os.rmdir(p)
+                elif get('shred', None) is not None:
+                    execute(get('shred').split(' ') + [p], fail = True)
+                else:
+                    os.remove(p)
+            else:
+                rm(tac(find(p)), directories = True)
+    
+    
+    @staticmethod
+    def rm_r(path):
+        '''
+        Remove a file or recursively a directory, multile are also possible
+        
+        @param  path:str|itr<str>  The files to remove
+        '''
+        rm(path, recursive = True)
+    
+    
+    @staticmethod
+    def rmdir(path):
+        '''
+        Remove one or more directories
+        
+        @param  path:str|itr<str>  The directories to remove
+        '''
+        for p in ([path] if isinstance(path, str) else path):
+            os.rmdir(p)
+    
+    
+    @staticmethod
+    def mkdir(path, recursive = False):
+        '''
+        Create one or more directories, it will not fail if the path already exists and is a directory
+        
+        @param  path:str|itr<str>  The directories to create
+        @param  recursive:bool     Whether to create all missing intermediate-level directories
+        '''
+        for p in ([path] if isinstance(path, str) else path):
+            if not recursive:
+                if not (os.path.exists(p) and os.path.isdir(p)):
+                    os.mkdir(p)
+            else:
+                ps = p.split(os.sep)
+                pp = ps[0]
+                for _p in ps[1:]:
+                    pp += os.sep + _p
+                    if not (os.path.exists(pp) and os.path.isdir(pp)):
+                        os.mkdir(pp)
+    
+    
+    @staticmethod
+    def mkdir_p(path):
+        '''
+        Create on ore more directories, and create all missing intermediate-level directories
+        
+        @param  path:str|itr<str>  The directories to create
+        '''
+        mkdir(path, recursive = True)
+    
+    
+    @staticmethod
+    def mkcd(path, recursive = False):
+        '''
+        Create a directory and `cd` into it, it will not fail if the path already exists and is a directory
+        
+        @param  path:str        The directory to create and move into
+        @param  recursive:bool  Whether to create all missing intermediate-level directories
+        '''
+        mkdir(path, recursive)
+        cd(path)
+    
+    
+    @staticmethod
+    def git(*params):
+        '''
+        Execute git
+        
+        @param  params:*str  Arguments for the command
+        '''
+        execute(['git'] + params, fail = True)
+    
+    
+    @staticmethod
+    def curl(*params):
+        '''
+        Execute curl
+        
+        @param  params:*str  Arguments for the command
+        '''
+        execute(['curl'] + params, fail = True)
+    
+    
+    @staticmethod
+    def wget(*params):
+        '''
+        Execute wget
+        
+        @param  params:*str  Arguments for the command
+        '''
+        execute(['wget'] + params, fail = True)
+    
+    
+    @staticmethod
+    def make(*params):
+        '''
+        Execute make
+        
+        @param  params:*str  Arguments for the command
+        '''
+        execute(['make'] + params, fail = True)
+    
+    
+    @staticmethod
+    def rename(path, expression, replacement):
+        '''
+        Rename multiple files with a pattern using util-linux's command rename
+        
+        @param  path:str|list<str>  File or files to rename
+        @param  expression:str      Matching expression
+        @param  replacement:str     Replacement
+        '''
+        files = [path] if isinstance(path, str) else path
+        execute(['rename', '--', expression, replacement] + files, fail = True)
+    
+    
+    @staticmethod
+    def upx(path, level = 8, overlay = 1, brute = 0):
+        '''
+        Compress one or more files using the command upx
+        
+        @param  path:str|list<str>  The files to compress
+        @param  level:int           Compression level, [1; 10], 10 for --best
+        @param  overlay:int         0: --overlay=skip
+                                    1: --overlay=copy
+                                    2: --overlay=strip
+        @param  brute:int           0: no addition parameter
+                                    1: --brute
+                                    2: --ultra-brute
+        '''
+        params = ['upx', '-%i' % level if level < 10 else '--best']
+        if overlay == 0:  params += ['--overlay=skip']
+        if overlay == 2:  params += ['--overlay=strip']
+        if brute == 1:  params += ['--brute']
+        if brute == 2:  params += ['--ultra-brute']
+        params += ['--', path] if isinstance(path, str) else (['--'] + path)
+        execute(params, fail = False)
+    
+    
+    @staticmethod
+    def strip(path, *params):
+        '''
+        Strip symbols from binaries and libraries using the command strip
+        
+        @param  path:str|list<str>  The files to compress
+        @param  params:*str         Arguments for strip
+        '''
+        cmd = ['strip'] + params + (['--', path] if isinstance(path, str) else (['--'] + path))
+        execute(cmd, fail = False)
+    
+    
+    @staticmethod
+    def installinfo(path):
+        '''
+        Update info/dir entries
+        
+        @param  path:str|list<str>  New or updated entries
+        '''
+        r = get('root', '/')
+        i = get('infodir', '/usr/share/info')
+        if not r.endswith('/'): r += '/'
+        if i.startswith('/'): i = i[1:]
+        if not i.endswith('/') and len(i) > 0: i += '/'
+        d = r + i + 'dir'
+        for p in (['--', path] if isinstance(path, str) else (['--'] + path)):
+            execute(['install-info', '--', p, d], fail = False)
 
 
