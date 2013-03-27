@@ -897,5 +897,75 @@ class DragonSuite():
             if os.path.exists(p) and ((not p.endswith(os.sep)) or os.path.isdir(p)):
                 nrc.append(p)
         return nrc
+    
+    
+    @staticmethod
+    def decompress(path, format = None):
+        '''
+        Decompres and extract archives
+        
+        Recognised formats, all using external programs:
+        gzip*, bzip2*, xz*, lzma*, lrzip*, lzip*, lzop*, zip, shar, tar, cpio, squashfs
+        Formats marked with and asteriks are recognised compressions for tar and cpio.
+        
+        @param  path:str|itr<str>  The file or files
+        @param  format:str?        The format, `None` for automatic detection (currently uses file extension)
+        '''
+        for p in ([path] if isinstance(path, str) else path):
+            p = '\'' + p.replace('\''. '\'\\\'\'') + '\''
+            fmt = format
+            if fmt is None:
+                fmt = fmt[fmt.rfind(os.sep) + 1:]
+                if '.tar.' in fmt:
+                    fmt = fmt[:fmt.rfind(os.extsep):] + fmt[fmt.rfind(os.extsep) + 1:]
+                fmt = fmt[fmt.rfind(os.extsep) + 1:]
+            havecpio = False
+            for d in get('PATH').split(os.pathsep):
+                if not d.endswith(os.sep):
+                    d += os.sep
+                if os.path.exists(d + 'cpio'):
+                    havecpio = True
+                    break
+            fmt = {'gz' : 'gzip -d %s',
+                   'bz' : 'bzip2 -d %s',
+                   'bz2' : 'bzip2 -d %s',
+                   'xz' : 'xz -d %s',
+                   'lzma' : 'lzma -d %s',
+                   'lrz' : 'lrzip -d %s',
+                   'lz' : 'lzip -d %s',
+                   'lzop' : 'lzop -d %s',
+                   'z' : 'unzip %s',
+                   'tar' : 'tar --get < %s',
+                   'tgz' : 'tar --gzip --get < %s',
+                   'targz' : 'tar --gzip --get < %s',
+                   'tarbz' : 'tar --bzip2 --get < %s',
+                   'tarbz2' : 'tar --bzip2 --get < %s',
+                   'tarxz' : 'tar --xz --get < %s',
+                   'tarlzma' : 'tar --lzma --get < %s',
+                   'tarlz' : 'tar --lzip --get < %s',
+                   'tarlzop' : 'tar --lzop --get < %s',
+                   'tarlrz' : 'lzrip -d < %s | tar --get',
+                   'cpio' : 'cpio --extract < %s',
+                   'cpiogz' : 'gzip -d < %s | cpio --extract',
+                   'cpiobz' : 'bzip2 -d < %s | cpio --extract',
+                   'cpiobz2' : 'bzip2 -d < %s | cpio --extract',
+                   'cpioxz' : 'xz -d < %s | cpio --extract',
+                   'cpiolzma' : 'lzma -d < %s | cpio --extract',
+                   'cpiolz' : 'lzip -d < %s | cpio --extract',
+                   'cpiolzop' : 'lzop -d < %s | cpio --extract',
+                   'cpiolrz' : 'lrzip -d < %s | cpio --extract',
+                   'shar' : 'sh %s',
+                   'sfs' : 'unsquashfs %s',
+                   'squashfs' : 'unsquashfs %s'}[fmt.lower().replace(os.extsep, '').replace('zip', 'z')]
+            if not havecpio:
+                fmt = fmt.replace('cpio', 'bsdcpio')
+            sh(fmt % p, fail = True)
 
+
+## TODO:
+#  grep /usr/bin/egrep (-o = False)
+#  patch /usr/bin/patch
+#  sed /usr/bin/sed
+#  execute (fail = False)
+#  bash /bin/sh (fail = False)
 
