@@ -691,9 +691,18 @@ class DragonSuite():
             if directory or os.path.isdir(src):
                 mkdir(dest)
             else:
+                blksize = 8192
+                try:
+                    blksize = os.stat(os.path.realpath(ifile)).st_blksize
+                except:
+                    pass
                 with open(src, 'rb') as ifile:
                     with open(dest, 'wb') as ofile:
-                        ofile.write(ifile.read()) # TODO: support large files by copying in chunks
+                        while True:
+                            chunk = ifile.read(blksize)
+                            if len(chunk) == 0:
+                                break
+                            ofile.write(chunk)
             (u, g) = (owner, group)
             stat = os.lstat(src)
             u = u if isinstance(u, str) or u != -1 else stat.st_uid
