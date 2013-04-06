@@ -251,9 +251,9 @@ def make(db, maxlen, pairs):
         buckets[ivalue].append(pair)
     counts = []
     with open(db, 'wb') as file:
-        wbuf = [0] * (1 << (INITIALS_LEN << 2))
+        wbuf = bytes([0] * (1 << (INITIALS_LEN << 2)))
         for i in range(3):
-            file.write(zbuf)
+            file.write(wbuf)
         wbuf = None
         for initials in sorted(buckets.keys()):
             bucket = buckets[initials]
