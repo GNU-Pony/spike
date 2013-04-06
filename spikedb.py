@@ -154,28 +154,29 @@ class Blocklist():
         return self.length
 
 
-def fetch(rc, db, maxlen, values):
+def fetch(rc, db, maxlen, keys, valuelength):
     '''
     Looks up values in a file
     
     @param   rc:append((str, bytes))→void  Sink to which to append found results
     @param   db:str                        The database file
-    @param   maxlen:int                    The length of values
-    @param   values:list<string>           Keys for which to search
+    @param   maxlen:int                    The length of keys
+    @param   keys:list<str>                Keys for which to search
+    @param   valuelen:itn                  The length of values
     @return                                `rc` is returned, filled with `(key:str, value:bytes)`-pairs
     '''
     buckets = {}
-    for path in unique(sorted(values)):
+    for key in unique(sorted(keys)):
         pos = 0
         initials = ''
-        while '/' in path[pos : -1]:
-            pos = path.find('/') + 1
-            initials += path[pos]
+        while '/' in key[pos : -1]:
+            pos = key.find('/') + 1
+            initials += key[pos]
         while len(initials) < INITIALS_LEN:
             pos += 1
             if pos == len(initials):
                 break
-            initials += path[pos]
+            initials += keys[pos]
         if len(initials) > INITIALS_LEN:
             initials += initials[:INITIALS_LEN]
         initials = [(ord(c) & 15) for c in initials]
@@ -192,6 +193,7 @@ def fetch(rc, db, maxlen, values):
         amount = 0
         masterseeklen = 3 * (1 << (INITIALS_LEN << 2))
         masterseek = file.read(masterseeklen)
+        keyvallen = maxlen + valuelen
         for initials in sorted(buckets.keys()):
             if position >= initials:
                 position = 0
@@ -202,10 +204,10 @@ def fetch(rc, db, maxlen, values):
                 amount = [int(b) for b in list(masterseek[3 * position : 3 * (position + 1)])]
                 amount = (amount[0] << 16) + (amount[1] << 8) + amount[2]
                 position += 1
-            fileoffset = masterseeklen + offset * (maxlen + 3)
+            fileoffset = masterseeklen + offset * (maxlen + valuelen)
             bucket = buckets[initials]
             bbucket = [(word + '\0' * (maxlen - len(word.encode('utf-8')))).encode('utf-8') for word in bucket]
-            list = Blocklist(file, devblocksize, fileoffset, maxlen + 3, maxlen, amount)
+            list = Blocklist(file, devblocksize, fileoffset, keyvallen, maxlen, amount)
             class Agg():
                 def __init__(self, sink, keyMap, valueMap):
                     self.sink = sink
@@ -218,19 +220,26 @@ def fetch(rc, db, maxlen, values):
 
 
 def make(db, maxlen, pairs):
+    '''
+    Build a database from the ground
+    
+    @param  db:str                    The database file
+    @param  maxlen:int                The length of keys
+    @param  pairs:list<(str, bytes)>  Key–value-pairs, all values must be of same length
+    '''
     buckets = {}
     for pair in sorted(pairs, key = lambda x : x[0]):
         pos = 0
         initials = ''
-        (path, package) = pair
-        while '/' in path[pos : -1]:
-            pos = path.find('/') + 1
-            initials += path[pos]
+        (key, value) = pair
+        while '/' in key[pos : -1]:
+            pos = key.find('/') + 1
+            initials += key[pos]
         while len(initials) < INITIALS_LEN:
             pos += 1
             if pos == len(initials):
                 break
-            initials += path[pos]
+            initials += key[pos]
         if len(initials) > INITIALS_LEN:
             initials += initials[:INITIALS_LEN]
         initials = [(ord(c) & 15) for c in initials]
@@ -252,7 +261,6 @@ def make(db, maxlen, pairs):
                 (key, value) = pair
                 key = key + '\0' * (maxlen - len(key.encode('utf8')))
                 key = key.encode('utf8')
-                value = bytes([b & 255 for b in [value >> 16, value >> 8, value]])
                 file.write(key)
                 file.write(value)
             counts.append((initials, len(bucket)))
@@ -271,7 +279,9 @@ if len(sys.args) == 1:
         data.append(input())
     except:
         pass
-    make(rc, 'testdb', 50, [(comb[comb.find(' ') + 1:], hash(comb[:comb.find(' ')]) & 0xFFFFFF) for comb in data])
+    def _bin(value):
+        return bytes([b & 255 for b in [value >> 16, value >> 8, value]])
+    make(rc, 'testdb', 50, [(comb[comb.find(' ') + 1:], _bin(hash(comb[:comb.find(' ')]) & 0xFFFFFF)) for comb in data])
 else:
     rc = []
     for pair in fetch('testdb', 50, sorted(rc, [os.path.realpath(f)[:50] for f in sys.args[1:]])):
