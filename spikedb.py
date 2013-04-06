@@ -6,11 +6,10 @@ import os
 
 INITIALS_LEN = 4
 
-# TODO insert and remove is needed
+# TODO insert is needed
 # TODO paths should be db separated into groups by the binary logarithm of the length of their paths
 
-
-# keep in mind that it we sould not depend on sorted() using a stabil sort
+# keep in mind that it we sould not depend on sorted() and .sort() using a stabil sort
 
 
 def unique(sorted):
@@ -154,16 +153,16 @@ class Blocklist():
         return self.length
 
 
-def fetch(rc, db, maxlen, keys, valuelength):
+def fetch(rc, db, maxlen, keys, valuelen):
     '''
     Looks up values in a file
     
-    @param   rc:append((str, bytes))→void  Sink to which to append found results
-    @param   db:str                        The database file
-    @param   maxlen:int                    The length of keys
-    @param   keys:list<str>                Keys for which to search
-    @param   valuelen:itn                  The length of values
-    @return                                `rc` is returned, filled with `(key:str, value:bytes)`-pairs
+    @param   rc:append((str, bytes?))→void  Sink to which to append found results
+    @param   db:str                         The database file
+    @param   maxlen:int                     The length of keys
+    @param   keys:list<str>                 Keys for which to search
+    @param   valuelen:int                   The length of values
+    @return  rc:                            `rc` is returned, filled with `(key:str, value:bytes?)`-pairs. `value` is `None` when not found
     '''
     buckets = {}
     for key in unique(sorted(keys)):
@@ -202,7 +201,7 @@ def fetch(rc, db, maxlen, keys, valuelength):
             while position <= initials:
                 offset += amount
                 amount = [int(b) for b in list(masterseek[3 * position : 3 * (position + 1)])]
-                amount = (amount[0] << 16) + (amount[1] << 8) + amount[2]
+                amount = (amount[0] << 16) | (amount[1] << 8) | amount[2]
                 position += 1
             fileoffset = masterseeklen + offset * (maxlen + valuelen)
             bucket = buckets[initials]
@@ -214,8 +213,112 @@ def fetch(rc, db, maxlen, keys, valuelength):
                     self.keyMap = keyMap;
                     self.valueMap = valueMap;
                 def append(self, item):
-                    self.sink.append((self.keyMap[item[0]], self.valueMap.getValue(item[1])))
+                    val = item[1]
+                    val = None if val < 0 else self.valueMap.getValue(val)
+                    self.sink.append((self.keyMap[item[0]], val))
             multibinsearch(Agg(rc, bucket, list), list, bbucket)
+    return rc
+
+
+def remove(rc, db, maxlen, keys, valuelen):
+    '''
+    Looks up values in a file
+    
+    @param   rc:append(str)→void  Sink on which to append unfound keys
+    @param   db:str               The database file
+    @param   maxlen:int           The length of keys
+    @param   keys:list<str>       Keys for which to search
+    @param   valuelen:int         The length of values
+    @return  rc:                  `rc` is returned
+    '''
+    buckets = {}
+    for key in unique(sorted(keys)):
+        pos = 0
+        initials = ''
+        while '/' in key[pos : -1]:
+            pos = key.find('/') + 1
+            initials += key[pos]
+        while len(initials) < INITIALS_LEN:
+            pos += 1
+            if pos == len(initials):
+                break
+            initials += keys[pos]
+        if len(initials) > INITIALS_LEN:
+            initials += initials[:INITIALS_LEN]
+        initials = [(ord(c) & 15) for c in initials]
+        ivalue = 0
+        for initial in initials:
+            ivalue = (ivalue << 4) | ivalue
+        if ivalue not in buckets:
+            buckets[ivalue] = []
+        buckets[ivalue].append(value)
+    devblocksize = __blocksize(db)
+    wdata = []
+    with open(db, 'rb') as file:
+        removelist = []
+        diminish = []
+        offset = 0
+        position = 0
+        amount = 0
+        masterseeklen = 3 * (1 << (INITIALS_LEN << 2))
+        masterseek = list(file.read(masterseeklen))
+        keyvallen = maxlen + valuelen
+        for initials in sorted(buckets.keys()):
+            if position >= initials:
+                position = 0
+                offset = 0
+                amount = 0
+            while position <= initials:
+                offset += amount
+                amount = [int(b) for b in masterseek[3 * position : 3 * (position + 1)]]
+                amount = (amount[0] << 16) | (amount[1] << 8) | amount[2]
+                position += 1
+            fileoffset = masterseeklen + offset * (maxlen + valuelen)
+            bucket = buckets[initials]
+            bbucket = [(word + '\0' * (maxlen - len(word.encode('utf-8')))).encode('utf-8') for word in bucket]
+            curremove = len(removelist)
+            list = Blocklist(file, devblocksize, fileoffset, keyvallen, maxlen, amount)
+            class Agg():
+                def __init__(self, sink, failsink, keyMap, valueMap):
+                    self.sink = sink
+                    self.failsink = failsink
+                    self.keyMap = keyMap;
+                    self.valueMap = valueMap;
+                def append(self, item):
+                    val = item[1]
+                    if val < 0:
+                        self.failsink.append(self.keyMap[item[0]])
+                    else:
+                        self.sink.append(val)
+            multibinsearch(Agg(removelist, rc, bucket, list), list, bbucket)
+            diminishamount = len(removelist) - curremove
+            if diminishamount > 0:
+                diminish.append(position - 1, diminishamount))
+        end = 0
+        pos = 0
+        while pos < masterseeklen:
+            amount = [int(b) for b in masterseek[pos : pos + 3]]
+            end += (amount[0] << 16) | (amount[1] << 8) | amount[2]
+            pos += 3
+        for (index, amount) in diminish:
+            pos = 3 * index
+            was = [int(b) for b in masterseek[pos : pos + 3]]
+            was = (was[0] << 16) | (was[1] << 8) | was[2]
+            amount = was - amount
+            masterseek[pos : pos + 3] = [b & 255 for b in [amount >> 16, amount >> 8, amount]]
+        masterseek = bytes(masterseek)
+        wdata.append(masterseek)
+        pos = 0
+        removelist.sort()
+        for indices in (removelist, [end]):
+            for index in indices:
+                if pos != index:
+                    file.seek(offset = masterseeklen + pos * keyvallen, whence = 0) # 0 means from the start of the stream
+                    wdata.append(file.read((index - pos) * keyvallen))
+                pos = index + 1
+    with open(db, 'wb') as file:
+        for data in wdata:
+            file.write(data)
     return rc
 
 
