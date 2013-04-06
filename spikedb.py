@@ -249,12 +249,12 @@ def make(db, maxlen, pairs):
         for initials in sorted(buckets.keys()):
             bucket = buckets[initials]
             for pair in bucket:
-                (filepath, package) = pair
-                filepath = filepath + '\0' * (maxlen - len(filepath.encode('utf8')))
-                filepath = filepath.encode('utf8')
-                package = bytes([b & 255 for b in [package >> 16, package >> 8, package]])
-                file.write(filepath)
-                file.write(package)
+                (key, value) = pair
+                key = key + '\0' * (maxlen - len(key.encode('utf8')))
+                key = key.encode('utf8')
+                value = bytes([b & 255 for b in [value >> 16, value >> 8, value]])
+                file.write(key)
+                file.write(value)
             counts.append((initials, len(bucket)))
         file.flush()
         for (initials, count) in counts:
