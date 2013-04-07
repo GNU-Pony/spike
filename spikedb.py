@@ -6,7 +6,6 @@ import os
 
 INITIALS_LEN = 4
 
-# TODO insert is needed
 # TODO paths should be db separated into groups by the binary logarithm of the length of their paths
 
 # keep in mind that it we sould not depend on sorted() and .sort() using a stabil sort
@@ -60,7 +59,7 @@ def __blocksize(file):
     @return  :int      The block size, fall back to a regular value if not possible to determine
     '''
     try:
-        return os.stat(os.path.realpath(file)).st_size
+        return os.stat(os.path.realpath(file)).st_blksize
     except:
         return 8 << 10
 
@@ -144,6 +143,20 @@ class Blocklist():
         pos &= self.devblock - 1
         return self.buffer[pos + itemsize : pos + blocksize]
     
+    def getKey(self, index):
+        '''
+        Gets the associated key to an element by index
+        
+        @param   index:int  The index of the element
+        @return  :bytes     The associated key
+        '''
+        pos = index * self.blocksize + self.offset
+        if self.position != pos >> self.lbdevblock:
+            self.position = pos >> self.lbdevblock
+            self.buffer = self.file.read(self.devblock)
+        pos &= self.devblock - 1
+        return self.buffer[pos : pos + itemsize]
+    
     def __len__(self):
         '''
         Gets the number of elements
@@ -153,16 +166,12 @@ class Blocklist():
         return self.length
 
 
-def fetch(rc, db, maxlen, keys, valuelen):
+def __makebuckets(keys):
     '''
-    Looks up values in a file
+    Create key buckets
     
-    @param   rc:append((str, bytes?))→void  Sink to which to append found results
-    @param   db:str                         The database file
-    @param   maxlen:int                     The length of keys
-    @param   keys:list<str>                 Keys for which to search
-    @param   valuelen:int                   The length of values
-    @return  rc:                            `rc` is returned, filled with `(key:str, value:bytes?)`-pairs. `value` is `None` when not found
+    @param   keys:list<str>         Keys for with which to create buckets
+    @return  :dict<int, list<str>>  Map for key initials to key buckets
     '''
     buckets = {}
     for key in unique(sorted(keys)):
@@ -184,7 +193,54 @@ def fetch(rc, db, maxlen, keys, valuelen):
             ivalue = (ivalue << 4) | ivalue
         if ivalue not in buckets:
             buckets[ivalue] = []
-        buckets[ivalue].append(value)
+        buckets[ivalue].append(key)
+    return buckets
+
+
+def __makepairbuckets(pairs):
+    '''
+    Create key–value buckets
+    
+    @param   pairs:list<(str, bytes)>        Key–value-pair for with which to create buckets
+    @return  :dict<int, list<(str, bytes)>>  Map for key initials to key–value buckets
+    '''
+    buckets = {}
+    for pair in sorted(pairs, key = lambda x : x[0]):
+        pos = 0
+        initials = ''
+        (key, value) = pair
+        while '/' in key[pos : -1]:
+            pos = key.find('/') + 1
+            initials += key[pos]
+        while len(initials) < INITIALS_LEN:
+            pos += 1
+            if pos == len(initials):
+                break
+            initials += key[pos]
+        if len(initials) > INITIALS_LEN:
+            initials += initials[:INITIALS_LEN]
+        initials = [(ord(c) & 15) for c in initials]
+        ivalue = 0
+        for initial in initials:
+            ivalue = (ivalue << 4) | ivalue
+        if ivalue not in buckets:
+            buckets[ivalue] = []
+        buckets[ivalue].append(pair)
+    return buckets
+
+
+def fetch(rc, db, maxlen, keys, valuelen):
+    '''
+    Looks up values in a file
+    
+    @param   rc:append((str, bytes?))→void  Sink to which to append found results
+    @param   db:str                         The database file
+    @param   maxlen:int                     The length of keys
+    @param   keys:list<str>                 Keys for which to search
+    @param   valuelen:int                   The length of values
+    @return  rc:                            `rc` is returned, filled with `(key:str, value:bytes?)`-pairs. `value` is `None` when not found
+    '''
+    buckets = __makebuckets(keys)
     devblocksize = __blocksize(db)
     with open(db, 'rb') as file:
         offset = 0
@@ -208,15 +264,31 @@ def fetch(rc, db, maxlen, keys, valuelen):
             bbucket = [(word + '\0' * (maxlen - len(word.encode('utf-8')))).encode('utf-8') for word in bucket]
             list = Blocklist(file, devblocksize, fileoffset, keyvallen, maxlen, amount)
             class Agg():
-                def __init__(self, sink, keyMap, valueMap):
+                def __init__(self, sink, keyMap, valueMap, limit):
                     self.sink = sink
                     self.keyMap = keyMap;
                     self.valueMap = valueMap;
+                    self.limit = limit;
                 def append(self, item):
                     val = item[1]
                     val = None if val < 0 else self.valueMap.getValue(val)
-                    self.sink.append((self.keyMap[item[0]], val))
-            multibinsearch(Agg(rc, bucket, list), list, bbucket)
+                    key = self.keyMap[item[0]]
+                    _key = self.valueMap.getKey(val)
+                    self.sink.append((key, val))
+                    _val = val
+                    val += 1
+                    while val < self.limit:
+                        if self.valueMap.getKey(val) != _key:
+                            break
+                        self.sink.append((key, val))
+                        val += 1
+                    val = _val - 1
+                    while val >= 0:
+                        if self.valueMap.getKey(val) != _key:
+                            break
+                        self.sink.append((key, val))
+                        val -= 1
+            multibinsearch(Agg(rc, bucket, list, amount), list, bbucket)
     return rc
 
 
@@ -231,27 +303,7 @@ def remove(rc, db, maxlen, keys, valuelen):
     @param   valuelen:int         The length of values
     @return  rc:                  `rc` is returned
     '''
-    buckets = {}
-    for key in unique(sorted(keys)):
-        pos = 0
-        initials = ''
-        while '/' in key[pos : -1]:
-            pos = key.find('/') + 1
-            initials += key[pos]
-        while len(initials) < INITIALS_LEN:
-            pos += 1
-            if pos == len(initials):
-                break
-            initials += keys[pos]
-        if len(initials) > INITIALS_LEN:
-            initials += initials[:INITIALS_LEN]
-        initials = [(ord(c) & 15) for c in initials]
-        ivalue = 0
-        for initial in initials:
-            ivalue = (ivalue << 4) | ivalue
-        if ivalue not in buckets:
-            buckets[ivalue] = []
-        buckets[ivalue].append(value)
+    buckets = __makebuckets(keys)
     devblocksize = __blocksize(db)
     wdata = []
     with open(db, 'rb') as file:
@@ -290,6 +342,20 @@ def remove(rc, db, maxlen, keys, valuelen):
                         self.failsink.append(self.keyMap[item[0]])
                     else:
                         self.sink.append(val)
+                        _key = self.valueMap.getKey(val)
+                        _val = val
+                        val += 1
+                        while val < self.limit:
+                            if self.valueMap.getKey(val) != _key:
+                                break
+                            self.sink.append(val)
+                            val += 1
+                        val = _val - 1
+                        while val >= 0:
+                            if self.valueMap.getKey(val) != _key:
+                                break
+                            self.sink.append(val)
+                            val -= 1
             multibinsearch(Agg(removelist, rc, bucket, list), list, bbucket)
             diminishamount = len(removelist) - curremove
             if diminishamount > 0:
@@ -322,6 +388,17 @@ def remove(rc, db, maxlen, keys, valuelen):
     return rc
 
 
+def insert(db, maxlen, pairs):
+    '''
+    Insert, but do not override, values in a database
+    
+    @param  db:str                    The database file
+    @param  maxlen:int                The length of keys
+    @param  pairs:list<(str, bytes)>  Key–value-pairs, all values must be of same length
+    '''
+    pass # TODO
+
+
 def make(db, maxlen, pairs):
     '''
     Build a database from the ground
@@ -330,28 +407,7 @@ def make(db, maxlen, pairs):
     @param  maxlen:int                The length of keys
     @param  pairs:list<(str, bytes)>  Key–value-pairs, all values must be of same length
     '''
-    buckets = {}
-    for pair in sorted(pairs, key = lambda x : x[0]):
-        pos = 0
-        initials = ''
-        (key, value) = pair
-        while '/' in key[pos : -1]:
-            pos = key.find('/') + 1
-            initials += key[pos]
-        while len(initials) < INITIALS_LEN:
-            pos += 1
-            if pos == len(initials):
-                break
-            initials += key[pos]
-        if len(initials) > INITIALS_LEN:
-            initials += initials[:INITIALS_LEN]
-        initials = [(ord(c) & 15) for c in initials]
-        ivalue = 0
-        for initial in initials:
-            ivalue = (ivalue << 4) | ivalue
-        if ivalue not in buckets:
-            buckets[ivalue] = []
-        buckets[ivalue].append(pair)
+    buckets = __makepairbuckets(pairs)
     counts = []
     with open(db, 'wb') as file:
         wbuf = bytes([0] * (1 << (INITIALS_LEN << 2)))
