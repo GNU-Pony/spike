@@ -121,8 +121,8 @@ noextract:list<str>=[]
 source:list<str>
 	Source file URL:s to download.
 
-sha512sums:list<str>=[]
-	Source file checksums in 512 bit SHA2
+sha3sums:list<str>=[]
+	Source file checksums in Keccak[]
 
 backup:list<str>=[]
 	Filenames of files that should be backed up, this is commonly
