@@ -93,6 +93,10 @@ variant:str?=None
 patch:str?=None
 	Package that the package patches when that package is built.
 
+reason:str?=None
+	Reason why the scroll has been placed in its current repository;
+	every scroll in limbo should have this feild.
+
 patchbefore:list<str>=[]
 	Other patches the patch must be applied before.
 
