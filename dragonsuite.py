@@ -767,7 +767,7 @@ class DragonSuite():
         *        => .*
         ?        => .
         
-        Everything else if matched verbosely and the matching is closed (regex: ^pattern$),
+        Everything else is matched verbosely and the matching is closed (regex: ^pattern$),
         and \ is used to escape characters do that they are matched verbosely instead of
         getting a special meaning.
         Ending the pattern with / specified that it should be a directory.
