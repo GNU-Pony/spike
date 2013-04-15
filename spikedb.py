@@ -55,6 +55,40 @@ class SpikeDB():
     
     
     
+    def destroyDatabase(self):
+        '''
+        Remove the entire database
+        '''
+        # Using DragonSuite.rm because if shred:s files if the user has enabled shred:ing
+        from dragonsuite import DragonSuite
+        for lblen in range(64):
+            db = self.filePattern % lblen
+            if os.path.exists(db):
+                DragonSuite.rm(db)
+    
+    
+    def list(self, rc):
+        '''
+        List all stored values
+        
+        @param   rc:append((str, bytes))→void  Sink to which to append found key–value-pairs
+        @return  rc:                           `rc` is returned, filled with `(key:str, value:bytes)`-pairs
+        '''
+        masterseeklen = 3 * (1 << (INITIALS_LEN << 2))
+        for lblen in range(64):
+            db = self.filePattern % lblen
+            if os.path.exists(db):
+                devblocksize = SpikeDB.__lbblocksize(db)
+                with open(db, 'rb') as file:
+                    keyvallen = 1 << lblen + vallen
+                    amount = os.stat(os.path.realpath(db)).st_size
+                    amount = (amount - masterseeklen) // keyvallen
+                    list = Blocklist(file, devblocksize, masterseeklen, keyvallen, 1 << lblen, amount)
+                    for i in range(amount):
+                        rc.append((list.getKey(i), list.getValue(i)))
+        return rc
+    
+    
     def fetch(self, rc, keys):
         '''
         Looks up values in a file
@@ -203,31 +237,6 @@ class SpikeDB():
     
     
     @staticmethod
-    def __fileread(stream, n):
-        '''
-        Read an exact amount of bytes from a file stream independent on how the native stream
-        actually works (it should to the same thing for regular files, but we need to be on
-        the safe side.)
-        
-        @param  stream:istream  The file's input stream
-        @param  n:int           The number of bytes to read
-        @parma  :bytes()        The exactly `n` read bytes
-        '''
-        rc = []
-        read = 0
-        while read < n:
-            rc.append(stream.read(n - read))
-            read += len(rc[-1])
-        if len(rc) == 1:
-            return rc
-        else:
-            rcc = []
-            for c in rc:
-                rcc += list(c)
-            return bytes(rrc)
-    
-    
-    @staticmethod
     def __makebuckets(keys):
         '''
         Create key buckets
@@ -311,7 +320,7 @@ class SpikeDB():
             position = 0
             amount = 0
             masterseeklen = 3 * (1 << (INITIALS_LEN << 2))
-            masterseek = SpikeDB.__fileread(file, masterseeklen)
+            masterseek = __fileread(file, masterseeklen)
             keyvallen = maxlen + valuelen
             for initials in sorted(buckets.keys()):
                 if position >= initials:
@@ -378,7 +387,7 @@ class SpikeDB():
             position = 0
             amount = 0
             masterseeklen = 3 * (1 << (INITIALS_LEN << 2))
-            masterseek = list(SpikeDB.__fileread(file, masterseeklen))
+            masterseek = list(__fileread(file, masterseeklen))
             keyvallen = maxlen + valuelen
             for initials in sorted(buckets.keys()):
                 if position >= initials:
@@ -445,7 +454,7 @@ class SpikeDB():
                 for index in indices:
                     if pos != index:
                         file.seek(offset = masterseeklen + pos * keyvallen, whence = 0) # 0 means from the start of the stream
-                        wdata.append(SpikeDB.__fileread(file, (index - pos) * keyvallen))
+                        wdata.append(__fileread(file, (index - pos) * keyvallen))
                     pos = index + 1
         with open(db, 'wb') as file:
             for data in wdata:
@@ -473,7 +482,7 @@ class SpikeDB():
             offset = 0
             position = 0
             amount = 0
-            masterseek = list(SpikeDB.__fileread(file, masterseeklen))
+            masterseek = list(__fileread(file, masterseeklen))
             keyvallen = maxlen + valuelen
             for initials in sorted(buckets.keys()):
                 if position >= initials:
@@ -525,7 +534,7 @@ class SpikeDB():
             file.seek(offset = last, whence = 0) # 0 means from the start of the stream
             for (key, val, pos, _) in insertlist + [(None, None, end, None)]:
                 if pos > last:
-                    data.append(SpikeDB.__fileread(file, pos - last))
+                    data.append(__fileread(file, pos - last))
                     last = pos
                 if key is not None:
                     key = key + '\0' * (maxlen - len(key.encode('utf8')))
@@ -557,7 +566,7 @@ class SpikeDB():
             offset = 0
             position = 0
             amount = 0
-            masterseek = list(SpikeDB.__fileread(file, masterseeklen))
+            masterseek = list(__fileread(file, masterseeklen))
             keyvallen = maxlen + valuelen
             for initials in sorted(buckets.keys()):
                 if position >= initials:
@@ -611,7 +620,7 @@ class SpikeDB():
             file.seek(offset = last, whence = 0) # 0 means from the start of the stream
             for (key, val, pos, initials) in insertlist + [(None, None, end, None)]:
                 if pos > last:
-                    data.append(SpikeDB.__fileread(file, pos - last))
+                    data.append(__fileread(file, pos - last))
                     last = pos
                 if key is not None:
                     key = key + '\0' * (maxlen - len(key.encode('utf8')))
@@ -694,7 +703,7 @@ class Blocklist():
         pos = index * self.blocksize + self.offset
         if self.position != pos >> self.lbdevblock:
             self.position = pos >> self.lbdevblock
-            self.buffer = self.file.read(self.devblock)
+            self.buffer = __fileread(self.file, self.devblock)
         pos &= self.devblock - 1
         return self.buffer[pos : pos + itemsize]
     
@@ -708,11 +717,11 @@ class Blocklist():
         pos = index * self.blocksize + self.offset
         if self.position != pos >> self.lbdevblock:
             self.position = pos >> self.lbdevblock
-            self.buffer = self.file.read(self.devblock)
+            self.buffer = __fileread(self.file, self.devblock)
         pos &= self.devblock - 1
         return self.buffer[pos + itemsize : pos + blocksize]
     
-    def getKey(self, index):
+    def getKeyBinary(self, index):
         '''
         Gets the associated key to an element by index
         
@@ -722,9 +731,25 @@ class Blocklist():
         pos = index * self.blocksize + self.offset
         if self.position != pos >> self.lbdevblock:
             self.position = pos >> self.lbdevblock
-            self.buffer = self.file.read(self.devblock)
+            self.buffer = __fileread(self.file, self.devblock)
         pos &= self.devblock - 1
         return self.buffer[pos : pos + itemsize]
+    
+    def getKey(self, index):
+        '''
+        Gets the associated key to an element by index
+        
+        @param   index:int  The index of the element
+        @return  :str       The associated key
+        '''
+        pos = index * self.blocksize + self.offset
+        if self.position != pos >> self.lbdevblock:
+            self.position = pos >> self.lbdevblock
+            self.buffer = __fileread(self.file, self.devblock)
+        pos &= self.devblock - 1
+        key = self.buffer[pos : pos + itemsize]
+        key = key[:key.find(0)]
+        return key.decode('utf-8', 'replace')
     
     def __len__(self):
         '''
@@ -733,4 +758,30 @@ class Blocklist():
         @return  :int  The number of elements
         '''
         return self.length
+
+
+
+@staticmethod
+def __fileread(stream, n):
+    '''
+    Read an exact amount of bytes from a file stream independent on how the native stream
+    actually works (it should to the same thing for regular files, but we need to be on
+    the safe side.)
+    
+    @param  stream:istream  The file's input stream
+    @param  n:int           The number of bytes to read
+    @parma  :bytes()        The exactly `n` read bytes
+    '''
+    rc = []
+    read = 0
+    while read < n:
+        rc.append(stream.read(n - read))
+        read += len(rc[-1])
+    if len(rc) == 1:
+        return rc
+    else:
+        rcc = []
+        for c in rc:
+            rcc += list(c)
+        return bytes(rrc)
 
