@@ -83,83 +83,6 @@ class SpikeDB():
             return bytes(rrc)
     
     
-    
-    class Blocklist():
-        '''
-        A blockdevice representated as a list
-        '''
-        def __init__(self, file, lbdevblock, offset, blocksize, itemsize, length):
-            '''
-            Constructor
-            
-            @param  file:inputfile  The file, it must be seekable
-            @param  lbdevblock:int  The binary logarithm of the device's block size
-            @param  offset:int      The list's offset in the file
-            @param  blocksize:int   The number of bytes between the start of elements
-            @param  itemsize:int    The size of each element
-            @param  length:int      The number of elements
-            '''
-            self.file = file
-            self.lbdevblock = lbdevblock
-            self.devblock = 1 << lbdevblock
-            self.offset = offset
-            self.blocksize = blocksize
-            self.itemsize = itemsize
-            self.position = -1
-            self.length = length
-            self.buffer = None
-        
-        def __getitem__(self, index):
-            '''
-            Gets an element by index
-            
-            @param   index:int  The index of the element
-            @return  :bytes     The element
-            '''
-            pos = index * self.blocksize + self.offset
-            if self.position != pos >> self.lbdevblock:
-                self.position = pos >> self.lbdevblock
-                self.buffer = self.file.read(self.devblock)
-            pos &= self.devblock - 1
-            return self.buffer[pos : pos + itemsize]
-        
-        def getValue(self, index):
-            '''
-            Gets the associated value to an element by index
-            
-            @param   index:int  The index of the element
-            @return  :bytes     The associated value
-            '''
-            pos = index * self.blocksize + self.offset
-            if self.position != pos >> self.lbdevblock:
-                self.position = pos >> self.lbdevblock
-                self.buffer = self.file.read(self.devblock)
-            pos &= self.devblock - 1
-            return self.buffer[pos + itemsize : pos + blocksize]
-        
-        def getKey(self, index):
-            '''
-            Gets the associated key to an element by index
-            
-            @param   index:int  The index of the element
-            @return  :bytes     The associated key
-            '''
-            pos = index * self.blocksize + self.offset
-            if self.position != pos >> self.lbdevblock:
-                self.position = pos >> self.lbdevblock
-                self.buffer = self.file.read(self.devblock)
-            pos &= self.devblock - 1
-            return self.buffer[pos : pos + itemsize]
-        
-        def __len__(self):
-            '''
-            Gets the number of elements
-            
-            @return  :int  The number of elements
-            '''
-            return self.length
-    
-    
     def __makebuckets(keys):
         '''
         Create key buckets
@@ -223,7 +146,7 @@ class SpikeDB():
         return buckets
     
     
-    def fetch(rc, db, maxlen, keys, valuelen):
+    def __fetch(rc, db, maxlen, keys, valuelen):
         '''
         Looks up values in a file
         
@@ -286,7 +209,7 @@ class SpikeDB():
         return rc
     
     
-    def remove(rc, db, maxlen, keys, valuelen):
+    def __remove(rc, db, maxlen, keys, valuelen):
         '''
         Looks up values in a file
         
@@ -382,7 +305,7 @@ class SpikeDB():
         return rc
     
     
-    def insert(db, maxlen, pairs):
+    def __insert(db, maxlen, pairs):
         '''
         Insert, but do not override, values in a database
         
@@ -465,7 +388,7 @@ class SpikeDB():
         return rc
     
     
-    def override(db, maxlen, pairs):
+    def __override(db, maxlen, pairs):
         '''
         Insert, but override even possible, values in a database
         
@@ -552,7 +475,7 @@ class SpikeDB():
         return rc
     
     
-    def make(db, maxlen, pairs):
+    def __make(db, maxlen, pairs):
         '''
         Build a database from the ground
         
@@ -583,6 +506,82 @@ class SpikeDB():
                 file.write(wbuf)
             file.flush()
 
+
+
+class Blocklist():
+    '''
+    A blockdevice representated as a list
+    '''
+    def __init__(self, file, lbdevblock, offset, blocksize, itemsize, length):
+        '''
+        Constructor
+        
+        @param  file:inputfile  The file, it must be seekable
+        @param  lbdevblock:int  The binary logarithm of the device's block size
+        @param  offset:int      The list's offset in the file
+        @param  blocksize:int   The number of bytes between the start of elements
+        @param  itemsize:int    The size of each element
+        @param  length:int      The number of elements
+        '''
+        self.file = file
+        self.lbdevblock = lbdevblock
+        self.devblock = 1 << lbdevblock
+        self.offset = offset
+        self.blocksize = blocksize
+        self.itemsize = itemsize
+        self.position = -1
+        self.length = length
+        self.buffer = None
+    
+    def __getitem__(self, index):
+        '''
+        Gets an element by index
+        
+        @param   index:int  The index of the element
+        @return  :bytes     The element
+        '''
+        pos = index * self.blocksize + self.offset
+        if self.position != pos >> self.lbdevblock:
+            self.position = pos >> self.lbdevblock
+            self.buffer = self.file.read(self.devblock)
+        pos &= self.devblock - 1
+        return self.buffer[pos : pos + itemsize]
+    
+    def getValue(self, index):
+        '''
+        Gets the associated value to an element by index
+        
+        @param   index:int  The index of the element
+        @return  :bytes     The associated value
+        '''
+        pos = index * self.blocksize + self.offset
+        if self.position != pos >> self.lbdevblock:
+            self.position = pos >> self.lbdevblock
+            self.buffer = self.file.read(self.devblock)
+        pos &= self.devblock - 1
+        return self.buffer[pos + itemsize : pos + blocksize]
+    
+    def getKey(self, index):
+        '''
+        Gets the associated key to an element by index
+        
+        @param   index:int  The index of the element
+        @return  :bytes     The associated key
+        '''
+        pos = index * self.blocksize + self.offset
+        if self.position != pos >> self.lbdevblock:
+            self.position = pos >> self.lbdevblock
+            self.buffer = self.file.read(self.devblock)
+        pos &= self.devblock - 1
+        return self.buffer[pos : pos + itemsize]
+    
+    def __len__(self):
+        '''
+        Gets the number of elements
+        
+        @return  :int  The number of elements
+        '''
+        return self.length
 
 
 if len(sys.args) == 1:
