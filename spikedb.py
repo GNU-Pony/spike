@@ -36,6 +36,9 @@ import os
 from algospike from *
 
 INITIALS_LEN = 4
+'''
+The number of characters accounted for in the initials which are used to speed up searches
+'''
 
 # TODO paths should be db separated into groups by the binary logarithm of the length of their paths
 # TODO make really sure that file.read(n) reads exactly n bytes (via fileread(stream, n) function)
