@@ -7,8 +7,7 @@ import os
 INITIALS_LEN = 4
 
 # TODO paths should be db separated into groups by the binary logarithm of the length of their paths
-
-# keep in mind that it we sould not depend on sorted() and .sort() using a stabil sort
+# TODO make really sure that file.read(n) reads exactly n bytes (via fileread(stream, n) function)
 
 
 def unique(sorted):
@@ -70,7 +69,7 @@ def multibinsearch(rc, list, items):
     
     @param  rc:append((int, int))→void  Object to which to append found items, the append items are of tuple (itemIndex:int, listIndex:int)
     @param  list:[int]→¿E?;len()→int    Sorted list in which to search, the number of elements is named ‘n’ in the complexity analysis
-    @param  items:[int]→¿E?;len()→int   Sorted List of items for which to search, the number of elements is named ‘m’ in the complexity analysis
+    @param  items:[int]→¿E?;len()→int   Sorted list of items for which to search, the number of elements is named ‘m’ in the complexity analysis
     '''
     count = len(items)
     if count > 0:
@@ -259,7 +258,7 @@ def fetch(rc, db, maxlen, keys, valuelen):
                 amount = [int(b) for b in list(masterseek[3 * position : 3 * (position + 1)])]
                 amount = (amount[0] << 16) | (amount[1] << 8) | amount[2]
                 position += 1
-            fileoffset = masterseeklen + offset * (maxlen + valuelen)
+            fileoffset = masterseeklen + offset * keyvallen
             bucket = buckets[initials]
             bbucket = [(word + '\0' * (maxlen - len(word.encode('utf-8')))).encode('utf-8') for word in bucket]
             list = Blocklist(file, devblocksize, fileoffset, keyvallen, maxlen, amount)
@@ -325,7 +324,7 @@ def remove(rc, db, maxlen, keys, valuelen):
                 amount = [int(b) for b in masterseek[3 * position : 3 * (position + 1)]]
                 amount = (amount[0] << 16) | (amount[1] << 8) | amount[2]
                 position += 1
-            fileoffset = masterseeklen + offset * (maxlen + valuelen)
+            fileoffset = masterseeklen + offset * keyvallen
             bucket = buckets[initials]
             bbucket = [(word + '\0' * (maxlen - len(word.encode('utf-8')))).encode('utf-8') for word in bucket]
             curremove = len(removelist)
@@ -334,8 +333,8 @@ def remove(rc, db, maxlen, keys, valuelen):
                 def __init__(self, sink, failsink, keyMap, valueMap):
                     self.sink = sink
                     self.failsink = failsink
-                    self.keyMap = keyMap;
-                    self.valueMap = valueMap;
+                    self.keyMap = keyMap
+                    self.valueMap = valueMap
                 def append(self, item):
                     val = item[1]
                     if val < 0:
@@ -396,7 +395,79 @@ def insert(db, maxlen, pairs):
     @param  maxlen:int                The length of keys
     @param  pairs:list<(str, bytes)>  Key–value-pairs, all values must be of same length
     '''
-    pass # TODO
+    buckets = __makepairbuckets(pairs)
+    devblocksize = __blocksize(db)
+    insertlist = []
+    initialscache = {}
+    masterseek = None
+    masterseeklen = 3 * (1 << (INITIALS_LEN << 2))
+    data = []
+    with open(db, 'rb') as file:
+        offset = 0
+        position = 0
+        amount = 0
+        masterseek = list(file.read(masterseeklen))
+        keyvallen = maxlen + valuelen
+        for initials in sorted(buckets.keys()):
+            if position >= initials:
+                position = 0
+                offset = 0
+                amount = 0
+            while position <= initials:
+                offset += amount
+                if initials in initialscache:
+                    amount = initialscache[initials]
+                else:
+                    amount = [int(b) for b in masterseek[3 * position : 3 * (position + 1)]]
+                    amount = (amount[0] << 16) | (amount[1] << 8) | amount[2]
+                    initialscache[initials] = amount
+                position += 1
+            fileoffset = masterseeklen + offset * keyvallen
+            bucket = buckets[initials]
+            bbucket = [(word + '\0' * (maxlen - len(word.encode('utf-8')))).encode('utf-8') for word in bucket]
+            list = Blocklist(file, devblocksize, fileoffset, keyvallen, maxlen, amount)
+            class Agg():
+                def __init__(self, sink, keyMap, posCalc, initials):
+                    self.sink = sink
+                    self.keyMap = keyMap
+                    self.posCalc = posCalc
+                    self.initials = initials
+                def append(self, item):
+                    pos = item[1]
+                    pos = ~pos if pos < 0 else pos
+                    (key, val) = self.keyMap[item[0]]
+                    self.sink.append((key, val, self.posCalc(pos), self.initials))
+            multibinsearch(Agg(insertlist, bucket, lambda x : fileoffset + x * keyvallen, initials), list, bbucket)
+        insertlist.sort(key = lambda x : x[2])
+        end = 0
+        pos = 0
+        while pos < masterseeklen:
+            amount = [int(b) for b in masterseek[pos : pos + 3]]
+            end += (amount[0] << 16) | (amount[1] << 8) | amount[2]
+            pos += 3
+        end = masterseeklen + end * keyvallen
+        for (_k, _v, _p, initials) in insertlist:
+            initialscache[initials] += 1
+        for initials in initialscache:
+            count = initialscache[initials]
+            count = [b & 255 for b in [count >> 16, count >> 8, count]]
+            masterseek[3 * initials : 3 * (initials + 1)] = count
+        masterseek = bytes(masterseek)
+        data.append(masterseek)
+        last = masterseeklen
+        file.seek(offset = last, whence = 0) # 0 means from the start of the stream
+        for (key, val, pos, _) in insertlist + [(None, None, end, None)]:
+            if pos >= last:
+                data.append(file.read(pos - last))
+                last = pos
+            if key is not None:
+                key = key + '\0' * (maxlen - len(key.encode('utf8')))
+                data.append(key.encode('utf8'))
+                data.append(value)
+    with open(db, 'wb') as file:
+        for d in data:
+            file.write(d)
+    return rc
 
 
 def make(db, maxlen, pairs):
