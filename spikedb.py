@@ -29,8 +29,6 @@ INITIALS_LEN = 4
 The number of characters accounted for in the initials which are used to speed up searches
 '''
 
-# TODO paths should be db separated into groups by the binary logarithm of the length of their paths
-
 
 class SpikeDB():
     '''
@@ -42,10 +40,155 @@ class SpikeDB():
     and will never ever fail because of backwards incapabilities with
     the storage files.
     
-    Spike Database can only do act as a string to bytes map, with a fixed
-    value size.
+    Spike Database can only do act as a string to bytes map, with
+    a fixed value size.
     '''
+    def __init__(self, filePattern, valueLen):
+        '''
+        Constructor
+        
+        @param  filePattern:str  The pattern for the database files, all ‘%’ should be duplicated after which it should include a ‘%i’ for internal use
+        @param  valueLen:int     The length of values
+        '''
+        self.filePattern = filePattern
+        self.valueLen = valueLen
     
+    
+    
+    def fetch(self, rc, keys):
+        '''
+        Looks up values in a file
+        
+        @param   rc:append((str, bytes?))→void  Sink to which to append found results
+        @param-  db:str                         The database file
+        @param-  maxlen:int                     The length of keys
+        @param   keys:list<str>                 Keys for which to search
+        @param-  valuelen:int                   The length of values
+        @return  rc:                            `rc` is returned, filled with `(key:str, value:bytes?)`-pairs. `value` is `None` when not found
+        '''
+        buckets = {}
+        for key in keys:
+            lblen = lb32(len(key))
+            if (1 << lblen) < len(key):
+                lblen += 1
+            if lblen in buckets:
+                buckets[lblen] = [key]
+            else:
+                buckets[lblen].append(key)
+        for lblen in buckets:
+            filename = self.filePattern % lblen
+            if os.path.exists(filename):
+                SpikeDB.__fetch(rc, filename, 1 << lblen, buckets[lblen], self.valueLen)
+            else:
+                for key in buckets[lblen]:
+                    rc.append((key, None))
+        return rc
+    
+    
+    def remove(self, rc, keys):
+        '''
+        Looks up values in a file
+        
+        @param    rc:append(str)→void  Sink on which to append unfound keys
+        @param-   db:str               The database file
+        @param-   maxlen:int           The length of keys
+        @param    keys:list<str>       Keys for which to search
+        @param-   valuelen:int         The length of values
+        @return   rc:                  `rc` is returned
+        '''
+        buckets = {}
+        for key in keys:
+            lblen = lb32(len(key))
+            if (1 << lblen) < len(key):
+                lblen += 1
+            if lblen in buckets:
+                buckets[lblen] = [key]
+            else:
+                buckets[lblen].append(key)
+        for lblen in buckets:
+            filename = self.filePattern % lblen
+            if os.path.exists(filename):
+                SpikeDB.__remove(rc, filename, 1 << lblen, buckets[lblen], self.valueLen)
+            else:
+                for key in buckets[lblen]:
+                    rc.append(key)
+        return rc
+    
+    
+    def insert(self, pairs):
+        '''
+        Insert, but do not override, values in a database
+        
+        @param-  db:str                    The database file
+        @param-  maxlen:int                The length of keys
+        @param   pairs:list<(str, bytes)>  Key–value-pairs, all values must be of same length
+        '''
+        buckets = {}
+        for pair in pairs:
+            lblen = lb32(len(pair[0]))
+            if (1 << lblen) < len(pair[0]):
+                lblen += 1
+            if lblen in buckets:
+                buckets[lblen] = [pair]
+            else:
+                buckets[lblen].append(pair)
+        for lblen in buckets:
+            filename = self.filePattern % lblen
+            if os.path.exists(filename):
+                SpikeDB.__insert(filename, 1 << lblen, buckets[lblen])
+            else:
+                SpikeDB.__make(filename, 1 << lblen, buckets[lblen])
+    
+    
+    def override(self, pairs):
+        '''
+        Insert, but override even possible, values in a database
+        
+        @param-  db:str                    The database file
+        @param-  maxlen:int                The length of keys
+        @param   pairs:list<(str, bytes)>  Key–value-pairs, all values must be of same length
+        '''
+        buckets = {}
+        for pair in pairs:
+            lblen = lb32(len(pair[0]))
+            if (1 << lblen) < len(pair[0]):
+                lblen += 1
+            if lblen in buckets:
+                buckets[lblen] = [pair]
+            else:
+                buckets[lblen].append(pair)
+        for lblen in buckets:
+            filename = self.filePattern % lblen
+            if os.path.exists(filename):
+                SpikeDB.__override(filename, 1 << lblen, buckets[lblen])
+            else:
+                SpikeDB.__make(filename, 1 << lblen, buckets[lblen])
+    
+    
+    def make(self, pairs):
+        '''
+        Build a database from the ground
+        
+        @param-  db:str                    The database file
+        @param-  maxlen:int                The length of keys
+        @param   pairs:list<(str, bytes)>  Key–value-pairs, all values must be of same length
+        '''
+        buckets = {}
+        for pair in pairs:
+            lblen = lb32(len(pair[0]))
+            if (1 << lblen) < len(pair[0]):
+                lblen += 1
+            if lblen in buckets:
+                buckets[lblen] = [pair]
+            else:
+                buckets[lblen].append(pair)
+        for lblen in buckets:
+            filename = self.filePattern % lblen
+            SpikeDB.__make(filename, 1 << lblen, buckets[lblen])
+    
+    
+    
+    @staticmethod
     def __lbblocksize(file):
         '''
         Gets the binary logarithm of the block size of the device a file is placed in
@@ -54,11 +197,12 @@ class SpikeDB():
         @return  :int      The binary logarithm of the block size, fall back to a regular value if not possible to determine
         '''
         try:
-            return lb128(os.stat(os.path.realpath(file)).st_blksize)
+            return lb32(os.stat(os.path.realpath(file)).st_blksize)
         except:
             return 13
     
     
+    @staticmethod
     def __fileread(stream, n):
         '''
         Read an exact amount of bytes from a file stream independent on how the native stream
@@ -83,6 +227,7 @@ class SpikeDB():
             return bytes(rrc)
     
     
+    @staticmethod
     def __makebuckets(keys):
         '''
         Create key buckets
@@ -114,6 +259,7 @@ class SpikeDB():
         return buckets
     
     
+    @staticmethod
     def __makepairbuckets(pairs):
         '''
         Create key–value buckets
@@ -146,6 +292,7 @@ class SpikeDB():
         return buckets
     
     
+    @staticmethod
     def __fetch(rc, db, maxlen, keys, valuelen):
         '''
         Looks up values in a file
@@ -157,14 +304,14 @@ class SpikeDB():
         @param   valuelen:int                   The length of values
         @return  rc:                            `rc` is returned, filled with `(key:str, value:bytes?)`-pairs. `value` is `None` when not found
         '''
-        buckets = __makebuckets(keys)
-        devblocksize = __lbblocksize(db)
+        buckets = SpikeDB.__makebuckets(keys)
+        devblocksize = SpikeDB.__lbblocksize(db)
         with open(db, 'rb') as file:
             offset = 0
             position = 0
             amount = 0
             masterseeklen = 3 * (1 << (INITIALS_LEN << 2))
-            masterseek = __fileread(file, masterseeklen)
+            masterseek = SpikeDB.__fileread(file, masterseeklen)
             keyvallen = maxlen + valuelen
             for initials in sorted(buckets.keys()):
                 if position >= initials:
@@ -209,6 +356,7 @@ class SpikeDB():
         return rc
     
     
+    @staticmethod
     def __remove(rc, db, maxlen, keys, valuelen):
         '''
         Looks up values in a file
@@ -220,8 +368,8 @@ class SpikeDB():
         @param   valuelen:int         The length of values
         @return  rc:                  `rc` is returned
         '''
-        buckets = __makebuckets(keys)
-        devblocksize = __lbblocksize(db)
+        buckets = SpikeDB.__makebuckets(keys)
+        devblocksize = SpikeDB.__lbblocksize(db)
         wdata = []
         with open(db, 'rb') as file:
             removelist = []
@@ -230,7 +378,7 @@ class SpikeDB():
             position = 0
             amount = 0
             masterseeklen = 3 * (1 << (INITIALS_LEN << 2))
-            masterseek = list(__fileread(file, masterseeklen))
+            masterseek = list(SpikeDB.__fileread(file, masterseeklen))
             keyvallen = maxlen + valuelen
             for initials in sorted(buckets.keys()):
                 if position >= initials:
@@ -297,7 +445,7 @@ class SpikeDB():
                 for index in indices:
                     if pos != index:
                         file.seek(offset = masterseeklen + pos * keyvallen, whence = 0) # 0 means from the start of the stream
-                        wdata.append(__fileread(file, (index - pos) * keyvallen))
+                        wdata.append(SpikeDB.__fileread(file, (index - pos) * keyvallen))
                     pos = index + 1
         with open(db, 'wb') as file:
             for data in wdata:
@@ -305,6 +453,7 @@ class SpikeDB():
         return rc
     
     
+    @staticmethod
     def __insert(db, maxlen, pairs):
         '''
         Insert, but do not override, values in a database
@@ -313,8 +462,8 @@ class SpikeDB():
         @param  maxlen:int                The length of keys
         @param  pairs:list<(str, bytes)>  Key–value-pairs, all values must be of same length
         '''
-        buckets = __makepairbuckets(pairs)
-        devblocksize = __lbblocksize(db)
+        buckets = SpikeDB.__makepairbuckets(pairs)
+        devblocksize = SpikeDB.__lbblocksize(db)
         insertlist = []
         initialscache = {}
         masterseek = None
@@ -324,7 +473,7 @@ class SpikeDB():
             offset = 0
             position = 0
             amount = 0
-            masterseek = list(__fileread(file, masterseeklen))
+            masterseek = list(SpikeDB.__fileread(file, masterseeklen))
             keyvallen = maxlen + valuelen
             for initials in sorted(buckets.keys()):
                 if position >= initials:
@@ -376,7 +525,7 @@ class SpikeDB():
             file.seek(offset = last, whence = 0) # 0 means from the start of the stream
             for (key, val, pos, _) in insertlist + [(None, None, end, None)]:
                 if pos > last:
-                    data.append(__fileread(file, pos - last))
+                    data.append(SpikeDB.__fileread(file, pos - last))
                     last = pos
                 if key is not None:
                     key = key + '\0' * (maxlen - len(key.encode('utf8')))
@@ -388,6 +537,7 @@ class SpikeDB():
         return rc
     
     
+    @staticmethod
     def __override(db, maxlen, pairs):
         '''
         Insert, but override even possible, values in a database
@@ -396,8 +546,8 @@ class SpikeDB():
         @param  maxlen:int                The length of keys
         @param  pairs:list<(str, bytes)>  Key–value-pairs, all values must be of same length
         '''
-        buckets = __makepairbuckets(pairs)
-        devblocksize = __lbblocksize(db)
+        buckets = SpikeDB.__makepairbuckets(pairs)
+        devblocksize = SpikeDB.__lbblocksize(db)
         insertlist = []
         initialscache = {}
         masterseek = None
@@ -407,7 +557,7 @@ class SpikeDB():
             offset = 0
             position = 0
             amount = 0
-            masterseek = list(__fileread(file, masterseeklen))
+            masterseek = list(SpikeDB.__fileread(file, masterseeklen))
             keyvallen = maxlen + valuelen
             for initials in sorted(buckets.keys()):
                 if position >= initials:
@@ -461,7 +611,7 @@ class SpikeDB():
             file.seek(offset = last, whence = 0) # 0 means from the start of the stream
             for (key, val, pos, initials) in insertlist + [(None, None, end, None)]:
                 if pos > last:
-                    data.append(__fileread(file, pos - last))
+                    data.append(SpikeDB.__fileread(file, pos - last))
                     last = pos
                 if key is not None:
                     key = key + '\0' * (maxlen - len(key.encode('utf8')))
@@ -475,6 +625,7 @@ class SpikeDB():
         return rc
     
     
+    @staticmethod
     def __make(db, maxlen, pairs):
         '''
         Build a database from the ground
@@ -483,7 +634,7 @@ class SpikeDB():
         @param  maxlen:int                The length of keys
         @param  pairs:list<(str, bytes)>  Key–value-pairs, all values must be of same length
         '''
-        buckets = __makepairbuckets(pairs)
+        buckets = SpikeDB.__makepairbuckets(pairs)
         counts = []
         with open(db, 'wb') as file:
             wbuf = bytes([0] * (1 << (INITIALS_LEN << 2)))
@@ -582,19 +733,4 @@ class Blocklist():
         @return  :int  The number of elements
         '''
         return self.length
-
-
-if len(sys.args) == 1:
-    data = []
-    try:
-        data.append(input())
-    except:
-        pass
-    def _bin(value):
-        return bytes([b & 255 for b in [value >> 16, value >> 8, value]])
-    make(rc, 'testdb', 50, [(comb[comb.find(' ') + 1:], _bin(hash(comb[:comb.find(' ')]) & 0xFFFFFF)) for comb in data])
-else:
-    rc = []
-    for pair in fetch('testdb', 50, sorted(rc, [os.path.realpath(f)[:50] for f in sys.args[1:]])):
-        print('%s --> %s' % pair)
 
