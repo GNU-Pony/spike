@@ -457,13 +457,100 @@ def insert(db, maxlen, pairs):
         last = masterseeklen
         file.seek(offset = last, whence = 0) # 0 means from the start of the stream
         for (key, val, pos, _) in insertlist + [(None, None, end, None)]:
-            if pos >= last:
+            if pos > last:
                 data.append(file.read(pos - last))
                 last = pos
             if key is not None:
                 key = key + '\0' * (maxlen - len(key.encode('utf8')))
                 data.append(key.encode('utf8'))
                 data.append(value)
+    with open(db, 'wb') as file:
+        for d in data:
+            file.write(d)
+    return rc
+
+
+def override(db, maxlen, pairs):
+    '''
+    Insert, but override even possible, values in a database
+    
+    @param  db:str                    The database file
+    @param  maxlen:int                The length of keys
+    @param  pairs:list<(str, bytes)>  Key–value-pairs, all values must be of same length
+    '''
+    buckets = __makepairbuckets(pairs)
+    devblocksize = __blocksize(db)
+    insertlist = []
+    initialscache = {}
+    masterseek = None
+    masterseeklen = 3 * (1 << (INITIALS_LEN << 2))
+    data = []
+    with open(db, 'rb') as file:
+        offset = 0
+        position = 0
+        amount = 0
+        masterseek = list(file.read(masterseeklen))
+        keyvallen = maxlen + valuelen
+        for initials in sorted(buckets.keys()):
+            if position >= initials:
+                position = 0
+                offset = 0
+                amount = 0
+            while position <= initials:
+                offset += amount
+                if initials in initialscache:
+                    amount = initialscache[initials]
+                else:
+                    amount = [int(b) for b in masterseek[3 * position : 3 * (position + 1)]]
+                    amount = (amount[0] << 16) | (amount[1] << 8) | amount[2]
+                    initialscache[initials] = amount
+                position += 1
+            fileoffset = masterseeklen + offset * keyvallen
+            bucket = buckets[initials]
+            bbucket = [(word + '\0' * (maxlen - len(word.encode('utf-8')))).encode('utf-8') for word in bucket]
+            list = Blocklist(file, devblocksize, fileoffset, keyvallen, maxlen, amount)
+            class Agg():
+                def __init__(self, sink, keyMap, posCalc, initials):
+                    self.sink = sink
+                    self.keyMap = keyMap
+                    self.posCalc = posCalc
+                    self.initials = initials
+                def append(self, item):
+                    pos = item[1]
+                    (pos, inits) = (~pos, -1) if pos < 0 else (pos, self.initials)
+                    (key, val) = self.keyMap[item[0]]
+                    self.sink.append((key, val, self.posCalc(pos), inits))
+            multibinsearch(Agg(insertlist, bucket, lambda x : fileoffset + x * keyvallen, initials), list, bbucket)
+        insertlist.sort(key = lambda x : x[2])
+        end = 0
+        pos = 0
+        while pos < masterseeklen:
+            amount = [int(b) for b in masterseek[pos : pos + 3]]
+            end += (amount[0] << 16) | (amount[1] << 8) | amount[2]
+            pos += 3
+        end = masterseeklen + end * keyvallen
+        initialscache[-1] = 0
+        for (_k, _v, _p, initials) in insertlist:
+            initialscache[initials] += 1
+        for initials in initialscache:
+            if initials >= 0:
+                count = initialscache[initials]
+                count = [b & 255 for b in [count >> 16, count >> 8, count]]
+                masterseek[3 * initials : 3 * (initials + 1)] = count
+        masterseek = bytes(masterseek)
+        data.append(masterseek)
+        last = masterseeklen
+        file.seek(offset = last, whence = 0) # 0 means from the start of the stream
+        for (key, val, pos, initials) in insertlist + [(None, None, end, None)]:
+            if pos > last:
+                data.append(file.read(pos - last))
+                last = pos
+            if key is not None:
+                key = key + '\0' * (maxlen - len(key.encode('utf8')))
+                data.append(key.encode('utf8'))
+                data.append(value)
+                if initials >= 0:
+                    last += keyvallen
     with open(db, 'wb') as file:
         for d in data:
             file.write(d)
