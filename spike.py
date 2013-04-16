@@ -436,7 +436,7 @@ class Spike():
                 self.test_files(opts.files, 0, True)
                 exitValue = self.interactive(shred = opts.opts['--shred'] is not None)
         
-        except Error as err:
+        except Exception as err:
             exitValue = 255
             print("%s: %s", self.execprog, str(err))
             
