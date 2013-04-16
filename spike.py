@@ -1236,7 +1236,7 @@ class Gitcord():
         
         @return  :bool  Whether the spell casting was successful
         '''
-        return 0 == __exec(['git', 'pull'])
+        return 0 == __exec(['git', 'pull']) ## TODO add --verify-signatures at git 1.8.2-rc4
     
     
     def changeBransh(bransh):
