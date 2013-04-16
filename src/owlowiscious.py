@@ -34,6 +34,8 @@ class Owlowiscious(Spike):
         Constructor
         '''
         Spike.__init__(self)
+        self.execprog = 'owlowiscious'
+        self.prog = 'owlowiscious'
 
 
 

@@ -77,6 +77,7 @@ class Spike():
         '''
         self.version = SPIKE_VERSION
         self.execprog = 'spike'
+        self.prog = 'spike'
 
     
     def mane(self, args):
@@ -115,7 +116,7 @@ class Spike():
         '''
         self.execprog = args[0].split('/')[-1]
         
-        usage = 'spike [command [option]... [FILE... SCROLL | SCROLL...]]'
+        usage = self.prog + ' [command [option]... [FILE... SCROLL | SCROLL...]]'
         usage = usage.replace('spike',   '\033[35m' 'spike'   '\033[00m')
         usage = usage.replace('command', '\033[33m' 'command' '\033[00m')
         usage = usage.replace('option',  '\033[33m' 'option'  '\033[00m')
