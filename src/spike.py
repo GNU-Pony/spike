@@ -20,7 +20,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
 import sys
 import os
-from subprocess import Popen, PIPE
 
 from gitcord import *
 from argparser import *
@@ -1574,20 +1573,6 @@ class LibSpike():
         @return  :byte       Exit value, see description of `LibSpike`, the possible ones are: 0 (TODO)
         '''
         return 0
-
-
-
-class Owlowiscious(Spike):
-    '''
-    Owlowiscious is the night time alternative to Spike, he is
-    nocturnal in constrast to the, although eversleepy, diurnal Spike.
-    '''
-    def __init__(self):
-        '''
-        Constructor
-        '''
-        Spike.__init__(self)
-
 
 
 
