@@ -1,0 +1,83 @@
+# -*- python -*-
+# Copying and distribution of this file, with or without modification,
+# are permitted in any medium without royalty provided the copyright
+# notice and this notice are preserved.  This file is offered as-is,
+# without any warranty.  [GNUALLPermissive]
+from dragonsuite import *
+
+pkgname = 'example'
+pkgver = 1
+#pkgrel = 1
+#epoch = 0
+pkgdesc = 'Example scroll'
+upstream = 'https://github.com/GNU-Pony/spike'
+arch = ['any']
+freedom = SOFTWARE | MEDIA
+license = ['public']
+private = SUPPORTED
+#interactive = False
+#conflicts = []
+#replaces = []
+#provides = []
+#extension = None
+#variant = None
+#patch = None
+#reason = None
+#patchbefore = []
+#patchafter = []
+#groups = []
+#depends = []
+#makedepends = []
+#checkdepends = []
+#optdepends = []
+#noextract = []
+source = []
+sha3sums = []
+#backup = []
+#options = []
+
+
+def ride(private):
+    echo('This is just an example, it does not do anything, you may as well uninstall it.')
+
+
+def build(startdir, srcdir, pkgdir, private):
+    echo('Pretending to compile.')
+
+#def check(startdir, srcdir, pkgdir, private):
+#    pass
+
+def package(startdir, srcdir, pkgdir, private):
+    echo('Pretending to install.')
+
+
+#def patch_build(startdir, srcdir, pkgdir, private):
+#    pass
+
+#def patch_check(startdir, srcdir, pkgdir, private):
+#    pass
+
+#def patch_package(startdir, srcdir, pkgdir, private):
+#    pass
+
+
+#def pre_install(tmpdir, rootdir, private):
+#    pass
+
+#def post_install(tmpdir, rootdir, installedfiles, private):
+#    pass
+
+
+#def pre_upgrade(tmpdir, rootdir, installedfiles, private):
+#    pass
+
+#def post_upgrade(tmpdir, rootdir, installedfiles, private):
+#    pass
+
+
+#def pre_uninstall(tmpdir, rootdir, installedfiles, private):
+#    pass
+
+#def post_uninstall(tmpdir, rootdir, installedfiles, private):
+#    pass
+
