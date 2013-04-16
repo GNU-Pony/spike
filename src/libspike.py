@@ -67,7 +67,7 @@ class LibSpike():
     
     
     @staticmethod
-    def __parse_filename(filename):
+    def parse_filename(filename):
         '''
         Parse a filename encoded with environment variables
         
@@ -411,6 +411,7 @@ class LibSpike():
 
 
 
+SPIKE_PATH = LibSpike.parse_filename(SPIKE_PATH)
 if not SPIKE_PATH.endswith('/'):
     SPIKE_PATH += '/'
 
