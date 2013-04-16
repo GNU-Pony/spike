@@ -89,6 +89,20 @@ class SpikeDB():
         return rc
     
     
+    def files(self):
+        '''
+        Gest all files associated with the database
+        
+        @return  :list<str>  All files associated with the database
+        '''
+        rc = []
+        for lblen in range(64):
+            db = self.filePattern % lblen
+            if os.path.exists(db):
+                rc.append(db)
+        return rc
+    
+    
     def fetch(self, rc, keys):
         '''
         Looks up values in a file
