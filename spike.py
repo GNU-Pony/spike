@@ -226,7 +226,6 @@ class Spike():
             exclusives.add('-' + opt)
         exclusives.add('--restore-archive')
         self.test_exclusiveness(opts.opts, exclusives, longmap, True)
-        exclusives = set()
         
         for opt in opts.opts:
             if (opt != '-i') and (opt != '-f'): # --ignore, --info
@@ -243,7 +242,7 @@ class Spike():
                 allowed.add(opt)
                 break
         
-        
+        exclusives = set()
         exitValue = 0
         
         try:
