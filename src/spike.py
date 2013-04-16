@@ -116,14 +116,13 @@ class Spike():
         self.execprog = args[0].split('/')[-1]
         
         usage = 'spike [command [option]... [FILE... SCROLL | SCROLL...]]'
-        usage = usage.replace('spike',   '\033[35m' 'spike'   '\033[39m')
-        usage = usage.replace('command', '\033[33m' 'command' '\033[39m')
-        usage = usage.replace('option',  '\033[33m' 'option'  '\033[39m')
-        usage = usage.replace('FILE',    '\033[04m' 'FILE'    '\033[24m')
-        usage = usage.replace('SCROLL',  '\033[04m' 'SCROLL'  '\033[24m')
+        usage = usage.replace('spike',   '\033[35m' 'spike'   '\033[00m')
+        usage = usage.replace('command', '\033[33m' 'command' '\033[00m')
+        usage = usage.replace('option',  '\033[33m' 'option'  '\033[00m')
+        usage = usage.replace('FILE',    '\033[04m' 'FILE'    '\033[00m')
+        usage = usage.replace('SCROLL',  '\033[04m' 'SCROLL'  '\033[00m')
         if tty:
             usage = usage.replace('\033[04m', '\033[34m')
-            usage = usage.replace('\033[24m', '\033[39m')
         
         usage = usage.replace('\033[', '\0')
         for sym in ('[', ']', '(', ')', '|', '...', '*'):

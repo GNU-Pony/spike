@@ -288,9 +288,9 @@ class ArgParser():
             for line in opt_help.split('\n'):
                 if first:
                     first = False
-                    print('%s' % (line), end='\033[21;39m\n')
+                    print('%s' % (line), end='\033[00m\n') # 21;39m
                 else:
-                    print('%s\033[%sm%s\033[39m' % (' ' * col, colour, line))
+                    print('%s\033[%sm%s\033[00m' % (' ' * col, colour, line)) # 39m
             index += 1
         
         print()
