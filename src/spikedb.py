@@ -75,7 +75,7 @@ class SpikeDB():
         @return  rc:                           `rc` is returned, filled with `(key:str, value:bytes)`-pairs
         '''
         masterseeklen = 3 * (1 << (INITIALS_LEN << 2))
-        for lblen in range(64):
+        for lblen in range(32):
             db = self.filePattern % lblen
             if os.path.exists(db):
                 devblocksize = SpikeDB.__lbblocksize(db)
@@ -96,7 +96,7 @@ class SpikeDB():
         @return  :list<str>  All files associated with the database
         '''
         rc = []
-        for lblen in range(64):
+        for lblen in range(32):
             db = self.filePattern % lblen
             if os.path.exists(db):
                 rc.append(db)
