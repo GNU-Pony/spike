@@ -12,7 +12,7 @@ pkgname:str
 		java-		Java modules
 		issue9-		Google Go modules (go is reserved for Go! as it predates Go)
 
-	Default surfixes:
+	Default suffixes:
 		-git		git repository download
 		-cvs		CVS repository download
 		-svn		SVN repository download
