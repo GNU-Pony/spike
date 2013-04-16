@@ -448,11 +448,11 @@ class Spike():
         '''
         Test for option conflicts
         
-        @param   opts:dict<str,list<str>>  Current options
-        @param   exclusives:set<str>       Exclusive options
-        @param   longmap:dict<str,str>     Map from short to long
-        @param   do_exit:bool              Exit program on conflict
-        @return  :bool                     Whether at most one exclusive option was used
+        @param   opts:dict<str, list<str>>  Current options
+        @param   exclusives:set<str>        Exclusive options
+        @param   longmap:dict<str, str>     Map from short to long
+        @param   do_exit:bool               Exit program on conflict
+        @return  :bool                      Whether at most one exclusive option was used
         '''
         used = []
         
@@ -478,11 +478,11 @@ class Spike():
         '''
         Test for out of context option usage
         
-        @param   opts:dict<str,list<str>>  Current options
-        @param   allowed:set<str>          Allowed options
-        @param   longmap:dict<str,str>     Map from short to long
-        @param   do_exit:bool              Exit program on incorrect usage
-        @return  :bool                     Whether only allowed options was used
+        @param   opts:dict<str, list<str>>  Current options
+        @param   allowed:set<str>           Allowed options
+        @param   longmap:dict<str, str>     Map from short to long
+        @param   do_exit:bool               Exit program on incorrect usage
+        @return  :bool                      Whether only allowed options was used
         '''
         for opt in opts:
             if (opts[opt] is not None) and (opt not in allowed):
@@ -562,7 +562,7 @@ class Spike():
         '''
         class Agg:
             '''
-            aggregator:(str,int)→void
+            aggregator:(str, int)→void
                 Feed a directory path and 0 when a directory is enqueued for bootstraping.
                 Feed a directory path and 1 when a directory bootstrap process is beginning.
                 Feed a directory path and 2 when a directory bootstrap process has ended.
@@ -618,7 +618,7 @@ class Spike():
         '''
         class Agg:
             '''
-            aggregator:(str,str?)→void
+            aggregator:(str, str?)→void
                 Feed a file path and a scroll when an owner has been found.
                 Feed a file path and `None` when it as been determined that their is no owner.
             '''
@@ -648,7 +648,7 @@ class Spike():
         '''
         class Agg:
             '''
-            aggregator:(str?,int,[*])→(void|bool|str)
+            aggregator:(str?, int, [*])→(void|bool|str)
                 Feed a scroll (`None` only at state 2 and 5) and a state (can be looped) during the process of a scroll.
                 The states are: 0 - proofreading
                                 1 - scroll added because of being updated
@@ -783,7 +783,7 @@ class Spike():
         '''
         class Agg:
             '''
-            aggregator:(str?,int,[*])→(void|bool|str)
+            aggregator:(str?, int, [*])→(void|bool|str)
                 Feed a scroll (`None` only at state 2 and 5) and a state (can be looped) during the process of a scroll.
                 The states are: 0 - proofreading
                                 1 - scroll added because of being updated
@@ -919,7 +919,7 @@ class Spike():
         '''
         class Agg:
             '''
-            aggregator:(str,int,int)→void
+            aggregator:(str, int, int)→void
                 Feed a scroll, removal progress state and removal progress end state, continuously during the progress,
                 this begins by feeding the state 0 when a scroll is cleared for removal, when all is enqueued the removal begins.
             '''
@@ -968,7 +968,7 @@ class Spike():
         '''
         class Agg:
             '''
-            aggregator:(str,str)→void
+            aggregator:(str, str)→void
                 Feed the pony and the file when a file is detected
             '''
             def __init__(self):
@@ -989,7 +989,7 @@ class Spike():
         '''
         class Agg:
             '''
-            aggregator:(str,str,str)→void
+            aggregator:(str, str, str)→void
                 Feed the scroll, the field name and the information in the field when a scroll's information is read,
                 all (desired) fields for a scroll will come once, in an uninterrupted sequence.
             '''
@@ -1014,7 +1014,7 @@ class Spike():
         '''
         class Agg:
             '''
-            aggregator:(str,str)→void
+            aggregator:(str, str)→void
                 Feed a file and it's owner when a file is already claimed
             '''
             def __init__(self):
@@ -1048,7 +1048,7 @@ class Spike():
         '''
         class Agg:
             '''
-            aggregator:(str,int,int,int,int)→void
+            aggregator:(str, int, int, int, int)→void
                 Feed a scroll, scroll index, scroll count, scroll progress state and scroll progress end, continuously during the process
             '''
             def __init__(self):
@@ -1090,7 +1090,7 @@ class Spike():
         '''
         class Agg:
             '''
-            aggregator:(str,int,int,int,int)→void
+            aggregator:(str, int, int, int, int)→void
                 Feed a scroll, scroll index, scroll count, scroll progress state and scroll progress end, continuously during the process
             '''
             def __init__(self):
@@ -1128,7 +1128,7 @@ class Spike():
         '''
         class Agg:
             '''
-            aggregator:(str,int,[*])→void
+            aggregator:(str, int, [*])→void
                 Feed a scroll, 0, scroll index:int, scroll count:int when a scroll proofreading begins
                 Feed a scroll, 1, error message:str when a error is found
             '''
@@ -1155,7 +1155,7 @@ class Spike():
         '''
         class Agg:
             '''
-            aggregator:(str,int,int)→void
+            aggregator:(str, int, int)→void
                 Feed a scroll, removal progress state and removal progress end state, continuously during the progress,
                 this begins by feeding the state 0 when a scroll is enqueued, when all is enqueued the removal begins.
             '''
@@ -1399,7 +1399,7 @@ class LibSpike():
         '''
         Update the spike and the scroll archives
         
-        @param   aggregator:(str,int)→void
+        @param   aggregator:(str, int)→void
                      Feed a directory path and 0 when a directory is enqueued for bootstraping.
                      Feed a directory path and 1 when a directory bootstrap process is beginning.
                      Feed a directory path and 2 when a directory bootstrap process has ended.
@@ -1457,12 +1457,12 @@ class LibSpike():
         '''
         Search for a files owner pony, includes only installed ponies
         
-        @param   aggregator:(str,str?)→void
+        @param   aggregator:(str, str?)→void
                      Feed a file path and a scroll when an owner has been found.
                      Feed a file path and `None` when it as been determined that their is no owner.
         
-        @param   files:list<string>  Files for which to do lookup
-        @return  :byte               Exit value, see description of `LibSpike`, the possible ones are: 0 (TODO)
+        @param   files:list<str>  Files for which to do lookup
+        @return  :byte            Exit value, see description of `LibSpike`, the possible ones are: 0 (TODO)
         '''
         return 0
     
@@ -1472,7 +1472,7 @@ class LibSpike():
         '''
         Install ponies from scrolls
         
-        @param   aggregator:(str?,int,[*])→(void|bool|str)
+        @param   aggregator:(str?, int, [*])→(void|bool|str)
                      Feed a scroll (`None` only at state 2 and 5) and a state (can be looped) during the process of a scroll.
                      The states are: 0 - proofreading
                                      1 - scroll added because of being updated
@@ -1507,7 +1507,7 @@ class LibSpike():
         '''
         Update installed ponies
         
-        @param   aggregator:(str?,int,[*])→(void|bool|str)
+        @param   aggregator:(str?, int, [*])→(void|bool|str)
                      Feed a scroll (`None` only at state 2 and 5) and a state (can be looped) during the process of a scroll.
                      The states are: 0 - proofreading
                                      1 - scroll added because of being updated
@@ -1538,7 +1538,7 @@ class LibSpike():
         '''
         Uninstall ponies
         
-        @param   aggregator:(str,int,int)→void
+        @param   aggregator:(str, int, int)→void
                      Feed a scroll, removal progress state and removal progress end state, continuously during the progress,
                      this begins by feeding the state 0 when a scroll is cleared for removal, when all is enqueued the removal begins.
         
@@ -1567,7 +1567,7 @@ class LibSpike():
         '''
         List files installed for ponies
         
-        @param   aggregator:(str,str)→void
+        @param   aggregator:(str, str)→void
                      Feed the pony and the file when a file is detected
         
         @param   ponies:list<str>  Installed ponies for which to list claimed files
@@ -1581,7 +1581,7 @@ class LibSpike():
         '''
         List information about scrolls
         
-        @param   aggregator:(str,str,str)→void
+        @param   aggregator:(str, str, str)→void
                      Feed the scroll, the field name and the information in the field when a scroll's information is read,
                      all (desired) fields for a scroll will come once, in an uninterrupted sequence.
         
@@ -1597,7 +1597,7 @@ class LibSpike():
         '''
         Claim one or more files as a part of a pony
         
-        @param   aggregator:(str,str)→void
+        @param   aggregator:(str, str)→void
                      Feed a file and it's owner when a file is already claimed
         
         @param   files:list<str>    File to claim
@@ -1629,7 +1629,7 @@ class LibSpike():
         '''
         Archive the current system installation state
         
-        @param   aggregator:(str,int,int,int,int)→void
+        @param   aggregator:(str, int, int, int, int)→void
                      Feed a scroll, scroll index, scroll count, scroll progress state and scroll progress end, continuously during the process
         
         @param   archive:str   The archive file to create
@@ -1644,7 +1644,7 @@ class LibSpike():
         '''
         Roll back to an archived state
         
-        @param   aggregator:(str,int,int,int,int)→void
+        @param   aggregator:(str, int, int, int, int)→void
                      Feed a scroll, scroll index, scroll count, scroll progress state and scroll progress end, continuously during the process
         
         @param   archive:str    Archive to roll back to
@@ -1662,7 +1662,7 @@ class LibSpike():
         '''
         Look for errors in a scrolls
         
-        @param   aggregator:(str,int,[*])→void
+        @param   aggregator:(str, int, [*])→void
                      Feed a scroll, 0, scroll index:int, scroll count:int when a scroll proofreading begins
                      Feed a scroll, 1, error message:str when a error is found
         
@@ -1677,7 +1677,7 @@ class LibSpike():
         '''
         Remove unneeded ponies that are installed as dependencies
         
-        @param   aggregator:(str,int,int)→void
+        @param   aggregator:(str, int, int)→void
                      Feed a scroll, removal progress state and removal progress end state, continuously during the progress,
                      this begins by feeding the state 0 when a scroll is enqueued, when all is enqueued the removal begins.
         
