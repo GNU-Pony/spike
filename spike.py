@@ -574,7 +574,7 @@ class Spike():
             def __call__(self, directory, state):
                 if directory not in self.dirs:
                     self.dirs[directory] = self.next
-                    self.next++
+                    self.next += 1
                 p = self.dirs[directory]
                 if p > self.pos:
                     print('\033[%iBm', p - self.pos)
@@ -930,7 +930,7 @@ class Spike():
             def __call__(self, scroll, progress, end):
                 if directory not in self.dirs:
                     self.dirs[directory] = self.next
-                    self.next++
+                    self.next += 1
                 p = self.dirs[directory]
                 if p > self.pos:
                     print('\033[%iBm', p - self.pos)
@@ -1058,7 +1058,7 @@ class Spike():
             def __call__(self, scroll, scrolli, scrolln, progess, end):
                 if directory not in self.dirs:
                     self.dirs[directory] = self.next
-                    self.next++
+                    self.next += 1
                 p = self.dirs[directory]
                 if p > self.pos:
                     print('\033[%iBm', p - self.pos)
@@ -1100,7 +1100,7 @@ class Spike():
             def __call__(self, scroll, scrolli, scrolln, progess, end):
                 if directory not in self.dirs:
                     self.dirs[directory] = self.next
-                    self.next++
+                    self.next += 1
                 p = self.dirs[directory]
                 if p > self.pos:
                     print('\033[%iBm', p - self.pos)
@@ -1166,7 +1166,7 @@ class Spike():
             def __call__(self, scroll, progress, end):
                 if directory not in self.dirs:
                     self.dirs[directory] = self.next
-                    self.next++
+                    self.next += 1
                 p = self.dirs[directory]
                 if p > self.pos:
                     print('\033[%iBm', p - self.pos)
@@ -1226,7 +1226,7 @@ class Gitcord():
             return proc.returncode
         except:
             if proc is not None:
-                return proc.returncode == 0 ? 255 : proc.returncode
+                return 255 if proc.returncode == 0 else proc.returncode
             else:
                 return 255
     
