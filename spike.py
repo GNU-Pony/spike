@@ -488,7 +488,7 @@ class Spike():
             if (opts[opt] is not None) and (opt not in allowed):
                 msg = self.execprog + ': option used out of context: ' + opt
                 if opt in longmap:
-                    msg += '(' + longmap(opt) + ')'
+                    msg += '(' + longmap[opt] + ')'
                 printerr(msg)
                 if do_exit:
                     exit(1)
