@@ -1297,17 +1297,23 @@ class Gitcord():
         return 0 == __exec(['git', 'add', '--force', filename])
     
     
-    def commit(message, signoff): ## TODO the user should be able to select a message to use and whether to sign off
+    def commit(message, signoff, gpgsign): ## TODO the user should be able to select a message to use and whether to sign off or sign
         '''
         Commit changes in the repository
         
         @param   message:str   The commit message
         @param   signoff:bool  Whether to add a sign-off tag to the commit message
+        @param   gpgsign:str?  `None`, if not to signed with GPG, empty for implied key ID or the key ID with which to sign
         @return  :bool         Whether the spell casting was successful
         '''
         cmd = ['git', 'commit']
         if signoff:
             cmd += ['--signoff']
+        if gpgsign is not None:
+            if len(gpgsign) == 0:
+                cmd += '--gpg-sign'
+            else:
+                cmd += '--gpg-sign=' + gpgsign
         cmd += ['--message', message]
         return 0 == __exec(cmd)
 
