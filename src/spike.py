@@ -121,7 +121,7 @@ class Spike():
         usage = usage.replace('option',  '\033[33m' 'option'  '\033[39m')
         usage = usage.replace('FILE',    '\033[04m' 'FILE'    '\033[24m')
         usage = usage.replace('SCROLL',  '\033[04m' 'SCROLL'  '\033[24m')
-        if linuxvt:
+        if tty:
             usage = usage.replace('\033[04m', '\033[34m')
             usage = usage.replace('\033[24m', '\033[39m')
         
@@ -139,7 +139,7 @@ class Spike():
                          'these are written, for maximum simplicity and portability, in Python 3\n'
                          'and a collection of these are distributed with spike and updated when\n'
                          'spike is updated. But you can add scroll repositories to spike on your\n'
-                         'local installation.')
+                         'local installation.', tty)
         
         opts.add_argumentless(['-v', '--version'],                    help = 'Print program name and version')
         opts.add_argumentless(['-h', '--help'],                       help = 'Print this help')
@@ -1579,7 +1579,7 @@ class LibSpike():
 if not SPIKE_PATH.endswith('/'):
     SPIKE_PATH += '/'
 
-linuxvt = ('TERM' in os.environ) and (os.environ['TERM'] == 'linux')
+tty = ('TERM' in os.environ) and (os.environ['TERM'] in ('linux', 'hurd'))
 
 if __name__ == '__main__': # sic
     spike = Spike()

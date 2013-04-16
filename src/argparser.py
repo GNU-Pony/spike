@@ -41,7 +41,7 @@ class ArgParser():
     '''
     Simple argument parser, cannibalised from ponysay where it was cannibalised from paradis
     '''
-    def __init__(self, program, description, usage, longdescription = None):
+    def __init__(self, program, description, usage, longdescription = None, tty = True):
         '''
         Constructor.
         The short description is printed on same line as the program name
@@ -50,6 +50,7 @@ class ArgParser():
         @param  description:str       Short, single-line, description of the program
         @param  usage:str             Formated, multi-line, usage text
         @param  longdescription:str?  Long, multi-line, description of the program, may be `None`
+        @param  tty:bool              Whether the terminal is an not so capable virtual terminal
         '''
         self.__program = program
         self.__description = description
@@ -58,6 +59,7 @@ class ArgParser():
         self.__arguments = []
         self.opts = {}
         self.optmap = {}
+        self.__tty = tty
     
     
     def add_argumentless(self, alternatives, help = None):
@@ -232,7 +234,7 @@ class ArgParser():
         '''
         Prints a colourful help message
         '''
-        print('\033[1m%s\033[21m %s %s' % (self.__program, '-' if linuxvt else '—', self.__description))
+        print('\033[1m%s\033[21m %s %s' % (self.__program, '-' if self.__tty else '—', self.__description))
         print()
         if self.__longdescription is not None:
             print(self.__longdescription)
