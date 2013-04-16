@@ -176,22 +176,22 @@ patch_check(startdir:str, srcdir:str, pkgdir:str, private:bool):void
 patch_package(startdir:str, srcdir:str, pkgdir:str, private:bool):void
 	Apply patch to target during the target's package().
 
-pre_install(tmpdir:str, installedfiles:list<str>, private:bool):void
+pre_install(tmpdir:str, rootdir:str, installedfiles:list<str>, private:bool):void
 	Run before files are installed in a fresh installation
 
-post_install(tmpdir:str, installedfiles:list<str>, private:bool):void
+post_install(tmpdir:str, rootdir:str, installedfiles:list<str>, private:bool):void
 	Run after files are installed in a fresh installation
 
-pre_upgrade(tmpdir:str, installedfiles:list<str>, private:bool):void
+pre_upgrade(tmpdir:str, rootdir:str, installedfiles:list<str>, private:bool):void
 	Run before upgraded files are installed
 
-post_upgrade(tmpdir:str, installedfiles:list<str>, private:bool):void
+post_upgrade(tmpdir:str, rootdir:str, installedfiles:list<str>, private:bool):void
 	Run after upgraded files are installed
 
-pre_uninstall(tmpdir:str, installedfiles:list<str>, private:bool):void
+pre_uninstall(tmpdir:str, rootdir:str, installedfiles:list<str>, private:bool):void
 	Run before uninstallation of files
 
-post_uninstall(tmpdir:str, installedfiles:list<str>, private:bool):void
+post_uninstall(tmpdir:str, rootdir:str, installedfiles:list<str>, private:bool):void
 	Run after uninstallation of files
 
 
