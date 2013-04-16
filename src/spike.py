@@ -163,7 +163,7 @@ class Spike():
                                                              'slaves: [--recursive] [--private]')
         opts.add_argumented(  ['-A', '--archive'],   arg = 'ARCHIVE', help = 'Create an archive of everything that is currently installed.\n'
                                                              'slaves: [--scrolls]')
-        opts.add_argumented(  ['--restore-archive'], arg = 'ARCHIVE', help = 'Rollback to an archived state of the system\n'
+        opts.add_argumented(  ['--restore-archive'], arg = 'ARCHIVE', help = 'Roll back to an archived state of the system\n'
                                                              'slaves: [--shared | --full | --old] [--downgrade | --upgrade] [--shred]')
         opts.add_argumentless(['-N', '--clean'],                      help = 'Uninstall unneeded ponies\n'
                                                              'slaves: [--shred]')
