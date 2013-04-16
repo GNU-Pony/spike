@@ -1301,9 +1301,9 @@ class Gitcord():
         '''
         Commit changes in the repository
         
-        @param   message:str  The commit message
-        @param   signoff:str  Whether to add a sign-off tag to the commit message
-        @return  :bool        Whether the spell casting was successful
+        @param   message:str   The commit message
+        @param   signoff:bool  Whether to add a sign-off tag to the commit message
+        @return  :bool         Whether the spell casting was successful
         '''
         cmd = ['git', 'commit']
         if signoff:
