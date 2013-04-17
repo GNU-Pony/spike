@@ -411,10 +411,9 @@ if __name__ == '__main__':
     r = s - (o << 1)  # --bitrate
     c = s - r         # --capacity
     w = s // 25       # --wordsize
-    i = 1             # --iterations
     binary = False
     
-    (_r, _c, _w, _o, _s, _i) = (r, c, w, o, s, i)
+    (_r, _c, _w, _o, _s) = (r, c, w, o, s)
     
     files = []
     dashed = False
@@ -440,8 +439,6 @@ if __name__ == '__main__':
             elif linger[0] in ('-s', '--statesize'):
                 s = int(linger[1])
                 r = s - (o << 1)
-            elif linger[0] in ('-i', '--iterations'):
-                i = int(linger[1])
             linger = None
             if arg is None:
                 continue
@@ -475,10 +472,6 @@ if __name__ == '__main__':
     
     if len(files) == 0:
         files.append(None)
-    if i < 1:
-        sys.stdout.buffer.write((sys.argv[0] + ': sorry, I will only do at least one iteration!\n').encode('utf-8'))
-        sys.stdout.buffer.flush()
-        exit(3)
     stdin = None
     for filename in files:
         if (filename is None) and (stdin is not None):
@@ -499,9 +492,6 @@ if __name__ == '__main__':
                     break
                 SHA3.update(chunk)
             bs = SHA3.digest(file.read())
-            for _ in range(1, i):
-                SHA3.initialise(r, c, o)
-                bs = SHA3.digest(bs)
             if binary:
                 if filename is None:
                     stdin = bs
