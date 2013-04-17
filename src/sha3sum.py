@@ -399,77 +399,7 @@ class SHA3:
 
 
 if __name__ == '__main__':
-    cmd = sys.argv[0]
-    args = sys.argv[1:]
-    if '/' in cmd:
-        cmd = cmd[cmd.rfind('/') + 1:]
-    if cmd.endswith('.py'):
-        cmd = cmd[:-3]
-    
-    o = 512           # --outputsize
-    s = 1600          # --statesize
-    r = s - (o << 1)  # --bitrate
-    c = s - r         # --capacity
-    w = s // 25       # --wordsize
-    binary = False
-    
-    (_r, _c, _w, _o, _s) = (r, c, w, o, s)
-    
     files = []
-    dashed = False
-    linger = None
-    
-    for arg in args + [None]:
-        if linger is not None:
-            if linger[1] is None:
-                linger[1] = arg
-                arg = None
-            if linger[0] in ('-r', '--bitrate'):
-                r = int(linger[1])
-                o = (s - r) >> 1
-            elif linger[0] in ('-c', '--capacity'):
-                c = int(linger[1])
-                r = s - c
-            elif linger[0] in ('-w', '--wordsize'):
-                w = int(linger[1])
-                s = w * 25
-            elif linger[0] in ('-o', '--outputsize'):
-                o = int(linger[1])
-                r = s - (o << 1)
-            elif linger[0] in ('-s', '--statesize'):
-                s = int(linger[1])
-                r = s - (o << 1)
-            linger = None
-            if arg is None:
-                continue
-        if arg is None:
-            continue
-        if dashed:
-            files.append(None if arg == '-' else arg)
-        elif arg == '--':
-            dashed = True
-        elif arg == '-':
-            files.append(None)
-        elif arg.startswith('--'):
-            if '=' in arg:
-                linger = (arg[:arg.find('=')], arg[arg.find('=') + 1:])
-            else:
-                if arg == '--binary':
-                    binary = True
-                else:
-                    linger = [arg, None]
-        elif arg.startswith('-'):
-            arg = arg[1:]
-            if arg[0] == 'b':
-                binary = True
-                arg = arg[1:]
-            elif len(arg) == 1:
-                linger = ['-' + arg, None]
-            else:
-                linger = ['-' + arg[0], arg[1:]]
-        else:
-            files.append(arg)
-    
     if len(files) == 0:
         files.append(None)
     stdin = None
@@ -480,8 +410,8 @@ if __name__ == '__main__':
         rc = ''
         fn = '/dev/stdin' if filename is None else filename
         with open(fn, 'rb') as file:
-            SHA3.initialise(r, c, o)
-            blksize = (o + 7) >> 3
+            SHA3.initialise(1024, 576, 576)
+            blksize = 8192
             try:
                 blksize = os.stat(os.path.realpath(fn)).st_blksize
             except:
@@ -492,19 +422,13 @@ if __name__ == '__main__':
                     break
                 SHA3.update(chunk)
             bs = SHA3.digest(file.read())
-            if binary:
-                if filename is None:
-                    stdin = bs
-                sys.stdout.buffer.write(bs)
-                sys.stdout.buffer.flush()
-            else:
-                for b in bs:
-                    rc += "0123456789ABCDEF"[b >> 4]
-                    rc += "0123456789ABCDEF"[b & 15]
-                rc += ' ' + ('-' if filename is None else filename) + '\n'
-                if filename is None:
-                    stdin = rc
-                sys.stdout.buffer.write(rc.encode('UTF-8'))
-                sys.stdout.buffer.flush()
+            for b in bs:
+                rc += "0123456789ABCDEF"[b >> 4]
+                rc += "0123456789ABCDEF"[b & 15]
+            rc += ' ' + ('-' if filename is None else filename) + '\n'
+            if filename is None:
+                stdin = rc
+            sys.stdout.buffer.write(rc.encode('UTF-8'))
+            sys.stdout.buffer.flush()
 
 
