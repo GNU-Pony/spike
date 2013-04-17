@@ -52,9 +52,8 @@ class SHA3:
     '''
     
 
-    (r, c, n) = (0, 0, 0)
+    (c, n) = (0, 0)
     '''
-       r:int  The bitrate
        c:int  The capacity
        n:int  The output size
     '''
@@ -81,22 +80,6 @@ class SHA3:
         @return   :int  The value rotated
         '''
         return ((x >> (64 - n)) + (x << n)) & 0xFFFFFFFFFFFFFFFF
-    
-    
-    @staticmethod
-    def lb(x):
-        '''
-        Binary logarithm
-        
-        @param   x:int  The value of which to calculate the binary logarithm
-        @return   :int  The binary logarithm
-        '''
-        rc = 0
-        if (x & 0xFF00) != 0:  rc +=  8 ;  x >>=  8
-        if (x & 0x00F0) != 0:  rc +=  4 ;  x >>=  4
-        if (x & 0x000C) != 0:  rc +=  2 ;  x >>=  2
-        if (x & 0x0002) != 0:  rc +=  1
-        return rc
     
     
     @staticmethod
@@ -219,44 +202,42 @@ class SHA3:
     
     
     @staticmethod
-    def toLane64(message, rr, off):
+    def toLane64(message, off):
         '''
         Convert a chunk of char:s to a 64-bit word
         
         @param   message:bytes  The message
-        @param        rr:int    Bitrate in bytes
         @param       off:int    The offset in the message
         @return         :int    Lane
         '''
         rc = 0
-        n = min(len(message), rr)
+        n = min(len(message), 128)
         
         return ((message[off + 7] << 56) if (off + 7 < n) else 0) | ((message[off + 6] << 48) if (off + 6 < n) else 0) | ((message[off + 5] << 40) if (off + 5 < n) else 0) | ((message[off + 4] << 32) if (off + 4 < n) else 0) | ((message[off + 3] << 24) if (off + 3 < n) else 0) | ((message[off + 2] << 16) if (off + 2 < n) else 0) | ((message[off + 1] <<  8) if (off + 1 < n) else 0) | ((message[off]) if (off < n) else 0)
     
     
     @staticmethod
-    def pad10star1(msg, r):
+    def pad10star1(msg):
         '''
         pad 10*1
         
         @param   msg:bytes  The message to pad
-        @param     r:int    The bitrate
         @return     :str    The message padded
         '''
         nnn = len(msg) << 3
         
         nrf = nnn >> 3
         nbrf = nnn & 7
-        ll = nnn % r
+        ll = nnn & 1023
         
         bbbb = 1 if nbrf == 0 else ((msg[nrf] >> (8 - nbrf)) | (1 << nbrf))
         
         message = None
-        if ((r - 8 <= ll) and (ll <= r - 2)):
+        if ((1016 <= ll) and (ll <= 1022)):
             message = [bbbb ^ 128]
         else:
             nnn = (nrf + 1) << 3
-            nnn = ((nnn - (nnn % r) + (r - 8)) >> 3) + 1
+            nnn = ((nnn - (nnn & 1023) + 1016) >> 3) + 1
             message = [0] * (nnn - nrf)
             message[0] = bbbb
             nnn -= nrf
@@ -266,15 +247,13 @@ class SHA3:
     
     
     @staticmethod
-    def initialise(r, c, n):
+    def initialise(c, n):
         '''
         Initialise Keccak sponge
         
-        @param  r:int  The bitrate
         @param  c:int  The capacity
         @param  n:int  The output size
         '''
-        SHA3.r = r
         SHA3.c = c
         SHA3.n = n
         SHA3.S = [0] * 25
@@ -288,43 +267,41 @@ class SHA3:
         
         @param  msg:bytes  The partial message
         '''
-        rr = SHA3.r >> 3
-        
         SHA3.M += msg
         nnn = len(SHA3.M)
-        nnn -= nnn % (SHA3.r * 200)
+        nnn -= nnn % (1024 * 200)
         message = SHA3.M[:nnn]
         SHA3.M = SHA3.M[nnn:]
         
         # Absorbing phase
-        for i in range(0, nnn, rr):
-            SHA3.S[ 0] ^= SHA3.toLane64(message, rr, 0)
-            SHA3.S[ 5] ^= SHA3.toLane64(message, rr, 8)
-            SHA3.S[10] ^= SHA3.toLane64(message, rr, 16)
-            SHA3.S[15] ^= SHA3.toLane64(message, rr, 24)
-            SHA3.S[20] ^= SHA3.toLane64(message, rr, 32)
-            SHA3.S[ 1] ^= SHA3.toLane64(message, rr, 40)
-            SHA3.S[ 6] ^= SHA3.toLane64(message, rr, 48)
-            SHA3.S[11] ^= SHA3.toLane64(message, rr, 56)
-            SHA3.S[16] ^= SHA3.toLane64(message, rr, 64)
-            SHA3.S[21] ^= SHA3.toLane64(message, rr, 72)
-            SHA3.S[ 2] ^= SHA3.toLane64(message, rr, 80)
-            SHA3.S[ 7] ^= SHA3.toLane64(message, rr, 88)
-            SHA3.S[12] ^= SHA3.toLane64(message, rr, 96)
-            SHA3.S[17] ^= SHA3.toLane64(message, rr, 104)
-            SHA3.S[22] ^= SHA3.toLane64(message, rr, 112)
-            SHA3.S[ 3] ^= SHA3.toLane64(message, rr, 120)
-            SHA3.S[ 8] ^= SHA3.toLane64(message, rr, 128)
-            SHA3.S[13] ^= SHA3.toLane64(message, rr, 136)
-            SHA3.S[18] ^= SHA3.toLane64(message, rr, 144)
-            SHA3.S[23] ^= SHA3.toLane64(message, rr, 152)
-            SHA3.S[ 4] ^= SHA3.toLane64(message, rr, 160)
-            SHA3.S[ 9] ^= SHA3.toLane64(message, rr, 168)
-            SHA3.S[14] ^= SHA3.toLane64(message, rr, 176)
-            SHA3.S[19] ^= SHA3.toLane64(message, rr, 184)
-            SHA3.S[24] ^= SHA3.toLane64(message, rr, 192)
+        for i in range(0, nnn, 128):
+            SHA3.S[ 0] ^= SHA3.toLane64(message, 0)
+            SHA3.S[ 5] ^= SHA3.toLane64(message, 8)
+            SHA3.S[10] ^= SHA3.toLane64(message, 16)
+            SHA3.S[15] ^= SHA3.toLane64(message, 24)
+            SHA3.S[20] ^= SHA3.toLane64(message, 32)
+            SHA3.S[ 1] ^= SHA3.toLane64(message, 40)
+            SHA3.S[ 6] ^= SHA3.toLane64(message, 48)
+            SHA3.S[11] ^= SHA3.toLane64(message, 56)
+            SHA3.S[16] ^= SHA3.toLane64(message, 64)
+            SHA3.S[21] ^= SHA3.toLane64(message, 72)
+            SHA3.S[ 2] ^= SHA3.toLane64(message, 80)
+            SHA3.S[ 7] ^= SHA3.toLane64(message, 88)
+            SHA3.S[12] ^= SHA3.toLane64(message, 96)
+            SHA3.S[17] ^= SHA3.toLane64(message, 104)
+            SHA3.S[22] ^= SHA3.toLane64(message, 112)
+            SHA3.S[ 3] ^= SHA3.toLane64(message, 120)
+            SHA3.S[ 8] ^= SHA3.toLane64(message, 128)
+            SHA3.S[13] ^= SHA3.toLane64(message, 136)
+            SHA3.S[18] ^= SHA3.toLane64(message, 144)
+            SHA3.S[23] ^= SHA3.toLane64(message, 152)
+            SHA3.S[ 4] ^= SHA3.toLane64(message, 160)
+            SHA3.S[ 9] ^= SHA3.toLane64(message, 168)
+            SHA3.S[14] ^= SHA3.toLane64(message, 176)
+            SHA3.S[19] ^= SHA3.toLane64(message, 184)
+            SHA3.S[24] ^= SHA3.toLane64(message, 192)
             SHA3.keccakF(SHA3.S)
-            message = message[rr:]
+            message = message[128:]
     
     
     @staticmethod
@@ -336,52 +313,50 @@ class SHA3:
         '''
         if msg is None:
             msg = bytes([])
-        message = SHA3.pad10star1(SHA3.M + msg, SHA3.r)
+        message = SHA3.pad10star1(SHA3.M + msg)
         SHA3.M = None
         nnn = len(message)
         rc = [0] * ((SHA3.n + 7) >> 3)
         ptr = 0
         
-        rr = SHA3.r >> 3
         nn = SHA3.n >> 3
         
         # Absorbing phase
-        for i in range(0, nnn, rr):
-            SHA3.S[ 0] ^= SHA3.toLane64(message, rr, 0)
-            SHA3.S[ 5] ^= SHA3.toLane64(message, rr, 8)
-            SHA3.S[10] ^= SHA3.toLane64(message, rr, 16)
-            SHA3.S[15] ^= SHA3.toLane64(message, rr, 24)
-            SHA3.S[20] ^= SHA3.toLane64(message, rr, 32)
-            SHA3.S[ 1] ^= SHA3.toLane64(message, rr, 40)
-            SHA3.S[ 6] ^= SHA3.toLane64(message, rr, 48)
-            SHA3.S[11] ^= SHA3.toLane64(message, rr, 56)
-            SHA3.S[16] ^= SHA3.toLane64(message, rr, 64)
-            SHA3.S[21] ^= SHA3.toLane64(message, rr, 72)
-            SHA3.S[ 2] ^= SHA3.toLane64(message, rr, 80)
-            SHA3.S[ 7] ^= SHA3.toLane64(message, rr, 88)
-            SHA3.S[12] ^= SHA3.toLane64(message, rr, 96)
-            SHA3.S[17] ^= SHA3.toLane64(message, rr, 104)
-            SHA3.S[22] ^= SHA3.toLane64(message, rr, 112)
-            SHA3.S[ 3] ^= SHA3.toLane64(message, rr, 120)
-            SHA3.S[ 8] ^= SHA3.toLane64(message, rr, 128)
-            SHA3.S[13] ^= SHA3.toLane64(message, rr, 136)
-            SHA3.S[18] ^= SHA3.toLane64(message, rr, 144)
-            SHA3.S[23] ^= SHA3.toLane64(message, rr, 152)
-            SHA3.S[ 4] ^= SHA3.toLane64(message, rr, 160)
-            SHA3.S[ 9] ^= SHA3.toLane64(message, rr, 168)
-            SHA3.S[14] ^= SHA3.toLane64(message, rr, 176)
-            SHA3.S[19] ^= SHA3.toLane64(message, rr, 184)
-            SHA3.S[24] ^= SHA3.toLane64(message, rr, 192)
+        for i in range(0, nnn, 128):
+            SHA3.S[ 0] ^= SHA3.toLane64(message, 0)
+            SHA3.S[ 5] ^= SHA3.toLane64(message, 8)
+            SHA3.S[10] ^= SHA3.toLane64(message, 16)
+            SHA3.S[15] ^= SHA3.toLane64(message, 24)
+            SHA3.S[20] ^= SHA3.toLane64(message, 32)
+            SHA3.S[ 1] ^= SHA3.toLane64(message, 40)
+            SHA3.S[ 6] ^= SHA3.toLane64(message, 48)
+            SHA3.S[11] ^= SHA3.toLane64(message, 56)
+            SHA3.S[16] ^= SHA3.toLane64(message, 64)
+            SHA3.S[21] ^= SHA3.toLane64(message, 72)
+            SHA3.S[ 2] ^= SHA3.toLane64(message, 80)
+            SHA3.S[ 7] ^= SHA3.toLane64(message, 88)
+            SHA3.S[12] ^= SHA3.toLane64(message, 96)
+            SHA3.S[17] ^= SHA3.toLane64(message, 104)
+            SHA3.S[22] ^= SHA3.toLane64(message, 112)
+            SHA3.S[ 3] ^= SHA3.toLane64(message, 120)
+            SHA3.S[ 8] ^= SHA3.toLane64(message, 128)
+            SHA3.S[13] ^= SHA3.toLane64(message, 136)
+            SHA3.S[18] ^= SHA3.toLane64(message, 144)
+            SHA3.S[23] ^= SHA3.toLane64(message, 152)
+            SHA3.S[ 4] ^= SHA3.toLane64(message, 160)
+            SHA3.S[ 9] ^= SHA3.toLane64(message, 168)
+            SHA3.S[14] ^= SHA3.toLane64(message, 176)
+            SHA3.S[19] ^= SHA3.toLane64(message, 184)
+            SHA3.S[24] ^= SHA3.toLane64(message, 192)
             SHA3.keccakF(SHA3.S)
-            message = message[rr:]
+            message = message[128:]
         
         # Squeezing phase
         olen = SHA3.n
         j = 0
-        ni = min(25, rr)
         while (olen > 0):
             i = 0
-            while (i < ni) and (j < nn):
+            while (i < 25) and (j < 25):
                 v = SHA3.S[(i % 5) * 5 + i // 5]
                 for _ in range(64):
                     if (j < nn):
@@ -390,7 +365,7 @@ class SHA3:
                     v >>= 8
                     j += 1
                 i += 1
-            olen -= SHA3.r
+            olen -= 1024
             if olen > 0:
                 SHA3.keccakF(S)
         
@@ -410,7 +385,7 @@ if __name__ == '__main__':
         rc = ''
         fn = '/dev/stdin' if filename is None else filename
         with open(fn, 'rb') as file:
-            SHA3.initialise(1024, 576, 576)
+            SHA3.initialise(576, 576)
             blksize = 8192
             try:
                 blksize = os.stat(os.path.realpath(fn)).st_blksize
