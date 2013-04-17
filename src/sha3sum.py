@@ -51,12 +51,6 @@ class SHA3:
     :list<int>  Keccak-f round temporary
     '''
     
-
-    (c, n) = (0, 0)
-    '''
-       c:int  The capacity
-       n:int  The output size
-    '''
     
     S = None
     '''
@@ -210,7 +204,6 @@ class SHA3:
         @param       off:int    The offset in the message
         @return         :int    Lane
         '''
-        rc = 0
         n = min(len(message), 128)
         
         return ((message[off + 7] << 56) if (off + 7 < n) else 0) | ((message[off + 6] << 48) if (off + 6 < n) else 0) | ((message[off + 5] << 40) if (off + 5 < n) else 0) | ((message[off + 4] << 32) if (off + 4 < n) else 0) | ((message[off + 3] << 24) if (off + 3 < n) else 0) | ((message[off + 2] << 16) if (off + 2 < n) else 0) | ((message[off + 1] <<  8) if (off + 1 < n) else 0) | ((message[off]) if (off < n) else 0)
@@ -250,12 +243,7 @@ class SHA3:
     def initialise(c, n):
         '''
         Initialise Keccak sponge
-        
-        @param  c:int  The capacity
-        @param  n:int  The output size
         '''
-        SHA3.c = c
-        SHA3.n = n
         SHA3.S = [0] * 25
         SHA3.M = bytes([])
     
@@ -269,7 +257,7 @@ class SHA3:
         '''
         SHA3.M += msg
         nnn = len(SHA3.M)
-        nnn -= nnn % (1024 * 200)
+        nnn -= nnn % 2048000
         message = SHA3.M[:nnn]
         SHA3.M = SHA3.M[nnn:]
         
@@ -316,10 +304,7 @@ class SHA3:
         message = SHA3.pad10star1(SHA3.M + msg)
         SHA3.M = None
         nnn = len(message)
-        rc = [0] * ((SHA3.n + 7) >> 3)
-        ptr = 0
-        
-        nn = SHA3.n >> 3
+        rc = [0] * 72
         
         # Absorbing phase
         for i in range(0, nnn, 128):
@@ -352,14 +337,15 @@ class SHA3:
             message = message[128:]
         
         # Squeezing phase
-        olen = SHA3.n
+        olen = 576
         j = 0
+        ptr = 0
         while (olen > 0):
             i = 0
             while (i < 25) and (j < 25):
                 v = SHA3.S[(i % 5) * 5 + i // 5]
                 for _ in range(64):
-                    if (j < nn):
+                    if (j < 72):
                         rc[ptr] = v & 255
                         ptr += 1
                     v >>= 8
@@ -385,7 +371,7 @@ if __name__ == '__main__':
         rc = ''
         fn = '/dev/stdin' if filename is None else filename
         with open(fn, 'rb') as file:
-            SHA3.initialise(576, 576)
+            SHA3.initialise()
             blksize = 8192
             try:
                 blksize = os.stat(os.path.realpath(fn)).st_blksize
