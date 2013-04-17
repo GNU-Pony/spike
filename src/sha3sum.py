@@ -407,10 +407,6 @@ if __name__ == '__main__':
         cmd = cmd[:-3]
     
     o = 512           # --outputsize
-    if   cmd == 'sha3-224sum':  o = 224
-    elif cmd == 'sha3-256sum':  o = 256
-    elif cmd == 'sha3-384sum':  o = 384
-    elif cmd == 'sha3-512sum':  o = 512
     s = 1600          # --statesize
     r = s - (o << 1)  # --bitrate
     c = s - r         # --capacity
@@ -426,82 +422,26 @@ if __name__ == '__main__':
     
     for arg in args + [None]:
         if linger is not None:
-            if linger[0] in ('-h', '--help'):
-                sys.stderr.buffer.write(('''
-SHA-3/Keccak checksum calculator
-
-USAGE:  sha3sum [option...] < file
-        sha3sum [option...] file...
-
-
-OPTIONS:
-        -r BITRATE
-        --bitrate       The bitrate to use for SHA-3.           (default: %d)
-        
-        -c CAPACITY
-        --capacity      The capacity to use for SHA-3.          (default: %d)
-        
-        -w WORDSIZE
-        --wordsize      The word size to use for SHA-3.         (default: %d)
-        
-        -o OUTPUTSIZE
-        --outputsize    The output size to use for SHA-3.       (default: %d)
-        
-        -s STATESIZE
-        --statesize     The state size to use for SHA-3.        (default: %d)
-        
-        -i ITERATIONS
-        --iterations    The number of hash iterations to run.   (default: %d)
-
-        -b
-        --binary        Print the checksum in binary, rather than hexadecimal.
-
-
-COPYRIGHT:
-
-Copyright © 2013  Mattias Andrée (maandree@member.fsf.org)
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-''' % (_r, _c, _w, _o, _s, _i)).encode('utf-8'))
-                sys.stderr.buffer.flush()
-                exit(2)
-            else:
-                if linger[1] is None:
-                    linger[1] = arg
-                    arg = None
-                if linger[0] in ('-r', '--bitrate'):
-                    r = int(linger[1])
-                    o = (s - r) >> 1
-                elif linger[0] in ('-c', '--capacity'):
-                    c = int(linger[1])
-                    r = s - c
-                elif linger[0] in ('-w', '--wordsize'):
-                    w = int(linger[1])
-                    s = w * 25
-                elif linger[0] in ('-o', '--outputsize'):
-                    o = int(linger[1])
-                    r = s - (o << 1)
-                elif linger[0] in ('-s', '--statesize'):
-                    s = int(linger[1])
-                    r = s - (o << 1)
-                elif linger[0] in ('-i', '--iterations'):
-                    i = int(linger[1])
-                else:
-                    sys.stderr.buffer.write((sys.argv[0] + ': unrecognised option: ' + linger[0] + '\n').encode('utf-8'))
-                    sys.stdout.buffer.flush()
-                    exit(1)
+            if linger[1] is None:
+                linger[1] = arg
+                arg = None
+            if linger[0] in ('-r', '--bitrate'):
+                r = int(linger[1])
+                o = (s - r) >> 1
+            elif linger[0] in ('-c', '--capacity'):
+                c = int(linger[1])
+                r = s - c
+            elif linger[0] in ('-w', '--wordsize'):
+                w = int(linger[1])
+                s = w * 25
+            elif linger[0] in ('-o', '--outputsize'):
+                o = int(linger[1])
+                r = s - (o << 1)
+            elif linger[0] in ('-s', '--statesize'):
+                s = int(linger[1])
+                r = s - (o << 1)
+            elif linger[0] in ('-i', '--iterations'):
+                i = int(linger[1])
             linger = None
             if arg is None:
                 continue
