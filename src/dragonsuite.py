@@ -952,7 +952,7 @@ def decompress(path, format = None):
                'squashfs' : 'unsquashfs %s'}[fmt.lower().replace(os.extsep, '').replace('zip', 'z')]
         if not havecpio:
             fmt = fmt.replace('cpio', 'bsdcpio')
-        sh(fmt % p, fail = True)
+        bash(fmt % p, fail = True)
 
 
 def chroot(directory, function):
@@ -976,12 +976,42 @@ def chroot(directory, function):
         return os.waitpid(pid, 0)[1]
 
 
+def execute(command, fail = False):
+    '''
+    Execute a command
+    
+    @param  command:list<str>  Command line arguments, including the command
+    @param  fail:bool          Whether to raise an exception if the command fails
+    '''
+    proc = Popen(command, stdin = sys.stdin, stdout = PIPE, stderr = sys.stderr)
+    output = proc.communicate()[0]
+    if fail and (proc.returncode != 0):
+        raise Exception('%s exited with error code %i' % (str(command), proc.returncode))
+    output = output.decode('utf-8', 'replace')
+    if output.endswith('\n'):
+        output = output[:-1]
+    output = output.split(' ')
+    return output
+
+
+def bash(command, fail = True):
+    '''
+    Execute a shell command, in GNU Bash
+    
+    @param  command:str  The shell command
+    @param  fail:bool    Whether to raise an exception if the command fails
+    '''
+    return execute(['bash', '-c', command], fail)
+
+
+def sha3sum(files):
+    return files
+
+
 
 ## TODO:
 #  grep /usr/bin/egrep (-o = False)
 #  patch /usr/bin/patch
 #  sed /usr/bin/sed
-#  execute (fail = False)
-#  bash /bin/sh (fail = False)
 #  sha3sum (only keccak[])
 
