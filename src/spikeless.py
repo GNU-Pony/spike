@@ -43,7 +43,7 @@ class Spikeless():
         @param   startdir:str                                                   Scroll base working directory
         @param   pinpal:str                                                     Installation root
         @param   private:bool                                                   Whether to install privately
-        @parma   freshinstallation:bool                                         Whether it is a fresh installation
+        @param   freshinstallation:bool                                         Whether it is a fresh installation
         @param   buildpatch:(srcdir:str, pkgdir:str)?→void                      Scroll build patch function
         @param   checkpatch:(srcdir:str, pkgdir:str)?→void                      Scroll check patch function
         @param   packagepatch:(srcdir:str, pkgdir:str)?→void                    Scroll package patch function

@@ -784,7 +784,7 @@ def __fileread(stream, n):
     
     @param  stream:istream  The file's input stream
     @param  n:int           The number of bytes to read
-    @parma  :bytes()        The exactly `n` read bytes
+    @param  :bytes          The exactly `n` read bytes
     '''
     rc = []
     read = 0

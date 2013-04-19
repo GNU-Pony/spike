@@ -607,7 +607,7 @@ def msg(text, submessage = False):
     Display status message
     
     @param  text:str         The message
-    @parma  submessage:bool  Whether this is a submessage
+    @param  submessage:bool  Whether this is a submessage
     '''
     message = '\033[01;3%im%s\033[00;01m %s\033[00m\n'
     message %= (2, ' -->', text) if submessage else (4, '==>', text)
