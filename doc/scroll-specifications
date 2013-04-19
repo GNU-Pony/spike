@@ -120,12 +120,13 @@ optdepends:list<str>=[]
 	Optional packages that add functionality to the package at runtime.
 
 noextract:list<str>=[]
-	Sources that should not be extracted.
+	Sources, by destination name, that should not be extracted.
 
-source:list<str>
-	Source file URL:s to download.
+source:list<str|list<str>>
+	Source file URL:s to download, each element may be a list of wget parameters,
+	however with the source and destination file name as the two first elements.
 
-sha3sums:list<str>
+sha3sums:list<str?>
 	Source file checksums in Keccak[]
 
 backup:list<str>=[]
