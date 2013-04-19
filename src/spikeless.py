@@ -107,18 +107,25 @@ class Spikeless():
         
         sources()
         
+        cwd = os.getcwd()
         if build is not None:
             if buildpatch is not None:
                 buildpatch(srcdir, pkgdir)
+                os.chdir(cwd)
             build(startdir, srcdir, pkgdir, private)
+            os.chdir(cwd)
         if check is not None:
             if checkpatch is not None:
                 checkpatch(srcdir, pkgdir)
+                os.chdir(cwd)
             check(startdir, srcdir, pkgdir, private)
+            os.chdir(cwd)
         if package is not None:
             if patchpatch is not None:
                 packagepatch(srcdir, pkgdir)
+                os.chdir(cwd)
             package(startdir, srcdir, pkgdir, private)
+            os.chdir(cwd)
         
         global useopts, compresses ## TODO defualt options should be load
         if useopts is None:
