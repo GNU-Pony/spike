@@ -75,6 +75,9 @@ class Spikeless():
             
             i = 0
             for src in source:
+                dscrl = dirname(scroll)
+                if not dscrl.endswith(os.sep):
+                    dscrl += os.sep
                 dest = None
                 d = None
                 if isinstance(src, str):
@@ -83,7 +86,15 @@ class Spikeless():
                         dest = 'index.html'
                     d = dest
                     dest = startdir + os.sep + dest
-                    wget(src)
+                    if ':' not in src:
+                        cp(dscrl + src.replace('/', os.sep), dest)
+                    elif src.startswith('file:'):
+                        src = src[5:]
+                        if src.startswith('//'):
+                            src = src[2:]
+                        cp(dscrl + src.replace('/', os.sep), dest)
+                    else:
+                        wget(src)
                 else:
                     dest = src[1]
                     if dest is None:
@@ -92,7 +103,15 @@ class Spikeless():
                             dest = 'index.html'
                     d = dest
                     dest = startdir + os.sep + dest
-                    wget([src[0], '-O', dest] + src[2:])
+                    if ':' not in src:
+                        cp(dscrl + src.replace('/', os.sep), dest)
+                    elif src.startswith('file:'):
+                        src = src[5:]
+                        if src.startswith('//'):
+                            src = src[2:]
+                        cp(dscrl + src.replace('/', os.sep), dest)
+                    else:
+                        wget([src[0], '-O', dest] + src[2:])
                 if sha3sums[i] is not None:
                     sha3 = sha3sum(sumdests)
                     if sha3 is not sha3sums[i]:
