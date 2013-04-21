@@ -741,6 +741,23 @@ def find(path, maxdepth = -1, hardlinks = True):
     return rc
 
 
+def path_escape(filename):
+    '''
+    Escape a filename for dynamic include in a `path` expression without the risk of it being parsed as an expression, but rather be verbatim
+    
+    @param   filename:str|itr<str>  The filename or filenames
+    @return  :str|list<str>         The filename or filenames escaped, will be a list if a list or other iteratable type was used in the paramter
+    '''
+    files = [filename] if isinstance(filename, str) else filename
+    rc = []
+    for file in files:
+        rc.append(file.replace('\\', '\\\\').replace('{', '\\{').replace('}', '\\}').replace('*', '\\*').replace('?', '\\?'))
+    if isinstance(filename, str):
+        return rc[0]
+    else:
+        return rc
+
+
 def path(exprs, existing = False):
     '''
     Gets files matching a pattern
