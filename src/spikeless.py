@@ -76,7 +76,7 @@ class Spikeless():
             def inetget(params, dest, sha3sum):
                 if os.path.exists(dest):
                     if sha3sum is not None:
-                        if sha3sum(dest) != sha3sum:
+                        if sha3sum(dest) != sha3sum.upper():
                             wget(params)
                 else:
                     wget(params)
@@ -122,7 +122,7 @@ class Spikeless():
                         inetget([src[0], '-O', dest] + src[2:], dest, sha3sums[i])
                 if sha3sums[i] is not None:
                     sha3 = sha3sum(sumdests)
-                    if sha3 is not sha3sums[i]:
+                    if sha3 == sha3sums[i].upper():
                         pass ## TODO sha3sums
                 if dest not in noextract:
                     extract.append(os.path.abspath(dest))
