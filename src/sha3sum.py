@@ -21,7 +21,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys
 import os
-# TODO continue adapting
 
 
 class SHA3:
@@ -330,27 +329,22 @@ class SHA3:
                 self.keccakF()
         
         return bytes(rc)
-
-
-
-if __name__ == '__main__':
-    files = []
-    if len(files) == 0:
-        files.append(None)
-    stdin = None
-    for filename in files:
-        if (filename is None) and (stdin is not None):
-            print(stdin)
-            continue
+    
+    
+    def digestFile(self, filename):
+        '''
+        Calculate the hash sum of an entire file
+        
+        @param   filename:str  The filename of which to calculate the hash
+        @return  :str          The hash sum in uppercase hexadecimal
+        '''
+        blksize = 8192
+        try:
+            blksize = os.stat(os.path.realpath(filename)).st_blksize
+        except:
+            pass
         rc = ''
-        fn = '/dev/stdin' if filename is None else filename
-        with open(fn, 'rb') as file:
-            SHA3.initialise()
-            blksize = 8192
-            try:
-                blksize = os.stat(os.path.realpath(fn)).st_blksize
-            except:
-                pass
+        with open(filename, 'rb') as file:
             while True:
                 chunk = file.read(blksize)
                 if len(chunk) == 0:
@@ -360,10 +354,5 @@ if __name__ == '__main__':
             for b in bs:
                 rc += "0123456789ABCDEF"[b >> 4]
                 rc += "0123456789ABCDEF"[b & 15]
-            rc += ' ' + ('-' if filename is None else filename) + '\n'
-            if filename is None:
-                stdin = rc
-            sys.stdout.buffer.write(rc.encode('UTF-8'))
-            sys.stdout.buffer.flush()
-
+        return rc
 
