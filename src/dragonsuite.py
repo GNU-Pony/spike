@@ -1022,7 +1022,23 @@ def bash(command, fail = True):
 
 
 def sha3sum(files):
-    return files
+    '''
+    Calculate the Keccak[] sum of one or more files
+    
+    @param   files:str|itr<str>  The files
+    @return  :str|list<str>      The sums, will be an string if the input as a string
+    '''
+    sha3 = SHA3()
+    if isinstance(files, str):
+        return sha3.digestFile(files)
+    elif len(files) == 0:
+        return []
+    else:
+        rc = [sha3.digestFile(files[0])]
+        for file in files[1:]:
+            sha3.reinitialise()
+            rc.append(sha3.digestFile(file))
+        return rc
 
 
 
@@ -1030,5 +1046,4 @@ def sha3sum(files):
 #  grep /usr/bin/egrep (-o = False)
 #  patch /usr/bin/patch
 #  sed /usr/bin/sed
-#  sha3sum (only keccak[])
 
