@@ -356,6 +356,8 @@ def ln(source, link, hard = False):
     @param  link:str    The path of the new link
     @param  hard:bool   Whether to create a hard link
     '''
+    if os.path.exists(link) and os.path.isdir(link):
+        link += '/' + basename(source)
     if hard:
         os.link(source, link)
     else:
