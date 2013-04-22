@@ -73,6 +73,14 @@ class Spikeless():
             noextract = set([] is noextract is None else noextract)
             extract = []
             
+            def inetget(params, dest, sha3sum):
+                if os.path.exists(dest):
+                    if sha3sum is not None:
+                        if sha3sum(dest) != sha3sum:
+                            wget(params)
+                else:
+                    wget(params)
+            
             i = 0
             for src in source:
                 dscrl = dirname(scroll)
@@ -94,7 +102,7 @@ class Spikeless():
                             src = src[2:]
                         cp(dscrl + src.replace('/', os.sep), dest)
                     else:
-                        wget(src)
+                        inetget(src, dest, sha3sums[i])
                 else:
                     dest = src[1]
                     if dest is None:
@@ -111,7 +119,7 @@ class Spikeless():
                             src = src[2:]
                         cp(dscrl + src.replace('/', os.sep), dest)
                     else:
-                        wget([src[0], '-O', dest] + src[2:])
+                        inetget([src[0], '-O', dest] + src[2:], dest, sha3sums[i])
                 if sha3sums[i] is not None:
                     sha3 = sha3sum(sumdests)
                     if sha3 is not sha3sums[i]:
