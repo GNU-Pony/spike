@@ -1023,6 +1023,22 @@ def bash(command, fail = True):
     return execute(['bash', '-c', command], fail)
 
 
+def bash_escape(word):
+    '''
+    Escape one or more words for `bash()`
+    
+    @param   word:str|itr<str>  The words to escape
+    @return  :str|list<str>     The words escaped, will be a string if the input was a string
+    '''
+    if isinstance(word, str):
+        return '\'' + word.replace('\'', '\'\\\'\'') + '\''
+    else:
+        rc = []
+        for w in word:
+            rc.append('\'' + w.replace('\'', '\'\\\'\'') + '\'')
+        return rc
+
+
 def sha3sum(files):
     '''
     Calculate the Keccak[] sum of one or more files
