@@ -623,7 +623,7 @@ def cp(source, destination, recursive = True):
     @param  source:str|itr<str>   Files to copy
     @param  destination:str       Destination filename or directory
     '''
-    install(source, destination, parents=False, recursive = recursive, savemode=True, preservecontext=False)
+    install(source, destination, parents=False, recursive = recursive, savemode=True)
 
 
 def cp_r(source, destination):
