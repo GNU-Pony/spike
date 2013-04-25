@@ -74,7 +74,7 @@ class Spikeless():
                 if var not in s:
                     delete.append(var)
                 else:
-                    os.putvar(var, reset_to[var])
+                    os.putenv(var, reset_to[var])
                     os.environ[var] = reset_to[var]
             for var in delete:
                 os.unsetenv(var)
