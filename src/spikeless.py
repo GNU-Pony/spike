@@ -54,6 +54,8 @@ class Spikeless():
         '''
         global build, check, package, patch_build, patch_check, patch_package, pre_install, post_install, pre_upgrade, post_upgrade, noextract, source, sha3sums, options
         
+        cwd = os.getcwd()
+        
         srcdir = startdir + os.sep + 'src'
         pkgdir = startdir + os.sep + 'pkg'
         if not os.path.exists(srcdir):
@@ -101,24 +103,33 @@ class Spikeless():
                     extract.append(os.path.abspath(dest))
                 i += 1
             
-            pushd('src')
+            pushd(srcdir)
             decompress(extract)
             popd()
         
+        cd(startdir)
         sources()
         
         if build is not None:
             if buildpatch is not None:
+                os.chdir(startdir)
                 buildpatch(srcdir, pkgdir)
+            os.chdir(startdir)
             build(startdir, srcdir, pkgdir, private)
         if check is not None:
             if checkpatch is not None:
+                os.chdir(startdir)
                 checkpatch(srcdir, pkgdir)
+            os.chdir(startdir)
             check(startdir, srcdir, pkgdir, private)
         if package is not None:
             if patchpatch is not None:
+                os.chdir(startdir)
                 packagepatch(srcdir, pkgdir)
+            os.chdir(startdir)
             package(startdir, srcdir, pkgdir, private)
+        
+        os.chdir(cwd)
         
         global useopts, compresses ## TODO defualt options should be load
         if useopts is None:
@@ -149,6 +160,8 @@ class Spikeless():
                 self.root = root
             def __call__(self, installedfiles = []):
                 global pre_install, pre_upgrade
+                cwd = os.getcwd()
+                os.chdir(self.root)
                 if self.fresh:
                     if pre_install is not None:
                         tmpdir = self.start + os.sep + 'pretmp'
@@ -161,6 +174,7 @@ class Spikeless():
                         if not os.path.exists(tmpdir):
                             os.mkdir(tmpdir)
                         pre_install(tmpdir, self.root, installedfiles, self.priv)
+                os.chdir(cwd)
         
         class postFunctor():
             def __init__(self, fresh, start, root, priv):
@@ -169,6 +183,8 @@ class Spikeless():
                 self.root = root
             def __call__(self, installedfiles = []):
                 global post_install, post_upgrade
+                cwd = os.getcwd()
+                os.chdir(self.root)
                 if self.fresh:
                     if post_install is not None:
                         tmpdir = self.start + os.sep + 'posttmp'
@@ -181,6 +197,7 @@ class Spikeless():
                         if not os.path.exists(tmpdir):
                             os.mkdir(tmpdir)
                         post_install(tmpdir, self.root, installedfiles, self.priv)
+                os.chdir(cwd)
         
         pre = preFunctor(freshinstallation, startdir, pinpal, private)
         post = postFunctor(freshinstallation, startdir, pinpal, private)
