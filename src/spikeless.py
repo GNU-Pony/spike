@@ -36,7 +36,7 @@ class Spikeless():
     '''
     
     @staticmethod
-    def install(scroll, startdir, pinpal = '/', private = False, freshinstallation = True, buildpatch = None, checkpatch = None, packagepatch = None, inspection = None):
+    def install(scroll, startdir, pinpal = '', private = False, freshinstallation = True, buildpatch = None, checkpatch = None, packagepatch = None, inspection = None):
         '''
         Installs a scroll, but does not do any package managing
         
