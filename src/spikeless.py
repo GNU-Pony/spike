@@ -57,6 +57,7 @@ class Spikeless():
         (build, check, package, patch_build, patch_check, patch_package, pre_install, post_install, pre_upgrade, post_upgrade) = 10 * [None]
         (noextract, source, sha3sums, options) = ([], None, None, [])
         
+        scrolldir = os.path.abspath(dirname(scroll))
         cwd = os.getcwd()
         
         for (var, value) in [('ARCH', os.uname()[4]), ('HOST', '$ARCH-unknown-linux-gnu')]:
@@ -111,7 +112,7 @@ class Spikeless():
                         src = src[2:]
                 elif ':' in src:
                     continue
-                source[i] = os.path.abspath(src)
+                source[i] = 'file://' + os.path.abspath(src)
             popd()
             
             def inetget(params, dest, sha3sum):
@@ -124,9 +125,6 @@ class Spikeless():
             
             i = 0
             for src in source:
-                dscrl = dirname(scroll)
-                if not dscrl.endswith(os.sep):
-                    dscrl += os.sep
                 dest = None
                 d = None
                 if isinstance(src, str):
@@ -136,12 +134,12 @@ class Spikeless():
                     d = dest
                     dest = startdir + os.sep + dest
                     if ':' not in src:
-                        cp(dscrl + src.replace('/', os.sep), dest)
+                        cp(src.replace('/', os.sep), dest)
                     elif src.startswith('file:'):
                         src = src[5:]
                         if src.startswith('//'):
                             src = src[2:]
-                        cp(dscrl + src.replace('/', os.sep), dest)
+                        cp(src.replace('/', os.sep), dest)
                     else:
                         inetget(src, dest, sha3sums[i])
                 else:
@@ -153,12 +151,12 @@ class Spikeless():
                     d = dest
                     dest = startdir + os.sep + dest
                     if ':' not in src:
-                        cp(dscrl + src.replace('/', os.sep), dest)
+                        cp(src.replace('/', os.sep), dest)
                     elif src.startswith('file:'):
                         src = src[5:]
                         if src.startswith('//'):
                             src = src[2:]
-                        cp(dscrl + src.replace('/', os.sep), dest)
+                        cp(src.replace('/', os.sep), dest)
                     else:
                         inetget([src[0], '-O', dest] + src[2:], dest, sha3sums[i])
                 if sha3sums[i] is not None:
@@ -175,7 +173,7 @@ class Spikeless():
         
         cd(startdir)
         msg('Fetching sources')
-        sources(dirname(scroll))
+        sources(scrolldir)
         
         if build is not None:
             if buildpatch is not None:
