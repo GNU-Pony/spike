@@ -113,20 +113,26 @@ class Spikeless():
         if build is not None:
             if buildpatch is not None:
                 os.chdir(startdir)
+                os.umask(0o022)
                 buildpatch(srcdir, pkgdir)
             os.chdir(startdir)
+            os.umask(0o022)
             build(startdir, srcdir, pkgdir, private)
         if check is not None:
             if checkpatch is not None:
                 os.chdir(startdir)
+                os.umask(0o022)
                 checkpatch(srcdir, pkgdir)
             os.chdir(startdir)
+            os.umask(0o022)
             check(startdir, srcdir, pkgdir, private)
         if package is not None:
             if patchpatch is not None:
                 os.chdir(startdir)
+                os.umask(0o022)
                 packagepatch(srcdir, pkgdir)
             os.chdir(startdir)
+            os.umask(0o022)
             package(startdir, srcdir, pkgdir, private)
         
         os.chdir(cwd)
@@ -162,6 +168,7 @@ class Spikeless():
                 global pre_install, pre_upgrade
                 cwd = os.getcwd()
                 os.chdir(self.root)
+                os.umask(0o022)
                 if self.fresh:
                     if pre_install is not None:
                         tmpdir = self.start + os.sep + 'pretmp'
@@ -185,6 +192,7 @@ class Spikeless():
                 global post_install, post_upgrade
                 cwd = os.getcwd()
                 os.chdir(self.root)
+                os.umask(0o022)
                 if self.fresh:
                     if post_install is not None:
                         tmpdir = self.start + os.sep + 'posttmp'
