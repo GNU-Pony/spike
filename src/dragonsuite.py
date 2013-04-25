@@ -670,7 +670,7 @@ def install(source, destination, owner = -1, group = -1, mode = -1, strip = Fals
             raise OSError('Destination %s exists and is not a directory' % destination)
         else:
             for p in ps:
-                pairs = [p, d + basename(p)]
+                pairs = [(p, d + basename(p))]
     for (src, dest) in pairs:
         protection = mode
         if savemode and os.path.exists(dest):
