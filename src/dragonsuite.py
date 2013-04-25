@@ -924,13 +924,13 @@ def decompress(path, format = None):
     @param  format:str?        The format, `None` for automatic detection (currently uses file extension)
     '''
     for p in ([path] if isinstance(path, str) else path):
-        p = '\'' + p.replace('\'', '\'\\\'\'') + '\''
         fmt = format
         if fmt is None:
-            fmt = fmt[fmt.rfind(os.sep) + 1:]
+            fmt = p[p.rfind(os.sep) + 1:]
             if '.tar.' in fmt:
                 fmt = fmt[:fmt.rfind(os.extsep):] + fmt[fmt.rfind(os.extsep) + 1:]
             fmt = fmt[fmt.rfind(os.extsep) + 1:]
+        p = '\'' + p.replace('\'', '\'\\\'\'') + '\''
         havecpio = False
         for d in get('PATH').split(os.pathsep):
             if not d.endswith(os.sep):
