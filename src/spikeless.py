@@ -106,16 +106,25 @@ class Spikeless():
             pushd(scrolldir)
             for i in range(len(source)):
                 src = source[i]
+                extras = None
+                if not isinstance(src, str):
+                    extras = list(src[1:])
+                    src = src[0]
                 _src = src
                 if src.startswith('file:'):
                     src = src[5:]
                     if src.startswith('//'):
                         src = src[2:]
                 elif ':' in src:
+                    if extras is not None:
+                        src = [src] + extras
                     source[i] = (src, _src not in noextract)
                     continue
                 src = os.path.abspath(src)
-                source[i] = ('file://' + src, _src not in noextract)
+                src = 'file://' + src
+                if extras is not None:
+                    src = [src] + extras
+                source[i] = (src, _src not in noextract)
             popd()
             
             def inetget(params, dest, sha3sum):
@@ -146,9 +155,10 @@ class Spikeless():
                     else:
                         inetget(src, dest, sha3sums[i])
                 else:
-                    dest = src[1]
+                    extras = src[2:]
+                    (src, dest) = src[:2]
                     if dest is None:
-                        dest = src[0][src[0].rfind('/'):]
+                        dest = src[src.rfind('/'):]
                         if dest == '':
                             dest = 'index.html'
                     d = dest
@@ -161,7 +171,7 @@ class Spikeless():
                             src = src[2:]
                         cp(src.replace('/', os.sep), dest)
                     else:
-                        inetget([src[0], '-O', dest] + src[2:], dest, sha3sums[i])
+                        inetget([src, '-O', dest] + extras, dest, sha3sums[i])
                 if sha3sums[i] is not None:
                     sha3 = sha3sum(sumdests)
                     if sha3 == sha3sums[i].upper():

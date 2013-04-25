@@ -354,7 +354,7 @@ def chown(path, owner = -1, group = -1):
     @param  owner:int|str      The new owner, `-1` for ignored
     @param  group:int|str      The new group, `-1` for ignored, `-2` to select by owner
     '''
-    __print('lchown %s:%s %s' % (str('' if owner == -1 else owner), str('' if group == -1 else ('$' if group == -2 else group)), str(path)))
+    __print('lchown %s:%s %s' % (str('' if isinstance(owner, int) and (owner == -1) else owner), str(('' if group == -1 else ('$' if group == -2 else group)) if isinstance(group, int) else group), str(path)))
     u = owner if isinstance(owner, int) else usermodule.getpwnam(owner).pw_uid
     g = group if isinstance(group, int) else groupmodule.getgrnam(group).gr_gid
     for p in ([path] if isinstance(path, str) else path):
@@ -461,6 +461,9 @@ def mkdir(path, recursive = False):
         else:
             ps = p.split(os.sep)
             pp = ps[0]
+            if len(pp) > 0:
+                if not (os.path.exists(pp) and os.path.isdir(pp)):
+                    os.mkdir(pp)
             for _p in ps[1:]:
                 pp += os.sep + _p
                 if not (os.path.exists(pp) and os.path.isdir(pp)):
@@ -687,9 +690,9 @@ def install(source, destination, owner = -1, group = -1, mode = -1, strip = Fals
                    ' -r' if recursive else '',
                    ' -s' if strip else '',
                    ' --savemode' if savemode else '',
-                   '' if mode == -1 else oct(mode).replace('0o', ''),
-                   '' if owner == -1 else (' -u ' + str(owner)), 
-                   '' if group == -1 else (' -g $' if group == -2 else (' -g ' + str(group))),
+                   ('' if mode == -1 else (' -m ' + oct(mode).replace('0o', ''))) if isinstance(mode, int) else (' -m ' + mode),
+                   ('' if owner == -1 else (' -u ' + str(owner))) if isinstance(owner, int) else (' -u ' + owner),
+                   ('' if group == -1 else (' -g $' if group == -2 else (' -g ' + str(group)))) if isinstance(group, int) else (' -g ' + group),
                    ' -d' if directory else '',
                    str(source))
     __print('install -T %s%s%s%s%s%s%s%s%s %s' % _print_info)
@@ -716,7 +719,7 @@ def install(source, destination, owner = -1, group = -1, mode = -1, strip = Fals
         protection = mode
         if savemode and os.path.exists(dest):
             protection = os.lstat(dest).st_mode
-        elif mode < 0:
+        elif isinstance(mode, int) and (mode < 0):
             protection = 0o755 if directory else os.lstat(src).st_mode
         if directory or os.path.isdir(src):
             mkdir(dest)
@@ -827,26 +830,31 @@ def path(exprs, existing = False):
         ps = ['']
         esc = False
         buf = ''
-        b = 0
+        d = 0
         for c in expr.replace('\0', '').replace('/', ('\\' if os.sep in '?*{},.\\' else '') + os.sep):
             if esc:
                 esc = False
-                if b > 0:
+                if d > 0:
                     buf += '\\'
                 buf += c
             elif c == '\\': esc = True
-            elif c == '?':  buf += '\0?' if b == 0 else '?'
-            elif c == '*':  buf += '\0*' if b == 0 else '*'
-            elif c == ',':  buf += '\0,' if b == 1 else ','
-            elif c == '.':  buf += '\0.' if b == 1 else '.'
+            elif c == '?':  buf += '\0?' if d == 0 else '?'
+            elif c == '*':  buf += '\0*' if d == 0 else '*'
+            elif c == ',':  buf += '\0,' if d == 1 else ','
+            elif c == '.':  buf += '\0.' if d == 1 else '.'
             elif c == '{':
-                if b == 0:
+                if d == 0:
                     ps = [p + buf for p in ps]
                     buf = ''
-                b += 1
+                else:
+                    buf += '{'
+                d += 1
             elif c == '}':
-                if b == 1:
-                    t = [_(tp) for tp in buf.split('\0,')]
+                if d == 1:
+                    flatten = [_(tp) for tp in buf.split('\0,')]
+                    t = []
+                    for f in flatten:
+                        t += f
                     pz = []
                     for a in ps:
                         for b in t:
@@ -881,7 +889,7 @@ def path(exprs, existing = False):
                     buf = ''
                 else:
                     buf += '}'
-                b -= 1
+                d -= 1
             else:
                 buf += c
         return [p + buf for p in ps]
@@ -930,7 +938,7 @@ def path(exprs, existing = False):
                             esc = False
                             for c in s:
                                 if esc:
-                                    _ += {'\0*' : '.*',  '\0?' : '.'}[c]
+                                    _ += {'*' : '.*',  '?' : '.'}[c]
                                     esc = False
                                 elif c == '\0':
                                     esc = True
@@ -941,6 +949,7 @@ def path(exprs, existing = False):
                             for s in subs:
                                 if matcher.match(s) is not None:
                                     matches.append(s)
+                            _ = root
                             if len(_) > 0:
                                 _ += os.sep
                             for m in matches:
