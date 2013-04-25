@@ -47,7 +47,7 @@ def pipe(data, *commands):
     @param   commands:*(?)→?  List of functions
     @return  :?               Output data
     '''
-    if (len(commands) == 1) and isinstance(commands[0], list):
+    if (len(commands) == 1) and (isinstance(commands[0], list) or isinstance(commands[0], tuple)):
         commands = commands[0]
     rc = data
     for command in commands:
@@ -464,9 +464,9 @@ def git(*params):
     
     @param  params:*str  Arguments for the command
     '''
-    if (len(params) == 1) and isinstance(params[0], list):
+    if (len(params) == 1) and (isinstance(params[0], list) or isinstance(params[0], tuple)):
         params = params[0]
-    execute(['git'] + params, fail = True)
+    execute(['git'] + list(params), fail = True)
 
 
 def curl(*params):
@@ -475,9 +475,9 @@ def curl(*params):
     
     @param  params:*str  Arguments for the command
     '''
-    if (len(params) == 1) and isinstance(params[0], list):
+    if (len(params) == 1) and (isinstance(params[0], list) or isinstance(params[0], tuple)):
         params = params[0]
-    execute(['curl'] + params, fail = True)
+    execute(['curl'] + list(params), fail = True)
 
 
 def wget(*params):
@@ -486,9 +486,9 @@ def wget(*params):
     
     @param  params:*str  Arguments for the command
     '''
-    if (len(params) == 1) and isinstance(params[0], list):
+    if (len(params) == 1) and (isinstance(params[0], list) or isinstance(params[0], tuple)):
         params = params[0]
-    execute(['wget'] + params, fail = True)
+    execute(['wget'] + list(params), fail = True)
 
 
 def make(*params):
@@ -497,9 +497,9 @@ def make(*params):
     
     @param  params:*str  Arguments for the command
     '''
-    if (len(params) == 1) and isinstance(params[0], list):
+    if (len(params) == 1) and (isinstance(params[0], list) or isinstance(params[0], tuple)):
         params = params[0]
-    execute(['make'] + params, fail = True)
+    execute(['make'] + list(params), fail = True)
 
 
 def rename(path, expression, replacement):
@@ -543,9 +543,9 @@ def strip(path, *params):
     @param  path:str|list<str>  The files to compress
     @param  params:*str         Arguments for strip
     '''
-    if (len(params) == 1) and isinstance(params[0], list):
+    if (len(params) == 1) and (isinstance(params[0], list) or isinstance(params[0], tuple)):
         params = params[0]
-    cmd = ['strip'] + params + (['--', path] if isinstance(path, str) else (['--'] + path))
+    cmd = ['strip'] + list(params) + (['--', path] if isinstance(path, str) else (['--'] + path))
     execute(cmd, fail = False)
 
 
