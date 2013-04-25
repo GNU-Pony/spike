@@ -113,7 +113,10 @@ class Spikeless():
                             src = src[2:]
                     elif ':' in src:
                         continue
-                    list[i] = 'file://' + os.path.abspath(src)
+                    src = os.path.abspath(src)
+                    list[i] = 'file://' + src
+                    if list is noextract:
+                        list.append(src)
             popd()
             noextract = set(noextract)
             
