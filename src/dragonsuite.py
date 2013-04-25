@@ -50,7 +50,7 @@ def __print(text):
     
     @param  text:__str__()→str  The string to print
     '''
-    sys.stdout.buffer.write((str(text) + '\n').encode('utf-8'))
+    sys.stdout.buffer.write(('\033[34m' + str(text) + '\033[00m\n').encode('utf-8'))
     sys.stdout.buffer.flush()
 
 
