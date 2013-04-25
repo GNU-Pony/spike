@@ -80,12 +80,15 @@ class Spikeless():
                 os.unsetenv(var)
                 del os.environ[var]
         
+        cd(startdir)
+        startdir = os.getcwd()
+        cd(cwd)
         srcdir = startdir + os.sep + 'src'
         pkgdir = startdir + os.sep + 'pkg'
         if not os.path.exists(srcdir):
-            os.makedirs(startdir + os.sep + 'src')
+            os.makedirs(srcdir)
         if not os.path.exists(pkgdir):
-            os.mkdir(startdir + os.sep + 'pkg')
+            os.mkdir(pkgdir)
         
         code = scroll
         if isinstance(scroll, str):
@@ -154,9 +157,9 @@ class Spikeless():
                     extract.append(os.path.abspath(dest))
                 i += 1
             
-            pushd(srcdir)
+            cd('src')
             decompress(extract)
-            popd()
+            cd('..')
         
         cd(startdir)
         sources()
