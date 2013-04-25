@@ -742,7 +742,7 @@ def install(source, destination, owner = -1, group = -1, mode = -1, strip = Fals
         if strip and not directory:
             strip(dest)
         if recursive and os.path.isdir(src) and not directory:
-            d = dest if dest.endswith(os.sep) else (dest + os.sep)
+            d = src if src.endswith(os.sep) else (src + os.sep)
             sources = [d + f for f in os.listdir(d)]
             install(sources, dest, owner, group, mode, strip, False, False, True, savemode)
 
