@@ -20,7 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
 import os
 import sys
-from dragonscript import *
+from dragonsuite import *
 
 
 MEDIA = 1
