@@ -50,8 +50,8 @@ def __print(text):
     
     @param  text:str  The string to print
     '''
-    sys.stdout.write((text + '\n').encode('utf-8'))
-    sys.stdout.flush()
+    sys.stdout.buffer.write((text + '\n').encode('utf-8'))
+    sys.stdout.buffer.flush()
 
 
 def pipe(data, *commands):
