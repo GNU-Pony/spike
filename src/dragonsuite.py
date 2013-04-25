@@ -380,7 +380,7 @@ def ln(source, link, hard = False):
     @param  hard:bool   Whether to create a hard link
     '''
     if os.path.exists(link) and os.path.isdir(link):
-        link += '/' + basename(source)
+        link += os.sep + basename(source)
     if hard:
         __print('ln --hard %s %s' % (source, link))
         os.link(source, link)
