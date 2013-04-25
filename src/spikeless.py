@@ -163,34 +163,41 @@ class Spikeless():
             cd('..')
         
         cd(startdir)
+        msg('Fetching sources')
         sources()
         
         if build is not None:
             if buildpatch is not None:
+                msg('Patching build process')
                 resetEnviron(environ)
                 os.chdir(startdir)
                 os.umask(0o022)
                 buildpatch(srcdir, pkgdir)
+            msg('Building')
             resetEnviron(environ)
             os.chdir(startdir)
             os.umask(0o022)
             build(startdir, srcdir, pkgdir, private)
         if check is not None:
             if checkpatch is not None:
+                msg('Patching check process')
                 resetEnviron(environ)
                 os.chdir(startdir)
                 os.umask(0o022)
                 checkpatch(srcdir, pkgdir)
+            msg('Checking')
             resetEnviron(environ)
             os.chdir(startdir)
             os.umask(0o022)
             check(startdir, srcdir, pkgdir, private)
         if package is not None:
             if packagepatch is not None:
+                msg('Patching package process')
                 resetEnviron(environ)
                 os.chdir(startdir)
                 os.umask(0o022)
                 packagepatch(srcdir, pkgdir)
+            msg('Packaging')
             resetEnviron(environ)
             os.chdir(startdir)
             os.umask(0o022)
@@ -235,12 +242,14 @@ class Spikeless():
                 os.umask(0o022)
                 if self.fresh:
                     if pre_install is not None:
+                        msg('Preinstall processing')
                         tmpdir = self.start + os.sep + 'pretmp'
                         if not os.path.exists(tmpdir):
                             os.mkdir(tmpdir)
                         pre_install(tmpdir, self.root, self.priv)
                 else:
                     if pre_upgrade is not None:
+                        msg('Preupgrade processing')
                         tmpdir = self.start + os.sep + 'pretmp'
                         if not os.path.exists(tmpdir):
                             os.mkdir(tmpdir)
@@ -261,12 +270,14 @@ class Spikeless():
                 os.umask(0o022)
                 if self.fresh:
                     if post_install is not None:
+                        msg('Postinstall processing')
                         tmpdir = self.start + os.sep + 'posttmp'
                         if not os.path.exists(tmpdir):
                             os.mkdir(tmpdir)
                         post_install(tmpdir, self.root, installedfiles, self.priv)
                 else:
                     if post_upgrade is not None:
+                        msg('Postupgrade processing')
                         tmpdir = self.start + os.sep + 'posttmp'
                         if not os.path.exists(tmpdir):
                             os.mkdir(tmpdir)
@@ -289,5 +300,6 @@ if __name__ == '__main__': # sic
         cp_r(files, dest)
     pinpal = sys.argv[3]
     (_a, pkgdir, _b) = Spikeless.install(sys.argv[1], sys.argv[2], pinpal, 'private' in sys.argv[4:])
+    msg('Installing packaged files')
     installdir(pkgdir, pinpal)
 
