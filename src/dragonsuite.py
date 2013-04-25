@@ -682,10 +682,16 @@ def install(source, destination, owner = -1, group = -1, mode = -1, strip = Fals
     @param  recursive:bool        Copy directories resursively
     @param  savemode:bool         Whether to use the protection bits of already installed versions
     '''
-    _print_info = [destination, ' -D' if parents else '', ' -r' if recursive else '', ' -s' if strip else '', ' --savemode' if savemode else '']
-    _print_info += ['' if mode == -1 else oct(mode).replace('0o', ''), '' if owner == -1 else (' -u ' + str(owner))]
-    _print_info += ['' if group == -1 else (' -g $' if group == -2 else (' -g ' + str(group))), ' -d' if directory else '', str(source)]
-    __print('install -T %s%s%s%s%s%s%s%s%s %s' % _print_info)
+    _print_info = [destination, ' -D' if parents else '',
+                   ' -r' if recursive else '',
+                   ' -s' if strip else '',
+                   ' --savemode' if savemode else '',
+                   '' if mode == -1 else oct(mode).replace('0o', ''),
+                   '' if owner == -1 else (' -u ' + str(owner)), 
+                   '' if group == -1 else (' -g $' if group == -2 else (' -g ' + str(group))),
+                   ' -d' if directory else '',
+                   str(source)]
+    __print('install -T %s%s%s%s%s%s%s%s %s' % _print_info)
     ps = [source] if isinstance(source, str) else source
     d = destination if destination.endswith(os.sep) else (destination + os.sep)
     pairs = None
