@@ -285,7 +285,7 @@ if __name__ == '__main__': # sic
     def installdir(src, dest):
         if not os.path.exists(dest):
             os.makedirs(dest)
-        files = [src + os.path + f for f in os.listdir(src)]
+        files = [src + os.sep + f for f in os.listdir(src)]
         cp_r(files, dest)
     pinpal = sys.argv[3]
     (_a, pkgdir, _b) = Spikeless.install(sys.argv[1], sys.argv[2], pinpal, 'private' in sys.argv[4:])
