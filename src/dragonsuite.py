@@ -698,9 +698,9 @@ def install(source, destination, owner = -1, group = -1, mode = -1, strip = Fals
     pairs = None
     if len(ps) == 1:
         if os.path.exists(destination) and os.path.isdir(destination):
-            pairs = [(s, d + basename(s)) for s in source]
+            pairs = [(s, d + basename(s)) for s in ps]
         else:
-            pairs = [(s, destination) for s in source]
+            pairs = [(s, destination) for s in ps]
     else:
         if not os.path.exists(destination):
             if parents:
@@ -727,6 +727,8 @@ def install(source, destination, owner = -1, group = -1, mode = -1, strip = Fals
             except:
                 pass
             with open(src, 'rb') as ifile:
+                if parents and not os.path.exists(dirname(dest)):
+                    mkdir_p(dirname(dest))
                 with open(dest, 'wb') as ofile:
                     while True:
                         chunk = ifile.read(blksize)
