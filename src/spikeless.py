@@ -310,8 +310,10 @@ if __name__ == '__main__': # sic
             os.makedirs(dest)
         files = [src + os.sep + f for f in os.listdir(src)]
         cp_r(files, dest)
-    pinpal = sys.argv[3]
-    (_a, pkgdir, _b) = Spikeless.install(sys.argv[1], sys.argv[2], pinpal, 'private' in sys.argv[4:])
+    scroll = os.path.abspath(sys.argv[1])
+    startdir = os.path.abspath(sys.argv[2])
+    pinpal = os.path.abspath(sys.argv[3])
+    (_a, pkgdir, _b) = Spikeless.install(scroll, startdir, pinpal, 'private' in sys.argv[4:])
     msg('Installing packaged files')
     installdir(pkgdir, pinpal)
 
