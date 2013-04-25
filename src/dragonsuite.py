@@ -1055,7 +1055,7 @@ def execute_pipe(command, fail = False, *command_):
     @param   command:*str  Command line arguments, including the command
     @return  :list<str>    Standard output lines
     '''
-    command = list([command] if isinstance(command, str) else command) + list(command_)
+    command = list([command] if isinstance(command, str) else command) + ([fail] if isinstance(fail, str) else []) + list(command_)
     __print('Executing external command: ' + str(command))
     proc = Popen(command, stdin = sys.stdin, stdout = PIPE, stderr = sys.stderr)
     output = proc.communicate()[0]
@@ -1079,7 +1079,7 @@ def execute(command, fail = False, *command_):
     
     @param  command:*str  Command line arguments, including the command
     '''
-    command = list([command] if isinstance(command, str) else command) + list(command_)
+    command = list([command] if isinstance(command, str) else command) + ([fail] if isinstance(fail, str) else []) + list(command_)
     __print('Executing external command: ' + str(command))
     proc = Popen(command, stdin = sys.stdin, stdout = sys.stdout, stderr = sys.stderr)
     output = proc.communicate()[0]
