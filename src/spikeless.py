@@ -94,7 +94,7 @@ class Spikeless():
         
         def sources():
             from dragonscript import *
-            noextract = set([] is noextract is None else noextract)
+            noextract = set([] if noextract is None else noextract)
             extract = []
             
             def inetget(params, dest, sha3sum):
