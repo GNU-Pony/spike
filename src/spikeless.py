@@ -278,6 +278,8 @@ class Spikeless():
 
 
 if __name__ == '__main__': # sic
+    global useopts, compresses
+    (useopts, compresses) = (None, None)
     def installdir(src, dest):
         if not os.path.exists(dest):
             os.makedirs(dest)
