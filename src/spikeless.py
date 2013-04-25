@@ -100,20 +100,22 @@ class Spikeless():
         
         def sources(scrolldir):
             global noextract, source, sha3sums
-            noextract = set([] if noextract is None else noextract)
+            noextract = [] if noextract is None else noextract
             extract = []
             
             pushd(scrolldir)
-            for i in range(len(source)):
-                src = source[i]
-                if src.startswith('file:'):
-                    src = src[5:]
-                    if src.startswith('//'):
-                        src = src[2:]
-                elif ':' in src:
-                    continue
-                source[i] = 'file://' + os.path.abspath(src)
+            for list in (source, noextract):
+                for i in range(len(list)):
+                    src = list[i]
+                    if src.startswith('file:'):
+                        src = src[5:]
+                        if src.startswith('//'):
+                            src = src[2:]
+                    elif ':' in src:
+                        continue
+                    list[i] = 'file://' + os.path.abspath(src)
             popd()
+            noextract = set(noextract)
             
             def inetget(params, dest, sha3sum):
                 if os.path.exists(dest):
