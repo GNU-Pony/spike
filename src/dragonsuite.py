@@ -743,7 +743,7 @@ def install(source, destination, owner = -1, group = -1, mode = -1, strip = Fals
             strip(dest)
         if recursive and os.path.isdir(src) and not directory:
             d = dest if dest.endswith(os.sep) else (dest + os.sep)
-            sources = [d + f for f in os.listdir()]
+            sources = [d + f for f in os.listdir(d)]
             install(sources, dest, owner, group, mode, strip, False, False, True, savemode)
 
 
@@ -771,7 +771,7 @@ def find(path, maxdepth = -1, hardlinks = True):
                     f += os.sep
                     if d != maxdepth:
                         d += 1
-                        for sf in os.listdir():
+                        for sf in os.listdir(f):
                             stack.append((f + sf, d))
                 elif not hardlinks:
                     continue
