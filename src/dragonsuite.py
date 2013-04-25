@@ -416,7 +416,7 @@ def rm(path, recursive = False, directories = False):
     __print(('rm -r' if recursive else 'rm') + (' ' if directories else ' --directories ') + str(path))
     for p in ([path] if isinstance(path, str) else path):
         if not recursive:
-            if dirs and os.path.isdir(p):
+            if directories and os.path.isdir(p):
                 os.rmdir(p)
             elif get('shred', None) is not None:
                 execute(get('shred').split(' ') + [p], fail = True)
