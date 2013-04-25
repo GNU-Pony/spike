@@ -106,7 +106,7 @@ class Spikeless():
             for i in range(len(source)):
                 src = source[i]
                 if src.startswith('file:'):
-                    src = src[5]:
+                    src = src[5:]
                     if src.startswith('//'):
                         src = src[2:]
                 elif ':' in src:
