@@ -203,15 +203,16 @@ class Spikeless():
             useopts = set(['strip', 'docs', 'info', 'man', 'licenses' 'changelogs', 'libtool', 'upx'])
         if compresses is None:
             compresses = {'docs' : 'gz', 'info' : 'gz', 'man' : 'gz'}
-        for opt in options:
-            if opt.startswith('!'):
-                if opt[1:] in useopts:
-                    del useopts[opt[1:]]
-            elif '=' in opts:
-                compresses[opts.split('=')[0]] = opts.split('=')[1]
-            else:
-                if opt not in useopts:
-                    useopts.add(opt)
+        if options != None:
+            for opt in options:
+                if opt.startswith('!'):
+                    if opt[1:] in useopts:
+                        del useopts[opt[1:]]
+                elif '=' in opts:
+                    compresses[opts.split('=')[0]] = opts.split('=')[1]
+                else:
+                    if opt not in useopts:
+                        useopts.add(opt)
         
         ## TODO apply options
         
