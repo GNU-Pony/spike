@@ -318,10 +318,10 @@ def chmod(path, mode, mask = ~0):
     '''
     for p in ([path] if isinstance(path, str) else path):
         if mask == ~0:
-            os.lchmod(p, mode)
+            os.chmod(p, mode)
         else:
             cur = os.lstat(path).st_mode
-            os.lchmod(p, mode | (cur & ~mask))
+            os.chmod(p, mode | (cur & ~mask))
 
 
 def chown(path, owner = -1, group = -1):
@@ -657,9 +657,9 @@ def install(source, destination, owner = -1, group = -1, mode = -1, strip = Fals
     pairs = None
     if len(ps) == 1:
         if os.path.exists(destination) and os.path.isdir(destination):
-            pairs = [(source, d + basename(source))]
+            pairs = [(s, d + basename(s)) for s in source]
         else:
-            pairs = [(source, destination)]
+            pairs = [(s, destination) for s in source]
     else:
         if not os.path.exists(destination):
             if parents:
@@ -697,7 +697,7 @@ def install(source, destination, owner = -1, group = -1, mode = -1, strip = Fals
         u = u if isinstance(u, str) or u != -1 else stat.st_uid
         g = g if isinstance(g, str) or g != -1 else stat.st_gid
         chown(dest, u, g)
-        os.lchmod(dest, protection)
+        os.chmod(dest, protection)
         if strip and not directory:
             strip(dest)
         if recursive and os.path.isdir(src) and not directory:
