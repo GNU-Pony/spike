@@ -40,7 +40,7 @@ class Spikeless():
         '''
         Installs a scroll, but does not do any package managing
         
-        @param   scroll:str|exec(⋅)                                             Scroll to install, either precompiled or filename
+        @param   scroll:str                                                     Scroll to install, by filename
         @param   startdir:str                                                   Scroll base working directory
         @param   pinpal:str                                                     Installation root
         @param   private:bool                                                   Whether to install privately
@@ -91,17 +91,28 @@ class Spikeless():
         if not os.path.exists(pkgdir):
             os.mkdir(pkgdir)
         
-        code = scroll
-        if isinstance(scroll, str):
-            with open(scroll, 'rb') as file:
-                code = file.read().decode('utf8', 'replace') + '\n'
-                code = compile(code, scroll, 'exec')
+        code = None
+        with open(scroll, 'rb') as file:
+            code = file.read().decode('utf8', 'replace') + '\n'
+            code = compile(code, scroll, 'exec')
         exec(code, globals())
         
-        def sources():
+        def sources(scrolldir):
             global noextract, source, sha3sums
             noextract = set([] if noextract is None else noextract)
             extract = []
+            
+            pushd(scrolldir)
+            for i in range(len(source)):
+                src = source[i]
+                if src.startswith('file:'):
+                    src = src[5]:
+                    if src.startswith('//'):
+                        src = src[2:]
+                elif ':' in src:
+                    continue
+                source[i] = os.path.abspath(src)
+            popd()
             
             def inetget(params, dest, sha3sum):
                 if os.path.exists(dest):
@@ -164,7 +175,7 @@ class Spikeless():
         
         cd(startdir)
         msg('Fetching sources')
-        sources()
+        sources(dirname(scroll))
         
         if build is not None:
             if buildpatch is not None:
