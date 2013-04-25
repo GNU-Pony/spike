@@ -54,6 +54,7 @@ class Spikeless():
                                                                                 Between calling the functor you just install file files in the returned directory
         '''
         global build, check, package, patch_build, patch_check, patch_package, pre_install, post_install, pre_upgrade, post_upgrade, noextract, source, sha3sums, options
+        (build, check, package, patch_build, patch_check, patch_package, pre_install, post_install, pre_upgrade, post_upgrade, noextract, source, sha3sums, options) = 14 * [None]
         
         cwd = os.getcwd()
         
@@ -94,6 +95,7 @@ class Spikeless():
         exec(code, globals())
         
         def sources():
+            global noextract, source, sha3sums
             noextract = set([] if noextract is None else noextract)
             extract = []
             
