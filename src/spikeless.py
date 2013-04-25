@@ -54,7 +54,8 @@ class Spikeless():
                                                                                 Between calling the functor you just install file files in the returned directory
         '''
         global build, check, package, patch_build, patch_check, patch_package, pre_install, post_install, pre_upgrade, post_upgrade, noextract, source, sha3sums, options
-        (build, check, package, patch_build, patch_check, patch_package, pre_install, post_install, pre_upgrade, post_upgrade, noextract, source, sha3sums, options) = 14 * [None]
+        (build, check, package, patch_build, patch_check, patch_package, pre_install, post_install, pre_upgrade, post_upgrade) = 10 * [None]
+        (noextract, source, sha3sums, options) = ([], None, None, [])
         
         cwd = os.getcwd()
         
