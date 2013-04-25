@@ -995,6 +995,32 @@ def chroot(directory, function):
         return os.waitpid(pid, 0)[1]
 
 
+def execute_pipe(command, fail = False, *command_):
+    '''
+    Execute a command
+    
+    @param   command:str   Command line arguments, including the command
+    @param   fail:bool     Whether to raise an exception if the command fails
+    @return  :list<str>    Standard output lines
+    
+    -- OR --
+    
+    @param   command:*str  Command line arguments, including the command
+    @return  :list<str>    Standard output lines
+    '''
+    command = list([command] if isinstance(command, str) else command) + list(command_)
+    print('Executing external command: ' + str(command))
+    proc = Popen(command, stdin = sys.stdin, stdout = PIPE, stderr = sys.stderr)
+    output = proc.communicate()[0]
+    if fail and (proc.returncode != 0):
+        raise Exception('%s exited with error code %i' % (str(command), proc.returncode))
+    output = output.decode('utf-8', 'replace')
+    if output.endswith('\n'):
+        output = output[:-1]
+    output = output.split('\n')
+    return output
+
+
 def execute(command, fail = False, *command_):
     '''
     Execute a command
@@ -1008,15 +1034,20 @@ def execute(command, fail = False, *command_):
     '''
     command = list([command] if isinstance(command, str) else command) + list(command_)
     print('Executing external command: ' + str(command))
-    proc = Popen(command, stdin = sys.stdin, stdout = PIPE, stderr = sys.stderr)
+    proc = Popen(command, stdin = sys.stdin, stdout = sys.stdout, stderr = sys.stderr)
     output = proc.communicate()[0]
     if fail and (proc.returncode != 0):
         raise Exception('%s exited with error code %i' % (str(command), proc.returncode))
-    output = output.decode('utf-8', 'replace')
-    if output.endswith('\n'):
-        output = output[:-1]
-    output = output.split(' ')
-    return output
+
+
+def bash_pipe(command, fail = True):
+    '''
+    Execute a shell command, in GNU Bash
+    
+    @param  command:str  The shell command
+    @param  fail:bool    Whether to raise an exception if the command fails
+    '''
+    return execute_pipe(['bash', '-c', command], fail)
 
 
 def bash(command, fail = True):
@@ -1026,7 +1057,7 @@ def bash(command, fail = True):
     @param  command:str  The shell command
     @param  fail:bool    Whether to raise an exception if the command fails
     '''
-    return execute(['bash', '-c', command], fail)
+    execute(['bash', '-c', command], fail)
 
 
 def bash_escape(word):
