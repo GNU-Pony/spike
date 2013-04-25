@@ -115,8 +115,6 @@ class Spikeless():
                         continue
                     src = os.path.abspath(src)
                     list[i] = 'file://' + src
-                    if list is noextract:
-                        list.append(src)
             popd()
             noextract = set(noextract)
             
@@ -168,7 +166,7 @@ class Spikeless():
                     sha3 = sha3sum(sumdests)
                     if sha3 == sha3sums[i].upper():
                         pass ## TODO sha3sums
-                if dest not in noextract:
+                if src not in noextract:
                     extract.append(os.path.abspath(dest))
                 i += 1
             
