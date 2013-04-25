@@ -453,7 +453,7 @@ def mkdir(path, recursive = False):
     @param  path:str|itr<str>  The directories to create
     @param  recursive:bool     Whether to create all missing intermediate-level directories
     '''
-    __print('mkdir' + (' -p' if recursive else '') + str(path))
+    __print('mkdir' + (' -p ' if recursive else ' ') + str(path))
     for p in ([path] if isinstance(path, str) else path):
         if not recursive:
             if not (os.path.exists(p) and os.path.isdir(p)):
