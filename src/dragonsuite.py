@@ -995,13 +995,19 @@ def chroot(directory, function):
         return os.waitpid(pid, 0)[1]
 
 
-def execute(command, fail = False):
+def execute(command, fail = False, *command_):
     '''
     Execute a command
     
-    @param  command:list<str>  Command line arguments, including the command
-    @param  fail:bool          Whether to raise an exception if the command fails
+    @param  command:str   Command line arguments, including the command
+    @param  fail:bool     Whether to raise an exception if the command fails
+    
+    -- OR --
+    
+    @param  command:*str  Command line arguments, including the command
     '''
+    command = list([command] if isinstance(command, str) else command) + list(command_)
+    print('Executing external commnand: ' + str(command))
     proc = Popen(command, stdin = sys.stdin, stdout = PIPE, stderr = sys.stderr)
     output = proc.communicate()[0]
     if fail and (proc.returncode != 0):
