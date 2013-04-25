@@ -907,7 +907,7 @@ def path(exprs, existing = False):
                 if os.sep == '*': parts = [p.replace('\0b', '\0*') for p in parts]
                 for p in parts:
                     if len(p) == 0:
-                        pass
+                        f = [(os.sep if len(_) == 0 else _) for _ in f]
                     elif p == '.':
                         f = [(os.curdir if len(_) == 0 else _) for _ in f]
                     elif p == '..':
