@@ -38,6 +38,21 @@ _dragonsuite_directory_stack = []
 Keeps track of `pushd`:s
 '''
 
+_dragonsuite_verbose = True
+'''
+Whether to be verbose
+'''
+
+
+def __print(text):
+    '''
+    Print what is happening
+    
+    @param  text:str  The string to print
+    '''
+    sys.stdout.write((text + '\n').encode('utf-8'))
+    sys.stdout.flush()
+
 
 def pipe(data, *commands):
     '''
@@ -210,6 +225,7 @@ def cd(path):
     
     @param  path:str  The new current working directory
     '''
+    __print('cd ' + path)
     os.chdir(path)
 
 
@@ -219,6 +235,7 @@ def pushd(path):
     
     @param  path:str  The new current working directory
     '''
+    __print('pushd ' + path)
     _dragonsuite_directory_stack.append(os.path.abspath(os.getcwd()))
     os.chdir(path)
 
@@ -227,6 +244,7 @@ def popd():
     '''
     Changes the current working directory to the one in the top of the `pushd` stack and pop it
     '''
+    __print('popd')
     os.chdir(_dragonsuite_directory_stack.pop())
 
 
@@ -237,6 +255,7 @@ def umask(mask = 0o22):
     @param   mask:int  The new umask
     @return  :int      The previous umask
     '''
+    __print('umask ' + oct(mask).replace('0o', ''))
     return os.umask(mask)
 
 
@@ -277,6 +296,7 @@ def unset(var):
     
     @param  var:str  The environment variable
     '''
+    __print('unset ' + var)
     os.unsetenv(var)
     if var in os.environ:
         del os.environ[var]
@@ -292,6 +312,7 @@ def export(var, value):
     if value is None:
         unset(var)
     else:
+        __print('export %s=%s' % (var, value))
         os.putenv(var, value)
         if var not in os.environ or os.environ[var] != value:
             os.environ[var] = value
@@ -316,6 +337,7 @@ def chmod(path, mode, mask = ~0):
     @param  mode:int           The desired protection bits
     @param  mask:int           The portions of `mode` to apply
     '''
+    __print('chmod %s~%s %s' % (oct(mode).replace('0o', ''), oct(~mask).replace('0o', ''), str(path)))
     for p in ([path] if isinstance(path, str) else path):
         if mask == ~0:
             os.chmod(p, mode)
@@ -332,6 +354,7 @@ def chown(path, owner = -1, group = -1):
     @param  owner:int|str      The new owner, `-1` for ignored
     @param  group:int|str      The new group, `-1` for ignored, `-2` to select by owner
     '''
+    __print('lchown %s:%s %s' % (str('' if owner == -1 else owner), str('' if group == -1 else ('$' if group == -2 else group)), str(path)))
     u = owner if isinstance(owner, int) else usermodule.getpwnam(owner).pw_uid
     g = group if isinstance(group, int) else groupmodule.getgrnam(group).gr_gid
     for p in ([path] if isinstance(path, str) else path):
@@ -359,8 +382,10 @@ def ln(source, link, hard = False):
     if os.path.exists(link) and os.path.isdir(link):
         link += '/' + basename(source)
     if hard:
+        __print('ln --hard %s %s' % (source, link))
         os.link(source, link)
     else:
+        __print('ln --symbolic %s %s' % (source, link))
         os.symlink(source, link)
 
 
@@ -371,6 +396,7 @@ def touch(path, settime = False):
     @param  path:str|itr<str>  The file of files
     @param  settime:bool       Whether to set the timestamps on the files if they already exists
     '''
+    __print('touch %s' + str(path))
     for p in ([path] if isinstance(path, str) else path):
         if os.path.exists(p):
             if settime:
@@ -387,6 +413,7 @@ def rm(path, recursive = False, directories = False):
     @param  recursive:bool     Remove directories recursively
     @param  directories:bool   Attempt to remove directories with rmdir, this is forced for recursive removes
     '''
+    __print(('rm -r' if recursive else 'rm') + (' ' if directories else ' --directories ') + str(path))
     for p in ([path] if isinstance(path, str) else path):
         if not recursive:
             if dirs and os.path.isdir(p):
@@ -414,6 +441,7 @@ def rmdir(path):
     
     @param  path:str|itr<str>  The directories to remove
     '''
+    __print('rmdir' + str(path))
     for p in ([path] if isinstance(path, str) else path):
         os.rmdir(p)
 
@@ -425,6 +453,7 @@ def mkdir(path, recursive = False):
     @param  path:str|itr<str>  The directories to create
     @param  recursive:bool     Whether to create all missing intermediate-level directories
     '''
+    __print('mkdir' + (' -p' if recursive else '') + str(path))
     for p in ([path] if isinstance(path, str) else path):
         if not recursive:
             if not (os.path.exists(p) and os.path.isdir(p)):
@@ -572,6 +601,7 @@ def mv(source, destination):
     @param  source:str|itr<str>  The files to move
     @param  destination:str      The destination, either directory or new file
     '''
+    __print('mv %s %s' % (str(source), destination))
     ps = [source] if isinstance(source, str) else source
     d = destination if destination.endswith(os.sep) else (destination + os.sep)
     if len(ps) == 1:
@@ -623,7 +653,7 @@ def cp(source, destination, recursive = True):
     @param  source:str|itr<str>   Files to copy
     @param  destination:str       Destination filename or directory
     '''
-    install(source, destination, parents=False, recursive = recursive, savemode=True)
+    install(source, destination, parents = False, recursive = recursive, savemode = True)
 
 
 def cp_r(source, destination):
@@ -652,6 +682,10 @@ def install(source, destination, owner = -1, group = -1, mode = -1, strip = Fals
     @param  recursive:bool        Copy directories resursively
     @param  savemode:bool         Whether to use the protection bits of already installed versions
     '''
+    _print_info = [destination, ' -D' if parents else '', ' -r' if recursive else '', ' -s' if strip else '', ' --savemode' if savemode else '']
+    _print_info += ['' if mode == -1 else oct(mode).replace('0o', ''), '' if owner == -1 else (' -u ' + str(owner))]
+    _print_info += ['' if group == -1 else (' -g $' if group == -2 else (' -g ' + str(group))), ' -d' if directory else '', str(source)]
+    __print('install -T %s%s%s%s%s%s%s%s%s %s' % _print_info)
     ps = [source] if isinstance(source, str) else source
     d = destination if destination.endswith(os.sep) else (destination + os.sep)
     pairs = None
@@ -923,6 +957,7 @@ def decompress(path, format = None):
     @param  path:str|itr<str>  The file or files
     @param  format:str?        The format, `None` for automatic detection (currently uses file extension)
     '''
+    __print('decompress%s %s' % ('' if format is None else ('--format=' + format), str(path)))
     for p in ([path] if isinstance(path, str) else path):
         fmt = format
         if fmt is None:
@@ -986,13 +1021,16 @@ def chroot(directory, function):
     @param   function:()→void  Function to invoke with the new root
     @param   :int              Zero on success
     '''
+    __print('chroot ' + directory)
     pid = os.fork()
     if pid == 0:
         os.chroot(directory)
         function()
         exit(0)
     else:
-        return os.waitpid(pid, 0)[1]
+        rc = os.waitpid(pid, 0)[1]
+        __print('unchroot')
+        return rc
 
 
 def execute_pipe(command, fail = False, *command_):
@@ -1009,7 +1047,7 @@ def execute_pipe(command, fail = False, *command_):
     @return  :list<str>    Standard output lines
     '''
     command = list([command] if isinstance(command, str) else command) + list(command_)
-    print('Executing external command: ' + str(command))
+    __print('Executing external command: ' + str(command))
     proc = Popen(command, stdin = sys.stdin, stdout = PIPE, stderr = sys.stderr)
     output = proc.communicate()[0]
     if fail and (proc.returncode != 0):
@@ -1033,7 +1071,7 @@ def execute(command, fail = False, *command_):
     @param  command:*str  Command line arguments, including the command
     '''
     command = list([command] if isinstance(command, str) else command) + list(command_)
-    print('Executing external command: ' + str(command))
+    __print('Executing external command: ' + str(command))
     proc = Popen(command, stdin = sys.stdin, stdout = sys.stdout, stderr = sys.stderr)
     output = proc.communicate()[0]
     if fail and (proc.returncode != 0):
