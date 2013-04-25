@@ -676,7 +676,7 @@ def install(source, destination, owner = -1, group = -1, mode = -1, strip = Fals
         if savemode and os.path.exists(dest):
             protection = os.lstat(dest).st_mode
         elif mode < 0:
-            protection = 0x755 if directory else os.lstat(src).st_mode
+            protection = 0o755 if directory else os.lstat(src).st_mode
         if directory or os.path.isdir(src):
             mkdir(dest)
         else:
