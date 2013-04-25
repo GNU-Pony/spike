@@ -100,23 +100,23 @@ class Spikeless():
         
         def sources(scrolldir):
             global noextract, source, sha3sums
-            noextract = [] if noextract is None else noextract
+            noextract = set([] if noextract is None else noextract)
             extract = []
             
             pushd(scrolldir)
-            for list in (source, noextract):
-                for i in range(len(list)):
-                    src = list[i]
-                    if src.startswith('file:'):
-                        src = src[5:]
-                        if src.startswith('//'):
-                            src = src[2:]
-                    elif ':' in src:
-                        continue
-                    src = os.path.abspath(src)
-                    list[i] = 'file://' + src
+            for i in range(len(source)):
+                src = source[i]
+                _src = src
+                if src.startswith('file:'):
+                    src = src[5:]
+                    if src.startswith('//'):
+                        src = src[2:]
+                elif ':' in src:
+                    source[i] = (src, _src not in noextract)
+                    continue
+                src = os.path.abspath(src)
+                source[i] = ('file://' + src, _src not in noextract)
             popd()
-            noextract = set(noextract)
             
             def inetget(params, dest, sha3sum):
                 if os.path.exists(dest):
@@ -127,7 +127,7 @@ class Spikeless():
                     wget(params)
             
             i = 0
-            for src in source:
+            for (src, extractsrc) in source:
                 dest = None
                 d = None
                 if isinstance(src, str):
@@ -166,7 +166,7 @@ class Spikeless():
                     sha3 = sha3sum(sumdests)
                     if sha3 == sha3sums[i].upper():
                         pass ## TODO sha3sums
-                if src not in noextract:
+                if extractsrc:
                     extract.append(os.path.abspath(dest))
                 i += 1
             
