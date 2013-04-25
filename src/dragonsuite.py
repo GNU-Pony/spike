@@ -48,9 +48,9 @@ def __print(text):
     '''
     Print what is happening
     
-    @param  text:str  The string to print
+    @param  text:__str__()→str  The string to print
     '''
-    sys.stdout.buffer.write((text + '\n').encode('utf-8'))
+    sys.stdout.buffer.write((str(text) + '\n').encode('utf-8'))
     sys.stdout.buffer.flush()
 
 
@@ -682,7 +682,7 @@ def install(source, destination, owner = -1, group = -1, mode = -1, strip = Fals
     @param  recursive:bool        Copy directories resursively
     @param  savemode:bool         Whether to use the protection bits of already installed versions
     '''
-    _print_info = [destination,
+    _print_info = (destination,
                    ' -D' if parents else '',
                    ' -r' if recursive else '',
                    ' -s' if strip else '',
@@ -691,7 +691,7 @@ def install(source, destination, owner = -1, group = -1, mode = -1, strip = Fals
                    '' if owner == -1 else (' -u ' + str(owner)), 
                    '' if group == -1 else (' -g $' if group == -2 else (' -g ' + str(group))),
                    ' -d' if directory else '',
-                   str(source)]
+                   str(source))
     __print('install -T %s%s%s%s%s%s%s%s%s %s' % _print_info)
     ps = [source] if isinstance(source, str) else source
     d = destination if destination.endswith(os.sep) else (destination + os.sep)
