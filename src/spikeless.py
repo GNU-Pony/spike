@@ -56,6 +56,12 @@ class Spikeless():
         
         cwd = os.getcwd()
         
+        for (var, value) in [('ARCH', os.uname()[4]), ('HOST', '$ARCH-unknown-linux-gnu')]:
+            value = os.getenv(var, value.replace('$ARCH', os.getenv('ARCH')))
+            os.putenv(var, value)
+            if var not in os.environ or os.environ[var] != value:
+                os.environ[var] = value
+        
         srcdir = startdir + os.sep + 'src'
         pkgdir = startdir + os.sep + 'pkg'
         if not os.path.exists(srcdir):
