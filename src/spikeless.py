@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
 import os
 import sys
+from dragonscript import *
 
 
 MEDIA = 1
@@ -93,7 +94,6 @@ class Spikeless():
         exec(code, globals())
         
         def sources():
-            from dragonscript import *
             noextract = set([] if noextract is None else noextract)
             extract = []
             
@@ -274,7 +274,6 @@ class Spikeless():
 
 if __name__ == '__main__': # sic
     def installdir(src, dest):
-        from dragonscript import *
         if not os.path.exists(dest):
             os.makedirs(dest)
         files = [src + os.path + f for f in os.listdir(src)]
