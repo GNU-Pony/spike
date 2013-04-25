@@ -1007,7 +1007,7 @@ def execute(command, fail = False, *command_):
     @param  command:*str  Command line arguments, including the command
     '''
     command = list([command] if isinstance(command, str) else command) + list(command_)
-    print('Executing external commnand: ' + str(command))
+    print('Executing external command: ' + str(command))
     proc = Popen(command, stdin = sys.stdin, stdout = PIPE, stderr = sys.stderr)
     output = proc.communicate()[0]
     if fail and (proc.returncode != 0):
