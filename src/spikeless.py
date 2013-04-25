@@ -185,7 +185,7 @@ class Spikeless():
             os.umask(0o022)
             check(startdir, srcdir, pkgdir, private)
         if package is not None:
-            if patchpatch is not None:
+            if packagepatch is not None:
                 resetEnviron(environ)
                 os.chdir(startdir)
                 os.umask(0o022)
