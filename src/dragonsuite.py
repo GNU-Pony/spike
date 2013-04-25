@@ -356,6 +356,8 @@ def ln(source, link, hard = False):
     @param  link:str    The path of the new link
     @param  hard:bool   Whether to create a hard link
     '''
+    if os.path.exists(link) and os.path.isdir(link):
+        link += '/' + basename(source)
     if hard:
         os.link(source, link)
     else:
@@ -621,7 +623,7 @@ def cp(source, destination, recursive = True):
     @param  source:str|itr<str>   Files to copy
     @param  destination:str       Destination filename or directory
     '''
-    install(source, destination, parents=False, recursive = recursive, savemode=True, preservecontext=False)
+    install(source, destination, parents=False, recursive = recursive, savemode=True)
 
 
 def cp_r(source, destination):
@@ -739,6 +741,23 @@ def find(path, maxdepth = -1, hardlinks = True):
                 visited.add(inode)
             rc.append(f)
     return rc
+
+
+def path_escape(filename):
+    '''
+    Escape a filename for dynamic include in a `path` expression without the risk of it being parsed as an expression, but rather be verbatim
+    
+    @param   filename:str|itr<str>  The filename or filenames
+    @return  :str|list<str>         The filename or filenames escaped, will be a list if a list or other iteratable type was used in the paramter
+    '''
+    files = [filename] if isinstance(filename, str) else filename
+    rc = []
+    for file in files:
+        rc.append(file.replace('\\', '\\\\').replace('{', '\\{').replace('}', '\\}').replace('*', '\\*').replace('?', '\\?'))
+    if isinstance(filename, str):
+        return rc[0]
+    else:
+        return rc
 
 
 def path(exprs, existing = False):
@@ -952,7 +971,7 @@ def decompress(path, format = None):
                'squashfs' : 'unsquashfs %s'}[fmt.lower().replace(os.extsep, '').replace('zip', 'z')]
         if not havecpio:
             fmt = fmt.replace('cpio', 'bsdcpio')
-        sh(fmt % p, fail = True)
+        bash(fmt % p, fail = True)
 
 
 def chroot(directory, function):
@@ -976,12 +995,73 @@ def chroot(directory, function):
         return os.waitpid(pid, 0)[1]
 
 
+def execute(command, fail = False):
+    '''
+    Execute a command
+    
+    @param  command:list<str>  Command line arguments, including the command
+    @param  fail:bool          Whether to raise an exception if the command fails
+    '''
+    proc = Popen(command, stdin = sys.stdin, stdout = PIPE, stderr = sys.stderr)
+    output = proc.communicate()[0]
+    if fail and (proc.returncode != 0):
+        raise Exception('%s exited with error code %i' % (str(command), proc.returncode))
+    output = output.decode('utf-8', 'replace')
+    if output.endswith('\n'):
+        output = output[:-1]
+    output = output.split(' ')
+    return output
+
+
+def bash(command, fail = True):
+    '''
+    Execute a shell command, in GNU Bash
+    
+    @param  command:str  The shell command
+    @param  fail:bool    Whether to raise an exception if the command fails
+    '''
+    return execute(['bash', '-c', command], fail)
+
+
+def bash_escape(word):
+    '''
+    Escape one or more words for `bash()`
+    
+    @param   word:str|itr<str>  The words to escape
+    @return  :str|list<str>     The words escaped, will be a string if the input was a string
+    '''
+    if isinstance(word, str):
+        return '\'' + word.replace('\'', '\'\\\'\'') + '\''
+    else:
+        rc = []
+        for w in word:
+            rc.append('\'' + w.replace('\'', '\'\\\'\'') + '\'')
+        return rc
+
+
+def sha3sum(files):
+    '''
+    Calculate the Keccak[] sum of one or more files
+    
+    @param   files:str|itr<str>  The files
+    @return  :str|list<str>      The sums, will be an string if the input as a string
+    '''
+    sha3 = SHA3()
+    if isinstance(files, str):
+        return sha3.digestFile(files)
+    elif len(files) == 0:
+        return []
+    else:
+        rc = [sha3.digestFile(files[0])]
+        for file in files[1:]:
+            sha3.reinitialise()
+            rc.append(sha3.digestFile(file))
+        return rc
+
+
 
 ## TODO:
 #  grep /usr/bin/egrep (-o = False)
 #  patch /usr/bin/patch
 #  sed /usr/bin/sed
-#  execute (fail = False)
-#  bash /bin/sh (fail = False)
-#  sha3sum (only keccak[])
 

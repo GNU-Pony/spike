@@ -75,8 +75,19 @@ class Spikeless():
             noextract = set([] is noextract is None else noextract)
             extract = []
             
+            def inetget(params, dest, sha3sum):
+                if os.path.exists(dest):
+                    if sha3sum is not None:
+                        if sha3sum(dest) != sha3sum.upper():
+                            wget(params)
+                else:
+                    wget(params)
+            
             i = 0
             for src in source:
+                dscrl = dirname(scroll)
+                if not dscrl.endswith(os.sep):
+                    dscrl += os.sep
                 dest = None
                 d = None
                 if isinstance(src, str):
@@ -85,7 +96,15 @@ class Spikeless():
                         dest = 'index.html'
                     d = dest
                     dest = startdir + os.sep + dest
-                    wget(src)
+                    if ':' not in src:
+                        cp(dscrl + src.replace('/', os.sep), dest)
+                    elif src.startswith('file:'):
+                        src = src[5:]
+                        if src.startswith('//'):
+                            src = src[2:]
+                        cp(dscrl + src.replace('/', os.sep), dest)
+                    else:
+                        inetget(src, dest, sha3sums[i])
                 else:
                     dest = src[1]
                     if dest is None:
@@ -94,10 +113,18 @@ class Spikeless():
                             dest = 'index.html'
                     d = dest
                     dest = startdir + os.sep + dest
-                    wget([src[0], '-O', dest] + src[2:])
+                    if ':' not in src:
+                        cp(dscrl + src.replace('/', os.sep), dest)
+                    elif src.startswith('file:'):
+                        src = src[5:]
+                        if src.startswith('//'):
+                            src = src[2:]
+                        cp(dscrl + src.replace('/', os.sep), dest)
+                    else:
+                        inetget([src[0], '-O', dest] + src[2:], dest, sha3sums[i])
                 if sha3sums[i] is not None:
                     sha3 = sha3sum(sumdests)
-                    if sha3 is not sha3sums[i]:
+                    if sha3 == sha3sums[i].upper():
                         pass ## TODO sha3sums
                 if dest not in noextract:
                     extract.append(os.path.abspath(dest))
