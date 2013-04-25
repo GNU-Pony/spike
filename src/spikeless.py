@@ -62,6 +62,22 @@ class Spikeless():
             if var not in os.environ or os.environ[var] != value:
                 os.environ[var] = value
         
+        environ = {}
+        for var in os.environ:
+            environ[var] = os.environ[var]
+        def resetEnviron(reset_to):
+            delete = []
+            s = set(reset_to.keys())
+            for var in os.environ:
+                if var not in s:
+                    delete.append(var)
+                else:
+                    os.putvar(var, reset_to[var])
+                    os.environ[var] = reset_to[var]
+            for var in delete:
+                os.unsetenv(var)
+                del os.environ[var]
+        
         srcdir = startdir + os.sep + 'src'
         pkgdir = startdir + os.sep + 'pkg'
         if not os.path.exists(srcdir):
@@ -145,30 +161,37 @@ class Spikeless():
         
         if build is not None:
             if buildpatch is not None:
+                resetEnviron(environ)
                 os.chdir(startdir)
                 os.umask(0o022)
                 buildpatch(srcdir, pkgdir)
+            resetEnviron(environ)
             os.chdir(startdir)
             os.umask(0o022)
             build(startdir, srcdir, pkgdir, private)
         if check is not None:
             if checkpatch is not None:
+                resetEnviron(environ)
                 os.chdir(startdir)
                 os.umask(0o022)
                 checkpatch(srcdir, pkgdir)
+            resetEnviron(environ)
             os.chdir(startdir)
             os.umask(0o022)
             check(startdir, srcdir, pkgdir, private)
         if package is not None:
             if patchpatch is not None:
+                resetEnviron(environ)
                 os.chdir(startdir)
                 os.umask(0o022)
                 packagepatch(srcdir, pkgdir)
+            resetEnviron(environ)
             os.chdir(startdir)
             os.umask(0o022)
             package(startdir, srcdir, pkgdir, private)
         
         os.chdir(cwd)
+        resetEnviron(environ)
         
         global useopts, compresses ## TODO defualt options should be load
         if useopts is None:
@@ -193,10 +216,11 @@ class Spikeless():
             os.makedirs(pinpal + os.sep + 'src')
         
         class preFunctor():
-            def __init__(self, fresh, start, root, priv):
+            def __init__(self, fresh, start, root, priv, env):
                 self.fresh = fresh
                 self.start = start
                 self.root = root
+                self.env = env
             def __call__(self, installedfiles = []):
                 global pre_install, pre_upgrade
                 cwd = os.getcwd()
@@ -214,13 +238,15 @@ class Spikeless():
                         if not os.path.exists(tmpdir):
                             os.mkdir(tmpdir)
                         pre_install(tmpdir, self.root, installedfiles, self.priv)
+                resetEnviron(self.env)
                 os.chdir(cwd)
         
         class postFunctor():
-            def __init__(self, fresh, start, root, priv):
+            def __init__(self, fresh, start, root, priv, env):
                 self.fresh = fresh
                 self.start = start
                 self.root = root
+                self.env = env
             def __call__(self, installedfiles = []):
                 global post_install, post_upgrade
                 cwd = os.getcwd()
@@ -238,10 +264,11 @@ class Spikeless():
                         if not os.path.exists(tmpdir):
                             os.mkdir(tmpdir)
                         post_install(tmpdir, self.root, installedfiles, self.priv)
+                resetEnviron(self.env)
                 os.chdir(cwd)
         
-        pre = preFunctor(freshinstallation, startdir, pinpal, private)
-        post = postFunctor(freshinstallation, startdir, pinpal, private)
+        pre = preFunctor(freshinstallation, startdir, pinpal, private, environ)
+        post = postFunctor(freshinstallation, startdir, pinpal, private, environ)
         return (pre, pkgdir, post)
 
 
