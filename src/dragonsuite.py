@@ -386,6 +386,9 @@ def ln(source, link, hard = False):
         os.link(source, link)
     else:
         __print('ln --symbolic %s %s' % (source, link))
+        if os.path.exists(link) and os.path.islink(link):
+            if os.readlink(link) == source:
+                return
         os.symlink(source, link)
 
 
@@ -701,7 +704,10 @@ def install(source, destination, owner = -1, group = -1, mode = -1, strip = Fals
     pairs = None
     if len(ps) == 1:
         if os.path.exists(destination) and os.path.isdir(destination):
-            pairs = [(s, d + basename(s)) for s in ps]
+            if directory:
+                pairs = [(s, d + s) for s in ps]
+            else:
+                pairs = [(s, d + basename(s)) for s in ps]
         else:
             pairs = [(s, destination) for s in ps]
     else:
@@ -712,7 +718,10 @@ def install(source, destination, owner = -1, group = -1, mode = -1, strip = Fals
                 raise OSError('Destination %s does not exist but must be a directory' % destination)
         elif not os.path.isdir(destination):
             raise OSError('Destination %s exists and is not a directory' % destination)
-        pairs = [(p, d + basename(p)) for p in ps]
+        if directory:
+            pairs = [(p, d + p) for p in ps]
+        else:
+            pairs = [(p, d + basename(p)) for p in ps]
     for (src, dest) in pairs:
         protection = mode
         if savemode and os.path.exists(dest):
@@ -724,6 +733,8 @@ def install(source, destination, owner = -1, group = -1, mode = -1, strip = Fals
                 mkdir_p(dest)
             else:
                 mkdir(dest)
+        elif os.path.islink(src):
+            ln(os.readlink(src), dest)
         else:
             blksize = 8192
             try:
@@ -740,11 +751,12 @@ def install(source, destination, owner = -1, group = -1, mode = -1, strip = Fals
                             break
                         ofile.write(chunk)
         (u, g) = (owner, group)
-        stat = os.lstat(dest) if directory else os.lstat(src)
-        u = u if isinstance(u, str) or u != -1 else stat.st_uid
-        g = g if isinstance(g, str) or g != -1 else stat.st_gid
-        chown(dest, u, g)
-        os.chmod(dest, protection)
+        if (isinstance(u, str) or (u != -1) or isinstance(g, str) or (g != -1)):
+            stat = os.lstat(dest) if directory else os.lstat(src)
+            u = u if isinstance(u, str) or (u != -1) else stat.st_uid
+            g = g if isinstance(g, str) or (g != -1) else stat.st_gid
+            chown(dest, u, g)
+            os.chmod(dest, protection)
         if strip and not directory:
             strip(dest)
         if recursive and os.path.isdir(src) and not directory:
@@ -790,12 +802,12 @@ def find(path, maxdepth = -1, hardlinks = True):
     return rc
 
 
-def path_escape(filename):
+def path_escape(*filename):
     '''
     Escape a filename for dynamic include in a `path` expression without the risk of it being parsed as an expression, but rather be verbatim
     
-    @param   filename:str|itr<str>  The filename or filenames
-    @return  :str|list<str>         The filename or filenames escaped, will be a list if a list or other iteratable type was used in the paramter
+    @param   filename:*str    The filename or filenames
+    @return  :str|tuple<str>  The filename or filenames escaped, will be a list if a list or other iteratable type was used in the paramter
     '''
     files = [filename] if isinstance(filename, str) else filename
     rc = []
@@ -806,7 +818,7 @@ def path_escape(filename):
     if isinstance(filename, str):
         return rc[0]
     else:
-        return rc
+        return tuple(rc)
 
 
 def path(exprs, existing = False):
@@ -1124,12 +1136,12 @@ def bash(command, fail = True):
     execute(['bash', '-c', command], fail)
 
 
-def bash_escape(word):
+def bash_escape(*word):
     '''
     Escape one or more words for `bash()`
     
-    @param   word:str|itr<str>  The words to escape
-    @return  :str|list<str>     The words escaped, will be a string if the input was a string
+    @param   word:*str        The words to escape
+    @return  :str|tuple<str>  The words escaped, will be a string if the input was a string
     '''
     if isinstance(word, str):
         return '\'' + word.replace('\'', '\'\\\'\'') + '\''
@@ -1137,7 +1149,7 @@ def bash_escape(word):
         rc = []
         for w in word:
             rc.append('\'' + w.replace('\'', '\'\\\'\'') + '\'')
-        return rc
+        return tuple(rc)
 
 
 def sha3sum(files):
