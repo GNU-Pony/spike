@@ -809,6 +809,8 @@ def path_escape(*filename):
     @param   filename:*str    The filename or filenames
     @return  :str|tuple<str>  The filename or filenames escaped, will be a list if a list or other iteratable type was used in the paramter
     '''
+    if len(filename) == 1:
+        filename = filename[0]
     files = [filename] if isinstance(filename, str) else filename
     rc = []
     for file in files:
@@ -1143,6 +1145,8 @@ def bash_escape(*word):
     @param   word:*str        The words to escape
     @return  :str|tuple<str>  The words escaped, will be a string if the input was a string
     '''
+    if len(word) == 1:
+        word = word[0]
     if isinstance(word, str):
         return '\'' + word.replace('\'', '\'\\\'\'') + '\''
     else:
