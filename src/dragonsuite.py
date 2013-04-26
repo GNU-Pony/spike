@@ -712,9 +712,7 @@ def install(source, destination, owner = -1, group = -1, mode = -1, strip = Fals
                 raise OSError('Destination %s does not exist but must be a directory' % destination)
         elif not os.path.isdir(destination):
             raise OSError('Destination %s exists and is not a directory' % destination)
-        else:
-            for p in ps:
-                pairs = [(p, d + basename(p))]
+        pairs = [(p, d + basename(p)) for p in ps]
     for (src, dest) in pairs:
         protection = mode
         if savemode and os.path.exists(dest):
@@ -722,7 +720,10 @@ def install(source, destination, owner = -1, group = -1, mode = -1, strip = Fals
         elif isinstance(mode, int) and (mode < 0):
             protection = 0o755 if directory else os.lstat(src).st_mode
         if directory or os.path.isdir(src):
-            mkdir(dest)
+            if parents:
+                mkdir_p(dest)
+            else:
+                mkdir(dest)
         else:
             blksize = 8192
             try:
@@ -739,7 +740,7 @@ def install(source, destination, owner = -1, group = -1, mode = -1, strip = Fals
                             break
                         ofile.write(chunk)
         (u, g) = (owner, group)
-        stat = os.lstat(src)
+        stat = os.lstat(dest) if directory else os.lstat(src)
         u = u if isinstance(u, str) or u != -1 else stat.st_uid
         g = g if isinstance(g, str) or g != -1 else stat.st_gid
         chown(dest, u, g)
@@ -799,7 +800,9 @@ def path_escape(filename):
     files = [filename] if isinstance(filename, str) else filename
     rc = []
     for file in files:
-        rc.append(file.replace('\\', '\\\\').replace('{', '\\{').replace('}', '\\}').replace('*', '\\*').replace('?', '\\?'))
+        for c in '\\.^+$[]|(){}*?':
+            file = file.replace(c, '\\' + c)
+        rc.append(file)
     if isinstance(filename, str):
         return rc[0]
     else:
@@ -942,9 +945,13 @@ def path(exprs, existing = False):
                                     esc = False
                                 elif c == '\0':
                                     esc = True
+                                elif c == '?':
+                                    _ += '\\?'
+                                elif c == '*':
+                                    _ += '\\*'
                                 else:
                                     _ += c
-                            s = '^' + _.replace('?', '\\?').replace('*', '\\*') + '$'
+                            s = '^' + _ + '$'
                             matcher = regex.compile(s, regex.DOTALL)
                             for s in subs:
                                 if matcher.match(s) is not None:
@@ -955,6 +962,7 @@ def path(exprs, existing = False):
                             for m in matches:
                                 _f.append(_ + m)
                         f = _f
+                rc += f
     if not existing:
         return rc
     nrc = []
