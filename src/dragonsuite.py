@@ -1185,13 +1185,56 @@ def patch(patches, strip = 1, forward = True):
     @param  strip:int             The number of prefix directories to strip away in file names
     @param  forward:bool          Whether to include the -N/--forware option
     '''
+    __print('patch%s -p%i %s' % (' -N' if forward else '', strip, str(patches)))
     patches = [patches] if isinstance(patches, str) else patches
     for p in patches:
         execute(('patch -%sp%i -i' % ('N' if forward else '', strip)).split(' ') + [p], fail = True)
 
 
+def sed(scripts, path):
+    '''
+    Edit one or more file with `sed`
+    
+    @param  scripts:str|itr<str>  `sed` scripts
+    @param  path:str|itr<str>     Files to modify
+    '''
+    __print('sed -e %s -i %s' % (str(scripts), str(path)))
+    cmd = ['sed']
+    for script in [scripts] if isinstance(scripts, str) else scripts:
+        cmd.append('-e')
+        cmd.append(script)
+    cmd.append('-i')
+    for p in [path] if isinstance(path, str) else path:
+        execute(cmd + [p], fail = True)
 
-## TODO:
-#  grep /usr/bin/egrep (-o = False)
-#  sed /usr/bin/sed
+
+def sed_script(pattern, replacement, selection = None, transliterate = False, multiline = False, index = 0):
+    '''
+    Generate a sed script
+    
+    Patterns are written as in sed, escape, % is used instead of \, and %% instead of %
+    
+    @param  pattern:str         The replacee pattern
+    @param  replacement:str     The replacement pattern
+    @param  selection:str?      Pattern to find to qualify a line for modification
+    @param  transliterate:bool  Whether to translate character rather the using regular expression
+    @param  multiline:bool      Whether patterns can span multiple lines
+    @param  index:int           Index per match on a line to replace, 0 for all
+    '''
+    pattern = pattern.replace('\\', '\\\\').replace('/', '\\/')
+    pattern = pattern.replace('%%', '\0').replace('%', '\\').replace('\0', '%')
+    replacement = replacement.replace('\\', '\\\\').replace('/', '\\/')
+    replacement = replacement.replace('%%', '\0').replace('%', '\\').replace('\0', '%')
+    script = '%s/%s/%s/' % ('y' if transliterate else 's', pattern, replacement)
+    if (not transliterate):
+        if index == 0:
+            script += 'g'
+        else
+            script += str(index)
+    if selection is not None:
+        selection = selection.replace('\\', '\\\\').replace('/', '\\/')
+        selection = selection.replace('%%', '\0').replace('%', '\\').replace('\0', '%')
+        script = '/%s/%s' % (selection, script)
+    if multiline:
+        script = ':a;N;$!ba;' + script
 
