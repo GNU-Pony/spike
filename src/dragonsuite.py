@@ -756,7 +756,7 @@ def install(source, destination, owner = -1, group = -1, mode = -1, strip = Fals
             u = u if isinstance(u, str) or (u != -1) else stat.st_uid
             g = g if isinstance(g, str) or (g != -1) else stat.st_gid
             chown(dest, u, g)
-            os.chmod(dest, protection)
+        os.chmod(dest, protection)
         if strip and not directory:
             strip(dest)
         if recursive and os.path.isdir(src) and not directory:
