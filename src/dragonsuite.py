@@ -1100,7 +1100,7 @@ def execute_pipe(command, fail = False, *command_):
     return output
 
 
-def execute(command, fail = False, *command_):
+def execute(command, fail = True, *command_):
     '''
     Execute a command
     
@@ -1177,9 +1177,21 @@ def sha3sum(files):
         return rc
 
 
+def patch(patches, strip = 1, forward = True):
+    '''
+    Apply one or more patches
+    
+    @param  patches:str|itr<str>  Patch files to apply
+    @param  strip:int             The number of prefix directories to strip away in file names
+    @param  forward:bool          Whether to include the -N/--forware option
+    '''
+    patches = [patches] if isinstance(patches, str) else patches
+    for p in patches:
+        execute(('patch -%sp%i -i' % ('N' if forward else '', strip)).split(' ') + [p], fail = True)
+
+
 
 ## TODO:
 #  grep /usr/bin/egrep (-o = False)
-#  patch /usr/bin/patch
 #  sed /usr/bin/sed
 
