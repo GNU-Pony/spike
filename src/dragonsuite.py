@@ -1229,7 +1229,7 @@ def sed_script(pattern, replacement, selection = None, transliterate = False, mu
     if (not transliterate):
         if index == 0:
             script += 'g'
-        else
+        else:
             script += str(index)
     if selection is not None:
         selection = selection.replace('\\', '\\\\').replace('/', '\\/')
