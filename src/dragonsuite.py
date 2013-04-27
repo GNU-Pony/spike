@@ -379,14 +379,14 @@ def ln(source, link, hard = False):
     @param  link:str    The path of the new link
     @param  hard:bool   Whether to create a hard link
     '''
-    if os.path.exists(link) and os.path.isdir(link):
+    if os.path.lexists(link) and os.path.isdir(link):
         link += os.sep + basename(source)
     if hard:
         __print('ln --hard %s %s' % (source, link))
         os.link(source, link)
     else:
         __print('ln --symbolic %s %s' % (source, link))
-        if os.path.exists(link) and os.path.islink(link):
+        if os.path.lexists(link) and os.path.islink(link):
             if os.readlink(link) == source:
                 return
         os.symlink(source, link)
@@ -401,7 +401,7 @@ def touch(path, settime = False):
     '''
     __print('touch %s' + str(path))
     for p in ([path] if isinstance(path, str) else path):
-        if os.path.exists(p):
+        if os.path.lexists(p):
             if settime:
                 os.utime(p, None)
         else:
@@ -459,17 +459,17 @@ def mkdir(path, recursive = False):
     __print('mkdir' + (' -p ' if recursive else ' ') + str(path))
     for p in ([path] if isinstance(path, str) else path):
         if not recursive:
-            if not (os.path.exists(p) and os.path.isdir(p)):
+            if not (os.path.lexists(p) and os.path.isdir(p)):
                 os.mkdir(p)
         else:
             ps = p.split(os.sep)
             pp = ps[0]
             if len(pp) > 0:
-                if not (os.path.exists(pp) and os.path.isdir(pp)):
+                if not (os.path.lexists(pp) and os.path.isdir(pp)):
                     os.mkdir(pp)
             for _p in ps[1:]:
                 pp += os.sep + _p
-                if not (os.path.exists(pp) and os.path.isdir(pp)):
+                if not (os.path.lexists(pp) and os.path.isdir(pp)):
                     os.mkdir(pp)
 
 
@@ -611,12 +611,12 @@ def mv(source, destination):
     ps = [source] if isinstance(source, str) else source
     d = destination if destination.endswith(os.sep) else (destination + os.sep)
     if len(ps) == 1:
-        if os.path.exists(destination) and os.path.isdir(destination):
+        if os.path.lexists(destination) and os.path.isdir(destination):
             os.rename(source, d + basename(source))
         else:
             os.rename(source, destination)
     else:
-        if not os.path.exists(destination):
+        if not os.path.lexists(destination):
             raise OSError('Destination %s does not exist but must be a directory' % destination)
         elif not os.path.isdir(destination):
             raise OSError('Destination %s exists and is not a directory' % destination)
@@ -703,7 +703,7 @@ def install(source, destination, owner = -1, group = -1, mode = -1, strip = Fals
     d = destination if destination.endswith(os.sep) else (destination + os.sep)
     pairs = None
     if len(ps) == 1:
-        if os.path.exists(destination) and os.path.isdir(destination):
+        if os.path.lexists(destination) and os.path.isdir(destination):
             if directory:
                 pairs = [(s, d + s) for s in ps]
             else:
@@ -711,7 +711,7 @@ def install(source, destination, owner = -1, group = -1, mode = -1, strip = Fals
         else:
             pairs = [(s, destination) for s in ps]
     else:
-        if not os.path.exists(destination):
+        if not os.path.lexists(destination):
             if parents:
                 mkdir_p(destination)
             else:
@@ -724,7 +724,7 @@ def install(source, destination, owner = -1, group = -1, mode = -1, strip = Fals
             pairs = [(p, d + basename(p)) for p in ps]
     for (src, dest) in pairs:
         protection = mode
-        if savemode and os.path.exists(dest):
+        if savemode and os.path.lexists(dest):
             protection = os.lstat(dest).st_mode
         elif isinstance(mode, int) and (mode < 0):
             protection = 0o755 if directory else os.lstat(src).st_mode
@@ -742,7 +742,7 @@ def install(source, destination, owner = -1, group = -1, mode = -1, strip = Fals
             except:
                 pass
             with open(src, 'rb') as ifile:
-                if parents and not os.path.exists(dirname(dest)):
+                if parents and not os.path.lexists(dirname(dest)):
                     mkdir_p(dirname(dest))
                 with open(dest, 'wb') as ofile:
                     while True:
@@ -781,7 +781,7 @@ def find(path, maxdepth = -1, hardlinks = True):
     stack = [(e, 0) for e in stack]
     while len(stack) > 0:
         (f, d) = stack.pop()
-        if os.path.exists(f):
+        if os.path.lexists(f):
             f = f if not f.endswith(os.sep) else f[:-1]
             if (not os.path.islink(f)) and os.path.isdir(f):
                 inode = os.lstat(f).st_ino
@@ -945,7 +945,7 @@ def path(exprs, existing = False):
                         _f = []
                         for _ in f:
                             root = os.curdir if len(_) == 0 else _
-                            if os.path.exists(root) and not os.path.isdir(root):
+                            if os.path.lexists(root) and not os.path.isdir(root):
                                 break
                             subs = os.listdir(root)
                             matches = []
@@ -982,7 +982,7 @@ def path(exprs, existing = False):
         return rc
     nrc = []
     for p in rc:
-        if os.path.exists(p) and ((not p.endswith(os.sep)) or os.path.isdir(p)):
+        if os.path.lexists(p) and ((not p.endswith(os.sep)) or os.path.isdir(p)):
             nrc.append(p)
     return nrc
 
@@ -1011,7 +1011,7 @@ def decompress(path, format = None):
         for d in get('PATH').split(os.pathsep):
             if not d.endswith(os.sep):
                 d += os.sep
-            if os.path.exists(d + 'cpio'):
+            if os.path.lexists(d + 'cpio'):
                 havecpio = True
                 break
         fmt = {'gz' : 'gzip -d %s',
