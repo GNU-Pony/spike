@@ -1214,12 +1214,13 @@ def sed_script(pattern, replacement, selection = None, transliterate = False, mu
     
     Patterns are written as in sed, escape, % is used instead of \, and %% instead of %
     
-    @param  pattern:str         The replacee pattern
-    @param  replacement:str     The replacement pattern
-    @param  selection:str?      Pattern to find to qualify a line for modification
-    @param  transliterate:bool  Whether to translate character rather the using regular expression
-    @param  multiline:bool      Whether patterns can span multiple lines
-    @param  index:int           Index per match on a line to replace, 0 for all
+    @param   pattern:str         The replacee pattern
+    @param   replacement:str     The replacement pattern
+    @param   selection:str?      Pattern to find to qualify a line for modification
+    @param   transliterate:bool  Whether to translate character rather the using regular expression
+    @param   multiline:bool      Whether patterns can span multiple lines
+    @param   index:int           Index per match on a line to replace, 0 for all
+    @return  :str                The sed script
     '''
     pattern = pattern.replace('\\', '\\\\').replace('/', '\\/')
     pattern = pattern.replace('%%', '\0').replace('%', '\\').replace('\0', '%')
@@ -1237,4 +1238,5 @@ def sed_script(pattern, replacement, selection = None, transliterate = False, mu
         script = '/%s/%s' % (selection, script)
     if multiline:
         script = ':a;N;$!ba;' + script
+    return script
 
