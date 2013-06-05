@@ -1066,6 +1066,7 @@ def chroot(directory, function):
     pid = os.fork()
     if pid == 0:
         os.chroot(directory)
+        os.chdir(directory)
         function()
         exit(0)
     else:
