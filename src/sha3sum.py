@@ -231,7 +231,7 @@ class SHA3:
         '''
         self.M += msg
         nnn = len(self.M)
-        nnn -= nnn % 2048000
+        nnn -= nnn % 204800
         message = self.M[:nnn]
         self.M = self.M[nnn:]
         
@@ -315,9 +315,9 @@ class SHA3:
         ptr = 0
         while (olen > 0):
             i = 0
-            while (i < 25) and (j < 25):
+            while (i < 25) and (j < 72):
                 v = self.S[(i % 5) * 5 + i // 5]
-                for _ in range(64):
+                for _ in range(8):
                     if (j < 72):
                         rc[ptr] = v & 255
                         ptr += 1
