@@ -74,15 +74,19 @@ class Gitcord():
         return 0 == __exec(['git', 'checkout', bransh])
     
     
-    def clone(repository, directory):
+    def clone(repository, directory, branch = None):
         '''
         Change current bransh in the repository
         
         @param   repository:str  The URL of the repository to clone
         @param   directory:str   The directory of the local clone
+        @param   branch:str?     The branch to download
         @return  :bool           Whether the spell casting was successful
         '''
-        return 0 == __exec(['git', 'clone', repository, directory])
+        if branch is None:
+            return 0 == __exec(['git', 'clone', repository, directory])
+        else:
+            return 0 == __exec(['git', 'clone', '--branch', branch, '--single-branch', repository, directory])
     
     
     def createRepository(directory):
