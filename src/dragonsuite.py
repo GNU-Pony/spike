@@ -592,8 +592,11 @@ def install_info(path, infodir = None):
     @param  infodir:str?        Directory for info manuals
     '''
     if infodir is None:
-        i = get('infodir', '%susr%sshare%sinfo%s' % (os.sep, os.sep, os.sep, os.sep))
-        infodir = i + 'dir'
+        infodir = get('infodir', '%susr%sshare%sinfo%s' % (os.sep, os.sep, os.sep, os.sep))
+    if infodir.endswith(os.sep):
+        infodir += 'dir'
+    else:
+        infodir += os.sep + 'dir'
     for p in ([path] if isinstance(path, str) else path):
         execute(['install-info', '--dir-file', infodir, '--', p], fail = False)
 
@@ -606,8 +609,11 @@ def uninstall_info(path, infodir = None):
     @param  infodir:str?        Directory for info manuals
     '''
     if infodir is None:
-        i = get('infodir', '%susr%sshare%sinfo%s' % (os.sep, os.sep, os.sep, os.sep))
-        infodir = i + 'dir'
+        infodir = get('infodir', '%susr%sshare%sinfo%s' % (os.sep, os.sep, os.sep, os.sep))
+    if infodir.endswith(os.sep):
+        infodir += 'dir'
+    else:
+        infodir += os.sep + 'dir'
     for p in ([path] if isinstance(path, str) else path):
         execute(['install-info', '--delete', '--dir-file', infodir, '--', p], fail = False)
 
