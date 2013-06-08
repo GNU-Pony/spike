@@ -593,6 +593,7 @@ def install_info(path, infodir = None):
     '''
     if infodir is None:
         infodir = get('infodir', '%susr%sshare%sinfo%s' % (os.sep, os.sep, os.sep, os.sep))
+        infodir = get('PINPAL') + infodir
     if infodir.endswith(os.sep):
         infodir += 'dir'
     else:
@@ -610,6 +611,7 @@ def uninstall_info(path, infodir = None):
     '''
     if infodir is None:
         infodir = get('infodir', '%susr%sshare%sinfo%s' % (os.sep, os.sep, os.sep, os.sep))
+        infodir = get('PINPAL') + infodir
     if infodir.endswith(os.sep):
         infodir += 'dir'
     else:
