@@ -1215,7 +1215,7 @@ class Spike():
                 pass
             def __call__(self, filename, checksum):
                 if checksum is None:
-                    if os.path.exists(filename):
+                    if not os.path.exists(filename):
                         printerr('%s is not exist.' % filename)
                     else:
                         printerr('%s is not a regular file.' % filename)
