@@ -55,28 +55,28 @@ class Gitcord():
                 return 255
     
     
-    def updateBransh():
+    def updateBranch():
         '''
-        Update the current bransh in the repository
+        Update the current branch in the repository
         
         @return  :bool  Whether the spell casting was successful
         '''
         return 0 == __exec(['git', 'pull']) ## TODO add --verify-signatures at git 1.8.2-rc4
     
     
-    def changeBransh(bransh):
+    def changeBranch(branch):
         '''
-        Change current bransh in the repository
+        Change current branch in the repository
         
-        @param   bransh:str  The new current bransh
+        @param   branch:str  The new current branch
         @return  :bool       Whether the spell casting was successful
         '''
-        return 0 == __exec(['git', 'checkout', bransh])
+        return 0 == __exec(['git', 'checkout', branch])
     
     
     def clone(repository, directory, branch = None):
         '''
-        Change current bransh in the repository
+        Clone a remote repository
         
         @param   repository:str  The URL of the repository to clone
         @param   directory:str   The directory of the local clone
@@ -145,4 +145,22 @@ class Gitcord():
                 cmd += '--gpg-sign=' + gpgsign
         cmd += ['--message', message]
         return 0 == __exec(cmd)
+    
+    
+    def download(repository, directory = None, branch = None):
+        '''
+        Download the tip of a remote repository
+        
+        @param   repository:str  The URL of the repository to clone
+        @param   directory:str   The directory of the local clone
+        @param   branch:str?     The branch to download
+        @return  :bool           Whether the spell casting was successful
+        '''
+        params = ['git', 'clone', '--single-branch', '--depth', '1']
+        if branch is not None:
+            params += ['--branch', branch]
+        params.append(repository)
+        if directory is not None:
+            params.append(directory)
+        return 0 == __exec(params)
 

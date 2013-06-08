@@ -152,7 +152,7 @@ class LibSpike():
         
         for repo in update:
             aggregator(repo, 1)
-            if not Gitcord(repo).updateBransh():
+            if not Gitcord(repo).updateBranch():
                 return 24
             aggregator(repo, 2)
         
