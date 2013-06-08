@@ -584,20 +584,32 @@ def strip(path, *params):
     execute(cmd, fail = False)
 
 
-def installinfo(path):
+def install_info(path, infodir = None):
     '''
     Update info/dir entries
     
     @param  path:str|list<str>  New or updated entries
+    @param  infodir:str?        Directory for info manuals
     '''
-    r = get('root', os.sep)
-    i = get('infodir', '%susr%sshare%sinfo' % (os.sep, os.sep, os.sep))
-    if not r.endswith(os.sep): r += os.sep
-    if i.startswith(os.sep): i = i[1:]
-    if not i.endswith(os.sep) and len(i) > 0: i += os.sep
-    d = r + i + 'dir'
-    for p in (['--', path] if isinstance(path, str) else (['--'] + path)):
-        execute(['install-info', '--', p, d], fail = False)
+    if infodir is None:
+        i = get('infodir', '%susr%sshare%sinfo%s' % (os.sep, os.sep, os.sep, os.sep))
+        infodir = i + 'dir'
+    for p in ([path] if isinstance(path, str) else path):
+        execute(['install-info', '--dir-file', infodir, '--', p], fail = False)
+
+
+def uninstall_info(path, infodir = None):
+    '''
+    Delete info/dir entries
+    
+    @param  path:str|list<str>  Removed entries
+    @param  infodir:str?        Directory for info manuals
+    '''
+    if infodir is None:
+        i = get('infodir', '%susr%sshare%sinfo%s' % (os.sep, os.sep, os.sep, os.sep))
+        infodir = i + 'dir'
+    for p in ([path] if isinstance(path, str) else path):
+        execute(['install-info', '--delete', '--dir-file', infodir, '--', p], fail = False)
 
 
 def mv(source, destination):
