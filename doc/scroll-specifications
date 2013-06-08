@@ -84,7 +84,7 @@ provides:list<str>=[]
 extension:str?=None
 	Package that the package extends, meaning that the package is
 	meaningless without that package and should be uninstalled when
-	that package is uninstalled.
+	that package is uninstalled. Runtime dependency is implied.
 
 variant:str?=None
 	Package that the package is an variant of, may or may not be
