@@ -349,8 +349,8 @@ class SHA3:
                 chunk = file.read(blksize)
                 if len(chunk) == 0:
                     break
-                SHA3.update(chunk)
-            bs = SHA3.digest(file.read())
+                self.update(chunk)
+            bs = self.digest()
             for b in bs:
                 rc += "0123456789ABCDEF"[b >> 4]
                 rc += "0123456789ABCDEF"[b & 15]

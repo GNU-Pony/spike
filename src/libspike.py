@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import os
 
 from gitcord import *
+from sha3sum import *
 
 
 
@@ -62,6 +63,7 @@ class LibSpike():
                  23 - File access denied
                  24 - Cannot pull git repository
                  25 - Cannot checkout git repository
+                 26 - File is of wrong type, normally a directory or regular file when the other is expected
                 255 - Unknown error
     '''
     
@@ -408,6 +410,35 @@ class LibSpike():
         @return  :byte       Exit value, see description of `LibSpike`, the possible ones are: 0 (TODO)
         '''
         return 0
+    
+    
+    @staticmethod
+    def sha3sum(aggregator, files):
+        '''
+        Look for errors in a scrolls
+        
+        @param   aggregator:(str, str?)→void
+                     Feed a file and its checksum when one has been calculated.
+                    `None` is returned as the checksum if it is not a regular file or does not exist.
+        
+        @param   files:list<str>  Files for which to calculate the checksum
+        @return  :byte            Exit value, see description of `LibSpike`, the possible ones are: 0, 12, 16
+        '''
+        error = 0
+        sha3 = SHA3()
+        for filename in files:
+            if not os.path.exists(filename):
+                aggregator(filename, None);
+                if error == 0:
+                    error = 12
+            elif not os.path.isfile(filename):
+                aggregator(filename, None);
+                if error == 0:
+                    error = 16
+            else:
+                aggregator(filename, sha3.digestFile(filename));
+                sha3.reinitialise()
+        return error
 
 
 

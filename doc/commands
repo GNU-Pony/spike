@@ -56,6 +56,10 @@ spike --version
 spike --copyright
 --> display copyright information
 
+spike --sha3sum FILE...
+--> calculate SHA3 checksums for files to use in scrolls,
+--> do not except the files to be returned in order.
+
 
 
 -B  --bootstrap
@@ -84,6 +88,7 @@ spike --copyright
     --nodep
 -f  --info
 -I  --interactive
+-3  --sha3sum
     --force
 -A  --archive
     --restore-archive

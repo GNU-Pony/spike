@@ -100,13 +100,14 @@ class Spike():
                      23 - File access denied
                      24 - Cannot pull git repository
                      25 - Cannot checkout git repository
+                     26 - File is of wrong type, normally a directory or regular file when the other is expected
                     255 - Unknown error
         
         @param  args:list<str>  Command line arguments, including invoked program alias ($0)
         '''
         self.execprog = args[0].split('/')[-1]
         
-        usage = self.prog + ' [command [option]... [FILE... SCROLL | SCROLL...]]'
+        usage = self.prog + ' [command [option]... [FILE... | FILE... SCROLL | SCROLL...]]'
         usage = usage.replace('spike',   '\033[35m' 'spike'   '\033[00m')
         usage = usage.replace('command', '\033[33m' 'command' '\033[00m')
         usage = usage.replace('option',  '\033[33m' 'option'  '\033[00m')
@@ -162,6 +163,8 @@ class Spike():
         opts.add_argumentless(['-I', '--interactive'],                help = 'Start in interative graphical terminal mode\n'
                                                                              '(supports installation and uninstallation only)\n'
                                                                              'slaves: [--shred]')
+        opts.add_argumentless(['-3', '--sha3sum'],                    help = 'Calculate the SHA3 checksums for files\n'
+                                                                             '(do not expect files to be listed in order)')
         
         opts.add_argumentless(['-o', '--owner'],                      help = 'Find owner pony for file')
         opts.add_argumented(  ['-w', '--written'],   arg = 'boolean', help = 'Search only for installed ("yes") or not installed ("no") ponies')
@@ -205,6 +208,7 @@ class Spike():
         longmap['-N'] = '--clean'
         longmap['-P'] = '--proofread'
         longmap['-I'] = '--interactive'
+        longmap['-3'] = '--sha3sum'
         longmap['-o'] = '--owner'
         longmap['-w'] = '--written'
         longmap['-u'] = '--private'
@@ -214,7 +218,7 @@ class Spike():
         longmap['-s'] = '--scrolls'
         
         exclusives = set()
-        for opt in 'vhcBFWUEXRCDANPI':
+        for opt in 'vhcBFWUEXRCDANPI3':
             exclusives.add('-' + opt)
         exclusives.add('--restore-archive')
         self.test_exclusiveness(opts.opts, exclusives, longmap, True)
@@ -253,6 +257,10 @@ class Spike():
                 self.test_allowed(opts.opts, allowed, longmap, True)
                 self.test_files(opts.files, 0, True)
                 self.print_copyright()
+            
+            elif opts.opts['-3'] is not None:
+                self.test_allowed(opts.opts, allowed, longmap, True)
+                exitValue = self.sha3sum(opts.files)
             
             elif opts.opts['-B'] is not None:
                 self.test_allowed(opts.opts, allowed, longmap, True)
@@ -429,7 +437,7 @@ class Spike():
         
         except Exception as err:
             exitValue = 255
-            print("%s: %s", self.execprog, str(err))
+            print("%s: %s" % (self.execprog, str(err)))
             
         exit(exitValue)
     
@@ -1188,6 +1196,34 @@ class Spike():
             return 15
         # TODO interactive mode
         return 0
+    
+    
+    def sha3sum(self, files):
+        '''
+        Calculate the SHA3 checksum for files to be used in scrolls
+        
+        @param   files:list<str>  Files for which to calculate the checksum
+        @return  :byte            Exit value, see description of `mane`
+        '''
+        class Agg:
+            '''
+            aggregator:(str, str?)→void
+                Feed a file and its checksum when one has been calculated.
+                `None` is returned as the checksum if it is not a regular file or does not exist.
+            '''
+            def __init__(self):
+                pass
+            def __call__(self, filename, checksum):
+                if checksum is None:
+                    if os.path.exists(filename):
+                        printerr('%s is not exist.' % filename)
+                    else:
+                        printerr('%s is not a regular file.' % filename)
+                else:
+                    print('\033[01m%s\033[21m  %s' % (checksum, filename));
+        
+        return LibSpike.sha3sum(Agg(), files)
+        
 
 
 
