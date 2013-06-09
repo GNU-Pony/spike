@@ -47,6 +47,7 @@ class Gitcord():
         proc = None
         try:
             proc = Popen(command, cwd=self.dir, stdout=sys.stderr, stdin=sys.stdin, stderr=sys.stderr)
+            proc.wait()
             return proc.returncode
         except:
             if proc is not None:
@@ -163,4 +164,60 @@ class Gitcord():
         if directory is not None:
             params.append(directory)
         return 0 == __exec(params)
+    
+    
+    def stash():
+        '''
+        Stash all uncommited staged changes
+        
+        @return  :bool  Whether the spell casting was successful, not it is successful even if there was nothing to stash and no object has been added to the stash stack
+        '''
+        return 0 == __exec(['git', 'stash'])
+    
+    
+    def popStash():
+        '''
+        Pop and apply the top of the stash stack
+        
+        @return  :bool  Whether the spell casting was successful
+        '''
+        return 0 == __exec(['git', 'stash', 'pop'])
+    
+    
+    def applyStash():
+        '''
+        Peek and apply the top of the stash stack
+        
+        @return  :bool  Whether the spell casting was successful
+        '''
+        return 0 == __exec(['git', 'stash', 'apply'])
+    
+    
+    def dropStash():
+        '''
+        Pop but do not apply the top of the stash stack
+        
+        @return  :bool  Whether the spell casting was successful
+        '''
+        return 0 == __exec(['git', 'stash', 'drop'])
+    
+    
+    def listStash():
+        '''
+        Get all items in the stash stack, you can use this to determine of a stash operation created and object
+        
+        @return  :list<str>?  All times in the stash stack, `None` on error
+        '''
+        proc = None
+        out = None
+        try:
+            proc = Popen(command, cwd=self.dir, stdout=PIPE, stdin=sys.stdin, stderr=sys.stderr)
+            out = proc.communicate()[0]
+            if proc.returncode != 0:
+                return None
+        except:
+            return None
+        while out.endswith('\n'):
+            out = out[:-1]
+        return out.split('\n')
 
