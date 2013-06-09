@@ -88,7 +88,8 @@ extension:str?=None
 
 variant:str?=None
 	Package that the package is an variant of, may or may not be
-	installed at the same time.
+	installed at the same time. It is implied that the package
+	provides the package of which it is an variant.
 
 patch:str?=None
 	Package that the package patches when that package is built.
