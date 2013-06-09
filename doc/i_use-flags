@@ -5,13 +5,15 @@ the scrolls. Booleanic flags are interpreted as
 set to true if the value starts with a 'y' or ‘Y’.
 The following I_USE-flags are used:
 
-I_USE_INFO     Whether you want info manuals installed.
-I_USE_MAN      Whether you want man manuals installed.
-I_USE_MAN_*    Whether you want man manuals if the language code *
-I_USE_BOOTDIR  ‘normal’ for a seperate /boot directory, ‘flat’ for
-	       /boot linking to /, and ‘none’ for no /boot.
-I_USE_SKEL     Whether you want user skeleton files installed.
-I_USE_BASH     Whether you want autocompletion for bash installed.
-I_USE_ZSH     Whether you want autocompletion for zsh installed.
-I_USE_FISH     Whether you want autocompletion for fish installed.
+I_USE_INFO      Whether you want info manuals installed.
+I_USE_PDF_INFO  Whether you want PDF compilations of info manuals installed.
+I_USE_MAN       Whether you want man manuals installed.
+I_USE_MAN_*     Whether you want man manuals if the language code *
+I_USE_BOOTDIR   ‘normal’ for a seperate /boot directory, ‘flat’ for
+	        /boot linking to /, and ‘none’ for no /boot.
+I_USE_SKEL      Whether you want user skeleton files installed.
+I_USE_BASH      Whether you want autocompletion for bash installed.
+I_USE_ZSH       Whether you want autocompletion for zsh installed.
+I_USE_FISH      Whether you want autocompletion for fish installed.
+I_USE_TTY       Whether you TTY only program resources installed.
 
