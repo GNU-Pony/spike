@@ -11,4 +11,7 @@ I_USE_MAN_*    Whether you want man manuals if the language code *
 I_USE_BOOTDIR  ‘normal’ for a seperate /boot directory, ‘flat’ for
 	       /boot linking to /, and ‘none’ for no /boot.
 I_USE_SKEL     Whether you want user skeleton files installed.
+I_USE_BASH     Whether you want autocompletion for bash installed.
+I_USE_ZSH     Whether you want autocompletion for zsh installed.
+I_USE_FISH     Whether you want autocompletion for fish installed.
 
