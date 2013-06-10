@@ -227,11 +227,10 @@ class LibSpike():
                      Feed a file path and `None` when it as been determined that their is no owner.
         
         @param   files:list<str>  Files for which to do lookup
-        @return  :byte            Exit value, see description of `LibSpike`, the possible ones are: 0
+        @return  :byte            Exit value, see description of `LibSpike`, the possible ones are: 0, 27
         '''
         # TODO support claim --entire
-        joinedLookup(aggregator, 'file', 'scroll', files, DB_SIZE_SCROLL, CONVERT_STR)
-        return 0
+        return joinedLookup(aggregator, 'file', 'scroll', files, DB_SIZE_SCROLL, CONVERT_STR)
     
     
     @staticmethod
@@ -357,14 +356,20 @@ class LibSpike():
                         fileid_scrolls[fileid].append(scroll)
                     else:
                         fileid_scrolls[fileid] = [scroll]
-        joinedLookup(Agg(), 'scroll', 'fileid', files, DB_SIZE_FILEID, CONVERT_INT)
-        fileid_file = SpikeDB(SPIKE_PATH.replace('%', '%%') + ('var/%s_%s.%%i' % ('fileid', 'file')), 4)
+        error = max(error, joinedLookup(Agg(), 'scroll', 'fileid', files, DB_SIZE_FILEID, CONVERT_INT))
         sink = []
+        fileid_file = SpikeDB(SPIKE_PATH.replace('%', '%%') + ('var/%s_%s.%%i' % ('fileid', 'file')), 4)
+        fileid_file.fetch(sink, fileid_scrolls.keys())
+        fileid_file = SpikeDB(SPIKE_PATH.replace('%', '%%') + ('var/priv_%s_%s.%%i' % ('fileid', 'file')), 4)
         fileid_file.fetch(sink, fileid_scrolls.keys())
         file_fileid = {}
+        nones = set()
         for (fileid, file) in sink:
             if file is None:
-                error = 27
+                if file in nones:
+                    error = 27
+                else:
+                    nones.add(file)
                 continue
             _file = ''
             for c in file:
@@ -374,16 +379,19 @@ class LibSpike():
                 file_fileid[file].append(fileid)
             else:
                 file_fileid[file] = [fileid]
+        nones = set()
         for file in file_fileid.keys():
-            fileid_file = SpikeDB(SPIKE_PATH.replace('%', '%%') + ('var/%s_%s.%%i' % ('fileid', 'file%i' % file)), 1 << file)
             class Sink:
                 def __init__(self):
                     pass
                 def append(self, _fileid__file):
                     (_fileid, _file) = _fileid__file
                     if _file is None:
-                        error = 27
-                        continue
+                        if file in nones:
+                            error = 27
+                        else:
+                            nones.add(file)
+                        break
                     __file = ''
                     for c in _file:
                         if c == 0:
@@ -391,6 +399,9 @@ class LibSpike():
                         __file += chr(c)
                     for scroll in fileid_scrolls(_fileid):
                         aggregator(__file, scroll)
+            fileid_file = SpikeDB(SPIKE_PATH.replace('%', '%%') + ('var/%s_%s.%%i' % ('fileid', 'file%i' % file)), 1 << file)
+            fileid_file.fetch(Sink(), file_fileid[file])
+            fileid_file = SpikeDB(SPIKE_PATH.replace('%', '%%') + ('var/priv_%s_%s.%%i' % ('fileid', 'file%i' % file)), 1 << file)
             fileid_file.fetch(Sink(), file_fileid[file])
         return error
     
@@ -538,7 +549,7 @@ class LibSpike():
     
     
     @staticmethod
-    def joinedLookup(aggregator, fromName, toName, fromInput, toSize, toConv = CONVERT_NONE, midName = 'id', midSize = DB_SIZE_ID):
+    def joinedLookup(aggregator, fromName, toName, fromInput, toSize, toConv = CONVERT_NONE, midName = 'id', midSize = DB_SIZE_ID, private = None):
         '''
         Perform a joined database lookup from on type to another, joined using an intermediary
         
@@ -546,22 +557,32 @@ class LibSpike():
                     Feed a input with its output when an output value has been found,
                     but with `None` as output if there is no output
         
-        @param  fromName:str   The input type
-        @param  toName:str     The output type
-        @param  fromInput:str  Input
-        @param  toSize:str     The output type size
-        @param  toConv:int     How to convert the size
-        @param  midName:str    The intermediary type, must be numeric
-        @param  midSize:str    The intermediary type size
+        @param   fromName:str   The input type
+        @param   toName:str     The output type
+        @param   fromInput:str  Input
+        @param   toSize:str     The output type size
+        @param   toConv:int     How to convert the size
+        @param   midName:str    The intermediary type, must be numeric
+        @param   midSize:str    The intermediary type size
+        @param   private:bool?  Whether to look in the private files rather then the public, `None` for both
+        @return  :byte          Exit value, see description of `LibSpike`, the possible ones are: 0, 27
         '''
-        from_mid = SpikeDB(SPIKE_PATH.replace('%', '%%') + ('var/%s_%s.%%i' % (fromName, midName)), midSize)
-        mid_to   = SpikeDB(SPIKE_PATH.replace('%', '%%') + ('var/%s_%s.%%i' % (midName,   toName)),  toSize)
+        pres = ([''] if ((not private) or (private is None)) else []) else (['priv_'] if (private or (private is None)) else [])
+        from_mid = [SpikeDB(SPIKE_PATH.replace('%', '%%') + ('var/%s%s_%s.%%i' % (pre, fromName, midName)), midSize) for pre in pres]
+        mid_to   = [SpikeDB(SPIKE_PATH.replace('%', '%%') + ('var/%s%s_%s.%%i' % (pre, midName,   toName)),  toSize) for pre in pres]
         sink = []
         ab_as = {}
-        from_mid.fetch(sink, fromInput)
+        for _from_mid in from_mid:
+            _from_mid.fetch(sink, fromInput)
+        nones = {}
         for (a, ab) in sink:
             if ab is None:
-                aggregator(a, None)
+                if a in nones:
+                    nones[a] += 1
+                else:
+                    nones[a] = 1
+                if nones[a] == len(pres):
+                    aggregator(a, None)
             else:
                 _ab = ''
                 for c in ab:
@@ -573,11 +594,21 @@ class LibSpike():
                     ab_as[_ab].append(a)
                 else:
                     ab_as[_ab] = [a]
+        nones = {}
+        error = 0
         class Agg:
             def __init__(self):
                 pass
             def append(self, ab_b):
                 (ab, b) = ab_b
+                if b is None:
+                    if ab in nones:
+                        nones[ab] += 1
+                    else:
+                        nones[ab] = 1
+                        if nones[ab] == len(pres):
+                            error = 27
+                    break
                 _b = ''
                 if toConv == CONVERT_STR:
                     for c in b:
@@ -595,7 +626,9 @@ class LibSpike():
                         _b += chr(c)
                 for a in ab_as[ab]:
                     aggregator(a, _b)
-        mid_to.fetch(Agg(), ab_as.keys())
+        for _mid_to in mid_to:
+            _mid_to.fetch(Agg(), ab_as.keys())
+        return error
 
 
 
