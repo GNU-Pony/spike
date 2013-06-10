@@ -2,7 +2,7 @@ I_USE-flags are variables passed to the scrolls
 to specify details one how you want your system
 installed. I_USE-flags default value depend on
 the scrolls. Booleanic flags are interpreted as
-set to true if the value starts with a 'y' or ‘Y’.
+set to true if the value starts with a ‘y’ or ‘Y’.
 The following I_USE-flags are used:
 
 I_USE_INFO      Whether you want info manuals installed.
@@ -10,7 +10,7 @@ I_USE_PDF_INFO  Whether you want PDF compilations of info manuals installed.
 I_USE_MAN       Whether you want man manuals installed.
 I_USE_MAN_*     Whether you want man manuals if the language code *
 I_USE_BOOTDIR   ‘normal’ for a seperate /boot directory, ‘flat’ for
-	        /boot linking to /, and ‘none’ for no /boot.
+                /boot linking to /, and ‘none’ for no /boot.
 I_USE_SKEL      Whether you want user skeleton files installed.
 I_USE_BASH      Whether you want autocompletion for bash installed.
 I_USE_ZSH       Whether you want autocompletion for zsh installed.
