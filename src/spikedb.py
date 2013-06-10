@@ -91,7 +91,7 @@ class SpikeDB():
     
     def files(self):
         '''
-        Gest all files associated with the database
+        Gets all files associated with the database
         
         @return  :list<str>  All files associated with the database
         '''

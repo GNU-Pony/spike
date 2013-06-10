@@ -2,3 +2,13 @@ To freeze Spike from updating when running --bootstrap put a file named `frozen.
 
 Similarly, you can put .git/frozen.spike in a repository directory to freeze it.
 
+
+Database files:
+
+	 file_id	file → owner scroll id		value_size = 4
+	 id_fileid      scroll id → owned file id	value_size = 64
+	 fileid_file    file id → lb(file name lenght)	value_size = 4 (→ max file name lenght = 65536 bytes)
+	 fileid_file¤   file id → file name 		value_size = 2↑¤
+	 id_scroll	scroll id → scroll name		value_size = 64
+	 scroll_id	scroll name → scroll id		value_size = 4
+

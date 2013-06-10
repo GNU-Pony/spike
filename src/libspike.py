@@ -22,6 +22,7 @@ import os
 
 from gitcord import *
 from sha3sum import *
+from spikedb import *
 
 
 
@@ -33,6 +34,38 @@ Spike's location
 SPIKE_PROGNAME = 'spike'
 '''
 The program name of Spike
+'''
+
+
+CONVERT_NONE = 0
+'''
+Do not convert database values
+'''
+
+CONVERT_INT = 1
+'''
+Do not convert database values as if numerical
+'''
+
+CONVERT_STR = 2
+'''
+Do not convert database values as if text
+'''
+
+
+DB_SIZE_ID = 4
+'''
+The maximum length of scroll ID
+'''
+
+DB_SIZE_SCROLL = 64
+'''
+The maximum length of scroll name
+'''
+
+DB_SIZE_FILEID = 64
+'''
+The maximum length of file ID
 '''
 
 
@@ -64,6 +97,7 @@ class LibSpike():
                  24 - Cannot pull git repository
                  25 - Cannot checkout git repository
                  26 - File is of wrong type, normally a directory or regular file when the other is expected
+                 27 - Corrupt database
                 255 - Unknown error
     '''
     
@@ -193,8 +227,10 @@ class LibSpike():
                      Feed a file path and `None` when it as been determined that their is no owner.
         
         @param   files:list<str>  Files for which to do lookup
-        @return  :byte            Exit value, see description of `LibSpike`, the possible ones are: 0 (TODO)
+        @return  :byte            Exit value, see description of `LibSpike`, the possible ones are: 0
         '''
+        # TODO support claim --entire
+        joinedLookup(aggregator, 'file', 'scroll', files, DB_SIZE_SCROLL, CONVERT_STR)
         return 0
     
     
@@ -298,13 +334,65 @@ class LibSpike():
         '''
         List files installed for ponies
         
-        @param   aggregator:(str, str)→void
-                     Feed the pony and the file when a file is detected
+        @param   aggregator:(str, str?)→void
+                     Feed the pony and the file when a file is detected,
+                     but `None` as the file if the pony is not installed.
         
         @param   ponies:list<str>  Installed ponies for which to list claimed files
-        @return  :byte             Exit value, see description of `LibSpike`, the possible ones are: 0 (TODO)
+        @return  :byte             Exit value, see description of `LibSpike`, the possible ones are: 0, 7, 27
         '''
-        return 0
+        # TODO support claim --entire
+        error = 0
+        fileid_scrolls = {}
+        class Agg:
+            def __init__(self):
+                pass
+            def __call__(self, scroll_fileid):
+                (scroll, fileid) = scroll_fileid
+                if fileid is None:
+                    aggregator(scroll, None)
+                    error = 7
+                else:
+                    if fileid in fileid_scrolls:
+                        fileid_scrolls[fileid].append(scroll)
+                    else:
+                        fileid_scrolls[fileid] = [scroll]
+        joinedLookup(Agg(), 'scroll', 'fileid', files, DB_SIZE_FILEID, CONVERT_INT)
+        fileid_file = SpikeDB(SPIKE_PATH.replace('%', '%%') + ('var/%s_%s.%%i' % ('fileid', 'file')), 4)
+        sink = []
+        fileid_file.fetch(sink, fileid_scrolls.keys())
+        file_fileid = {}
+        for (fileid, file) in sink:
+            if file is None:
+                error = 27
+                continue
+            _file = ''
+            for c in file:
+                _file += chr(c)
+            file = int(_file)
+            if file in file_fileid:
+                file_fileid[file].append(fileid)
+            else:
+                file_fileid[file] = [fileid]
+        for file in file_fileid.keys():
+            fileid_file = SpikeDB(SPIKE_PATH.replace('%', '%%') + ('var/%s_%s.%%i' % ('fileid', 'file%i' % file)), 1 << file)
+            class Sink:
+                def __init__(self):
+                    pass
+                def append(self, _fileid__file):
+                    (_fileid, _file) = _fileid__file
+                    if _file is None:
+                        error = 27
+                        continue
+                    __file = ''
+                    for c in _file:
+                        if c == 0:
+                            break
+                        __file += chr(c)
+                    for scroll in fileid_scrolls(_fileid):
+                        aggregator(__file, scroll)
+            fileid_file.fetch(Sink(), file_fileid[file])
+        return error
     
     
     @staticmethod
@@ -335,7 +423,7 @@ class LibSpike():
         @param   pony:str           The pony
         @param   recursiveness:int  0 for not recursive, 1 for recursive, 2 for recursive at detection
         @param   private:bool       Whether the pony is user private rather the user shared
-        @param   force:bool         Whether to override current file claim
+        @param   force:bool         Whether to extend current file claim
         @return  :byte              Exit value, see description of `LibSpike`, the possible ones are: 0 (TODO)
         '''
         return 0
@@ -445,6 +533,67 @@ class LibSpike():
                 aggregator(filename, sha3.digestFile(filename));
                 sha3.reinitialise()
         return error
+    
+    
+    @staticmethod
+    def joinedLookup(aggregator, fromName, toName, fromInput, toSize, toConv = CONVERT_NONE, midName = 'id', midSize = DB_SIZE_ID):
+        '''
+        Perform a joined database lookup from on type to another, joined using an intermediary
+        
+        @param  aggregator:(str, str?)→void
+                    Feed a input with its output when an output value has been found,
+                    but with `None` as output if there is no output
+        
+        @param  fromName:str   The input type
+        @param  toName:str     The output type
+        @param  fromInput:str  Input
+        @param  toSize:str     The output type size
+        @param  toConv:int     How to convert the size
+        @param  midName:str    The intermediary type, must be numeric
+        @param  midSize:str    The intermediary type size
+        '''
+        from_mid = SpikeDB(SPIKE_PATH.replace('%', '%%') + ('var/%s_%s.%%i' % (fromName, midName)), midSize)
+        mid_to   = SpikeDB(SPIKE_PATH.replace('%', '%%') + ('var/%s_%s.%%i' % (midName,   toName)),  toSize)
+        sink = []
+        ab_as = {}
+        from_mid.fetch(sink, fromInput)
+        for (a, ab) in sink:
+            if ab is None:
+                aggregator(a, None)
+            else:
+                _ab = ''
+                for c in ab:
+                    if (c != '0') or (len(_ab) > 0):
+                        _ab += chr(c)
+                if _ab == '':
+                    _ab = '0'
+                if _ab in ab_as:
+                    ab_as[_ab].append(a)
+                else:
+                    ab_as[_ab] = [a]
+        class Agg:
+            def __init__(self):
+                pass
+            def append(self, ab_b):
+                (ab, b) = ab_b
+                _b = ''
+                if toConv == CONVERT_STR:
+                    for c in b:
+                        if c == 0:
+                            break
+                        _b += chr(c)
+                elif toConv == CONVERT_INT:
+                    for c in b:
+                        if (c != '0') or (len(_b) > 0):
+                            _b += chr(c)
+                    if _b == '':
+                        _b = '0'
+                else:
+                    for c in b:
+                        _b += chr(c)
+                for a in ab_as[ab]:
+                    aggregator(a, _b)
+        mid_to.fetch(Agg(), ab_as.keys())
 
 
 

@@ -101,6 +101,7 @@ class Spike():
                      24 - Cannot pull git repository
                      25 - Cannot checkout git repository
                      26 - File is of wrong type, normally a directory or regular file when the other is expected
+                     27 - Corrupt database
                     255 - Unknown error
         
         @param  args:list<str>  Command line arguments, including invoked program alias ($0)
@@ -437,8 +438,10 @@ class Spike():
         
         except Exception as err:
             exitValue = 255
-            print("%s: %s" % (self.execprog, str(err)))
-            
+            printerr('%s: %s' % (self.execprog, str(err)))
+        
+        if exitValue == 27:
+            printerr('%s: \033[01;31m%s\033[00m' % (self.execprog, 'corrupt database'))
         exit(exitValue)
     
     
@@ -967,13 +970,17 @@ class Spike():
         '''
         class Agg:
             '''
-            aggregator:(str, str)→void
-                Feed the pony and the file when a file is detected
+            aggregator:(str, str?)→void
+                Feed the pony and the file when a file is detected,
+                but `None` as the file if the pony is not installed.
             '''
             def __init__(self):
                 pass
             def __call__(self, owner, filename):
-                print('%s: %s' % (owner, filename))
+                if filename is None:
+                    printerr('%s is not installed')
+                else:
+                    print('%s: %s' % (owner, filename))
         
         return LibSpike.read_files(Agg(), ponies)
     
