@@ -629,11 +629,11 @@ class LibSpike():
         sha3 = SHA3()
         for filename in files:
             if not os.path.exists(filename):
-                aggregator(filename, None);
+                aggregator(filename, None)
                 if error == 0:
                     error = 12
             elif not os.path.isfile(filename):
-                aggregator(filename, None);
+                aggregator(filename, None)
                 if error == 0:
                     error = 16
             else:
