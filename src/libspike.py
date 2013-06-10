@@ -93,7 +93,7 @@ class LibSpike():
                  20 - Scroll error
                  21 - Pony ride error
                  22 - Proofread found scroll error
-                 23 - File access denied
+                 23 - File access denied # TODO this is never check for
                  24 - Cannot pull git repository
                  25 - Cannot checkout git repository
                  26 - File is of wrong type, normally a directory or regular file when the other is expected
@@ -426,6 +426,7 @@ class LibSpike():
         @param   force:bool         Whether to extend current file claim
         @return  :byte              Exit value, see description of `LibSpike`, the possible ones are: 0 (TODO)
         '''
+        # TODO support claim --entire
         return 0
     
     
@@ -440,6 +441,7 @@ class LibSpike():
         @param   private:bool       Whether the pony is user private rather the user shared
         @return  :byte              Exit value, see description of `LibSpike`, the possible ones are: 0 (TODO)
         '''
+        # TODO support claim --entire
         return 0
     
     
