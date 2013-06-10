@@ -59,7 +59,7 @@ class SpikeDB():
         '''
         Remove the entire database
         '''
-        # Using DragonSuite.rm because if shred:s files if the user has enabled shred:ing
+        # Using DragonSuite.rm because it shred:s files if the user has enabled shred:ing
         from dragonsuite import DragonSuite
         for lblen in range(64):
             db = self.filePattern % lblen
