@@ -1,5 +1,8 @@
 _/
 
+.*
+!.git*
+
 *.pyc
 __pycache__/
 
@@ -9,8 +12,7 @@ __pycache__/
 *.swp
 *.swo
 
-.*
-!.git*
-
 /testdb*
+/var
+/repositories
 
