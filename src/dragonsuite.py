@@ -810,7 +810,7 @@ def find(path, maxdepth = -1, hardlinks = True):
                     f += os.sep
                     if d != maxdepth:
                         d += 1
-                        for sf in os.listdir(f):
+                        for sf in sorted(os.listdir(f)):
                             stack.append((f + sf, d))
                 elif not hardlinks:
                     continue

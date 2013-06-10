@@ -5,11 +5,11 @@ Similarly, you can put .git/frozen.spike in a repository directory to freeze it.
 
 Database files, prepended by priv_ for private:
 
-	 file_id	file → owner scroll id		value_size = DB_SIZE_ID = 4
-	 id_fileid      scroll id → owned file id	value_size = DB_SIZE_FILEID = 64
-	 fileid_file    file id → lb(file name lenght)	value_size = DB_SIZE_FILELEN = 4 (→ max file name lenght = 65536 bytes)
+	 file_id	file → owner scroll id		value_size = DB_SIZE_ID = 4		(→ max installed pony count = 4294967296)
+	 id_fileid      scroll id → owned file id	value_size = DB_SIZE_FILEID = 8		(→ max installed file count = 4294967296²)
+	 fileid_file    file id → lb(file name lenght)	value_size = DB_SIZE_FILELEN = 1	(→ max file name length = 2²⁵⁶ bytes)
 	 fileid_file¤   file id → file name 		value_size = 2↑¤
-	 file_fileid    file name → file id             value_size = DB_SIZE_FILEID = 64
-	 id_scroll	scroll id → scroll name		value_size = DB_SIZE_FILEID = 64
+	 file_fileid    file name → file id             value_size = DB_SIZE_FILEID = 8
+	 id_scroll	scroll id → scroll name		value_size = DB_SIZE_SCROLL = 64
 	 scroll_id	scroll name → scroll id		value_size = DB_SIZE_ID = 4
 
