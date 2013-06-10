@@ -112,7 +112,7 @@ class LibSpike():
         @return  :list<str>    File names
         '''
         rc = set()
-        dirs = ['$XDG_CONFIG_HOME/', '$HOME/.config/', '$HOME/.', SPIKE_PATH + '/', '$vardir/', '/var/', '$confdir/']
+        dirs = ['$XDG_CONFIG_HOME/', '$HOME/.config/', '$HOME/.', SPIKE_PATH, '$vardir/', '/var/', '$confdir/']
         if 'XDG_CONFIG_DIRS' in os.environ:
             for dir in os.environ['XDG_CONFIG_DIRS'].split(':'):
                 if len(dir) > 0:
@@ -143,20 +143,20 @@ class LibSpike():
         update = []
         repositories = set()
         
-        if not os.path.exists(SPIKE_PATH + '/.git/frozen.spike'):
+        if not os.path.exists(SPIKE_PATH + '.git/frozen.spike'):
             repositories.add(os.path.realpath(SPIKE_PATH))
             update.append(SPIKE_PATH)
             aggregator(SPIKE_PATH, 0)
         
-        for file in [SPIKE_PATH + '/repositories'] + get_confs('repositories'):
+        for file in [SPIKE_PATH + 'repositories'] + get_confs('repositories'):
             if os.path.isdir(file):
                 for repo in os.listdir(file):
                     repo = os.path.realpath(file + '/' + repo)
                     if repo not in repositories:
                         repositories.add(repo) 
                         if not os.path.exists(repo + '/.git/frozen.spike'):
-                            update.append(SPIKE_PATH)
-                            aggregator(SPIKE_PATH, 0)
+                            update.append(SPIKE_PATH[:-1])
+                            aggregator(SPIKE_PATH[:-1], 0)
         
         for repo in update:
             aggregator(repo, 1)
