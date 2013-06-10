@@ -1,0 +1,4 @@
+To freeze Spike from updating when running --bootstrap put a file named `frozen.spike` in the directory `.git` in your Spike directory.
+
+Similarly, you can put .git/frozen.spike in a repository directory to freeze it.
+
