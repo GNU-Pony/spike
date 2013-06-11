@@ -730,7 +730,7 @@ class LibSpike():
     
     
     @staticmethod
-    def clean(aggregator, shred = False):
+    def clean(aggregator, private = False, shred = False):
         '''
         Remove unneeded ponies that are installed as dependencies
         
@@ -738,10 +738,56 @@ class LibSpike():
                      Feed a scroll, removal progress state and removal progress end state, continuously during the progress,
                      this begins by feeding the state 0 when a scroll is enqueued, when all is enqueued the removal begins.
         
-        @param   shred:bool  Whether to preform secure removal when possible
-        @return  :byte       Exit value, see description of `LibSpike`, the possible ones are: 0 (TODO)
+        @param   shred:bool    Whether to preform secure removal when possible
+        @param   private:bool  Whether to uninstall user private ponies rather than user shared ponies
+        @return  :byte         Exit value, see description of `LibSpike`, the possible ones are: 0, 27 (TODO same as `erase`)
         '''
-        return 0
+        db = SpikeDB(SPIKE_PATH.replace('%', '%%') + ('var/%s%s.%%i' % ('priv_' if private else '', 'scroll_id')), DB_SIZE_ID)
+        sink = db.list([])
+        id_scroll = {}
+        for (scroll, id) in sink:
+            id_scroll[id] = scroll
+        queue = []
+        newqueue = []
+        def found(id):
+            queue.append(id)
+            newqueue.append(id)
+            aggregator(id_scroll[id], 0, 1)
+        db = SpikeDB(SPIKE_PATH.replace('%', '%%') + ('var/%s%s.%%i' % ('priv_' if private else '', 'deps_id')), DB_SIZE_ID)
+        sink = db.list([])
+        deps_id = {}
+        for (deps, id) in sink:
+            if deps not in id_scroll:
+                return 27
+            if deps not in deps_id:
+                deps_id[deps] = set()
+            _id = 0
+            for d in id:
+                _id = (_id << 8) | int(d)
+            deps_id[deps].add(_id)
+        remove = []
+        for deps in deps_id.keys():
+            if deps in deps_id[deps]:
+                remove.append(deps)
+        for deps in remove:
+            del deps_id[dels]
+        while True:
+            newqueue[:] = []
+            for deps in deps_id.keys():
+                ids = deps_id[deps]
+                if (len(ids) == 1) and (deps in ids):
+                    found(deps)
+            if len(newqueue) == 0:
+                break
+            for deps in newqueue:
+                del deps_id[deps]
+        class Agg:
+            def __init__(self):
+                pass
+            def __call__(self, scroll, state, end):
+                if state != 0:
+                    aggregator(scroll, state, end)
+        return erase(Agg(), queue, private = private, shred = shred)
     
     
     @staticmethod

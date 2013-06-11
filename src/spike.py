@@ -159,7 +159,7 @@ class Spike():
         opts.add_argumented(  ['--restore-archive'], arg = 'ARCHIVE', help = 'Roll back to an archived state of the system\n'
                                                              'slaves: [--shared | --full | --old] [--downgrade | --upgrade] [--shred]')
         opts.add_argumentless(['-N', '--clean'],                      help = 'Uninstall unneeded ponies\n'
-                                                             'slaves: [--shred]')
+                                                             'slaves: [--private] [--shred]')
         opts.add_argumentless(['-P', '--proofread'],                  help = 'Verify that a scroll is correct')
         opts.add_argumentless(['-I', '--interactive'],                help = 'Start in interative graphical terminal mode\n'
                                                                              '(supports installation and uninstallation only)\n'
@@ -419,10 +419,11 @@ class Spike():
                 exitValue = self.proofread(opts.files)
             
             elif opts.opts['-N'] is not None:
+                allowed.add('--private')
                 allowed.add('--shred')
                 self.test_allowed(opts.opts, allowed, longmap, True)
                 self.test_files(opts.files, 0, True)
-                exitValue = self.clean(shred = opts.opts['--shred'] is not None)
+                exitValue = self.clean(private = opts.opts['--private'] is not None, shred = opts.opts['--shred'] is not None)
             
             elif opts.opts['-I'] is not None:
                 allowed.add('--shred')
@@ -1152,12 +1153,13 @@ class Spike():
         return LibSpike.proofread(Agg(), scrolls)
     
     
-    def clean(self, shred = False):
+    def clean(self, private = False, shred = False):
         '''
         Remove unneeded ponies that are installed as dependencies
         
-        @param   shred:bool  Whether to preform secure removal when possible
-        @return  :byte        Exit value, see description of `mane`
+        @param   shred:bool    Whether to preform secure removal when possible
+        @param   private:bool  Whether to uninstall user private ponies rather than user shared ponies
+        @return  :byte         Exit value, see description of `mane`
         '''
         class Agg:
             '''

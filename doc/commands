@@ -44,7 +44,7 @@ spike --restore-archive ARCHIVE [--shared | --full | --old] [--downgrade | --upg
 --> and either downgrades only, upgrades only, or (default)
 --> regardless of version.
 
-spike --clean [--shred]
+spike --clean [--private] [--shred]
 --> uninstall unneeded package
 
 spike --help
