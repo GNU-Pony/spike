@@ -12,6 +12,6 @@ Database files, prepended by priv_ for private:
 	 file_fileid    file name → file id             value_size = DB_SIZE_FILEID = 8
 	 id_scroll	scroll id → scroll name		value_size = DB_SIZE_SCROLL = 64	(→ max scroll name length = 64 ASCII characters)
 	 scroll_id	scroll name → scroll id		value_size = DB_SIZE_ID = 4
-	 id_deps	scroll id → deps scrolls id	value_size = DB_SIZE_ID = 4		(with reflection for installed as deps)
-	 deps_id	deps scroll id → scrolls id	value_size = DB_SIZE_ID = 4		(with reflection for installed as deps)
+	 id_deps	scroll id → deps scrolls id	value_size = DB_SIZE_ID = 4		(with reflection for installed as explicit)
+	 deps_id	deps scroll id → scrolls id	value_size = DB_SIZE_ID = 4		(with reflection for installed as explicit)
 

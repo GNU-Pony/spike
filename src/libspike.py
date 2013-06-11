@@ -811,7 +811,7 @@ class LibSpike():
             deps_id[deps].add(_id)
         remove = []
         for deps in deps_id.keys():
-            if deps not in deps_id[deps]:
+            if deps in deps_id[deps]:
                 remove.append(deps)
         for deps in remove:
             del deps_id[dels]
@@ -819,7 +819,7 @@ class LibSpike():
             newqueue[:] = []
             for deps in deps_id.keys():
                 ids = deps_id[deps]
-                if (len(ids) == 1) and (deps in ids):
+                if len(ids) == 0:
                     found(deps)
             if len(newqueue) == 0:
                 break
