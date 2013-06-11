@@ -25,7 +25,7 @@ import os
 
 class SHA3:
     '''
-    SHA-3/Keccak[(r = 1024, c = 576, n = 576)] hash algorithm implementation
+    SHA-3/Keccak[r=1024, c=576, n=576] hash algorithm implementation
     
     @author  Mattias Andrée  (maandree@member.fsf.org)
     '''
