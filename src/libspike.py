@@ -815,14 +815,36 @@ class LibSpike():
                 remove.append(deps)
         for deps in remove:
             del deps_id[dels]
+        def get_clique(deps, clique, visited):
+            if deps in visited:
+                return None
+            else:
+                visited.add(deps)
+            ids = deps_id[deps]
+            for id in ids:
+                if id not in deps_id:
+                    return None
+            clique.add(deps)
+            for id in ids:
+                if id not in clique:
+                    if get_clique(id, clique, visited) is None:
+                        return None
+            return clique
         while True:
             newqueue[:] = []
             for deps in deps_id.keys():
-                ids = deps_id[deps]
-                if len(ids) == 0:
+                if len(deps_id[deps]) == 0:
                     found(deps)
             if len(newqueue) == 0:
-                break
+                visited = set()
+                for deps in deps_id.keys():
+                    if deps not in visited:
+                        clique = get_clique(deps, set(), visited)
+                        if clique is not None:
+                            newqueue.expand(list(clique))
+                            break
+                if len(newqueue) == 0:
+                    break
             for deps in newqueue:
                 del deps_id[deps]
         class Agg:
