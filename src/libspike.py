@@ -601,7 +601,7 @@ class LibSpike():
                         last = fid
                 file_id.append((file, fid))
                 fid += 1
-                n = lb32(len(file)) # limiting to 4,3 milliard bytes rather than 115,8 duodecilliard bytes
+                n = lb32(len(file)) # limiting to 4,3 milliard (2²³) bytes rather than 115,8 duodecilliard (2²⁵⁶) bytes
                 name = file.encode('utf-8')
                 name += '\0' * ((1 << n) - len(name))
                 fileid_len.append((file, n, name))
