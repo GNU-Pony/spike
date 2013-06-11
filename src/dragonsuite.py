@@ -1261,3 +1261,64 @@ def sed_script(pattern, replacement, selection = None, transliterate = False, mu
         script = ':a;N;$!ba;' + script
     return script
 
+
+def post_install_info(rootdir, installedfiles, private, i_use_info):
+    '''
+    Perform post-install actions for info manuals
+    
+    @param  rootdir         The root directory for the installation
+    @param  installedfiles  The installed files
+    @param  private         Whether the install is a private install
+    @param  i_use_info      Whether to install info manuals
+    '''
+    if i_use_info:
+        for local in ([None] if private else ['/usr', '/usr/local']):
+            _prefix = rootdir + (path('~/.local') if private else ('/usr/local' if local else '/usr'))
+            _infodir = _prefix + '/share/info/'
+            files = []
+            for file in installedfiles:
+                if file.startswith(_infodir) and os.path.lexists(file):
+                    files.append(file)
+            install_info(files, _infodir[:-1])
+
+
+def pre_upgrade_info(rootdir, installedfiles, private):
+    '''
+    Perform pre-upgrade actions for info manuals
+    
+    @param  rootdir         The root directory for the installation
+    @param  installedfiles  The installed files
+    @param  private         Whether the install is a private install
+    '''
+    pre_uninstall_info(rootdir, installedfiles, private)
+
+
+def post_upgrade_info(rootdir, installedfiles, private, i_use_info):
+    '''
+    Perform post-upgrade actions for info manuals
+    
+    @param  rootdir         The root directory for the installation
+    @param  installedfiles  The installed files
+    @param  private         Whether the install is a private install
+    '''
+    post_install_info(rootdir, installedfiles, private, i_use_info)
+
+
+def pre_uninstall_info(rootdir, installedfiles, private):
+    '''
+    Perform pre-uninstall actions for info manuals
+    
+    @param  rootdir         The root directory for the installation
+    @param  installedfiles  The installed files
+    @param  private         Whether the install is a private install
+    @param  i_use_info      Whether to install info manuals
+    '''
+    for local in ([None] if private else ['/usr', '/usr/local']):
+        _prefix = rootdir + (path('~/.local') if private else ('/usr/local' if local else '/usr'))
+        _infodir = _prefix + '/share/info/'
+        files = []
+        for file in installedfiles:
+            if file.startswith(_infodir) and os.path.lexists(file):
+                files.append(file)
+        uninstall_info(files, _infodir[:-1])
+
