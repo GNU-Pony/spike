@@ -187,11 +187,13 @@ class LibSpike():
         update = []
         repositories = set()
         
+        # List Spike for update if not frozen
         if not os.path.exists(SPIKE_PATH + '.git/frozen.spike'):
             repositories.add(os.path.realpath(SPIKE_PATH))
             update.append(SPIKE_PATH)
             aggregator(SPIKE_PATH, 0)
         
+        # Look for repositories and list, for update, those that are not frozen
         for file in [SPIKE_PATH + 'repositories'] + get_confs('repositories'):
             if os.path.isdir(file):
                 for repo in os.listdir(file):
@@ -202,6 +204,7 @@ class LibSpike():
                             update.append(SPIKE_PATH[:-1])
                             aggregator(SPIKE_PATH[:-1], 0)
         
+        # Update Spike and repositories, those that are listed
         for repo in update:
             aggregator(repo, 1)
             if not Gitcord(repo).updateBranch():
@@ -336,27 +339,32 @@ class LibSpike():
         @param   private:bool  Whether the pony is user private rather than user shared
         @return  :byte         Exit value, see description of `LibSpike`, the possible ones are: 0, 6, 7, 21, 27, 255
         '''
+        # Verify that the scroll has been installed
         db = SpikeDB(SPIKE_PATH.replace('%', '%%') + ('var/%s%s_%s.%%i' % ('priv_' if private else '', 'scroll', 'id')), DB_SIZE_ID)
         sink = db.fetch([], [pony])
-        if len(sink) > 1:
+        if len(sink) != 1:
             return 27
-        if len(sink) == 0:
+        if sink[0][1] is None:
             return 7
+        
         try:
-            global ride
-            ride = None
+            # Set $ARCH
             for (var, value) in [('ARCH', os.uname()[4]), ('HOST', '$ARCH-unknown-linux-gnu')]:
                 value = os.getenv(var, value.replace('$ARCH', os.getenv('ARCH')))
                 os.putenv(var, value)
                 if var not in os.environ or os.environ[var] != value:
                     os.environ[var] = value
-            code = None
-            scroll = locate_scroll(pony)
+            
+            # Open scroll
+            global ride
+            (ride, code, scroll) = (None, None, locate_scroll(pony))
             if scroll == None:
                 return 6
             with open(scroll, 'rb') as file:
                 code = file.read().decode('utf8', 'replace') + '\n'
                 code = compile(code, scroll, 'exec')
+            
+            # Ride pony
             exec(code, globals())
             if ride is None:
                 return 21
@@ -383,7 +391,9 @@ class LibSpike():
         @return  :byte             Exit value, see description of `LibSpike`, the possible ones are: 0, 7, 27
         '''
         # TODO support claim --entire
-        error = 0
+        
+        # Files belonging to specified ponies and map pony → files
+        error = [0]
         fileid_scrolls = {}
         class Agg:
             def __init__(self):
@@ -392,18 +402,22 @@ class LibSpike():
                 (scroll, fileid) = scroll_fileid
                 if fileid is None:
                     aggregator(scroll, None)
-                    error = 7
+                    error[0] = 7
                 else:
                     if fileid in fileid_scrolls:
                         fileid_scrolls[fileid].append(scroll)
                     else:
                         fileid_scrolls[fileid] = [scroll]
-        error = max(error, joined_lookup(Agg(), 'scroll', 'fileid', files, DB_SIZE_FILEID, CONVERT_INT))
+        error = max(error[0], joined_lookup(Agg(), 'scroll', 'fileid', ponies, DB_SIZE_FILEID, CONVERT_INT))
+        
+        # Fetch file name lengths for files
         sink = []
         fileid_file = SpikeDB(SPIKE_PATH.replace('%', '%%') + ('var/%s_%s.%%i' % ('fileid', 'file')), DB_SIZE_FILELEN)
         fileid_file.fetch(sink, fileid_scrolls.keys())
         fileid_file = SpikeDB(SPIKE_PATH.replace('%', '%%') + ('var/priv_%s_%s.%%i' % ('fileid', 'file')), DB_SIZE_FILELEN)
         fileid_file.fetch(sink, fileid_scrolls.keys())
+        
+        # Map file name length → file
         file_fileid = {}
         nones = set()
         for (fileid, file) in sink:
@@ -413,37 +427,29 @@ class LibSpike():
                 else:
                     nones.add(file)
                 continue
-            _file = ''
-            for c in file:
-                _file += chr(c)
-            file = int(_file)
+            file = raw_int(value_convert(file, CONVERT_INT))
             if file in file_fileid:
                 file_fileid[file].append(fileid)
             else:
                 file_fileid[file] = [fileid]
+        
+        # Fetch file names for files based on file name lengths and send (file name, scroll) 
         nones = set()
-        for _file in file_fileid.keys():
-            file = 0
-            for d in _file:
-                file = (file << 8) | int(d)
+        for file in file_fileid.keys():
             class Sink:
                 def __init__(self):
                     pass
-                def append(self, _fileid__file):
-                    (_fileid, _file) = _fileid__file
+                def append(self, fileid__file):
+                    (fileid, _file) = fileid__file
                     if _file is None:
-                        if file in nones:
+                        if _file in nones:
                             error = 27
                         else:
-                            nones.add(file)
+                            nones.add(_file)
                         break
-                    __file = ''
-                    for c in _file:
-                        if c == 0:
-                            break
-                        __file += chr(c)
-                    for scroll in fileid_scrolls(_fileid):
-                        aggregator(__file, scroll)
+                    _file = convert_value(_file, CONVERT_STR)
+                    for scroll in fileid_scrolls(fileid):
+                        aggregator(_file, scroll)
             fileid_file = SpikeDB(SPIKE_PATH.replace('%', '%%') + ('var/%s_%s.%%i' % ('fileid', 'file%i' % file)), 1 << file)
             fileid_file.fetch(Sink(), file_fileid[file])
             fileid_file = SpikeDB(SPIKE_PATH.replace('%', '%%') + ('var/priv_%s_%s.%%i' % ('fileid', 'file%i' % file)), 1 << file)
@@ -648,6 +654,8 @@ class LibSpike():
         '''
         # TODO support claim --entire
         files = [os.path.abspath(file) for file in files]
+        
+        # Fetch and map file name → scroll
         file_scrolls = {}
         class Agg:
             def __init__(self):
@@ -659,9 +667,10 @@ class LibSpike():
                     else:
                         file_scrolls[file].append(scroll)
         error = joined_lookup(Agg(), 'file', 'scroll', files, DB_SIZE_SCROLL, CONVERT_STR, private = private)
-        error_sink = []
         if error != 0:
             return error
+        
+        # Split file names into group: files claimed to one pony (exclusive), files claimed to multiple ponies (shared)
         (exclusive, shared) = ([], [])
         for file in file_scrolls.keys():
             if pony in file_scrolls[file]:
@@ -669,63 +678,58 @@ class LibSpike():
                     exclusive.add(file)
                 else:
                     shared.add(file)
+        
+        # Get the ID of the specified pony
         db = SpikeDB(SPIKE_PATH.replace('%', '%%') + ('var/%s%s.%%i' % ('priv_' if private else '', 'scroll_id')), DB_SIZE_ID)
-        sink = []
-        db.fetch(sink, [pony])
+        sink = db.fetch([], [pony])
         if (len(sink) != 1) or (sink[0][1] is None):
             return 27
         id = sink[0][1]
+        error_sink = []
+        
+        # Disclaim exclusive files
         if len(exclusive) > 0:
             db = SpikeDB(SPIKE_PATH.replace('%', '%%') + ('var/%s%s.%%i' % ('priv_' if private else '', 'file_fileid')), DB_SIZE_FILEID)
-            (sink, fileids) = ([], [])
-            db.fetch(sink, exclusive)
-            raw_ids = set()
+            sink = db.fetch([], exclusive)
+            (raw_ids, fileids) = (set(), [])
             for fileid in unique(sorted([item[1] for item in sink])):
-                _fileid = ''
-                for c in fileid:
-                    if (c != '0') or (len(_fileid) > 0):
-                        _fileid += chr(c)
-                if _fileid == '':
-                    _fileid = '0'
                 raw_ids.add(fileid)
-                fileids.append(_fileid)
+                fileids.append(value_convert(fileid, CONVERT_STR))
             removes = [('file_fileid', DB_SIZE_FILEID, exclusive), ('file_id', DB_SIZE_ID, exclusive), ('fileid_file', DB_SIZE_FILELEN, fileids)]
             db = SpikeDB(SPIKE_PATH.replace('%', '%%') + ('var/%s%s.%%i' % ('priv_' if private else '', 'fileid_file')), DB_SIZE_FILELEN)
-            sink = []
-            db.fetch(sink, fileids)
+            sink = db.fetch([], fileids)
             ns = {}
-            for (fileid, _n) in sink:
-                n = 0
-                for d in _n:
-                    n = (n << 8) | int(d)
-                if n not in ns:
-                    ns[n] = [fileid]
+            for (fileid, n) in sink:
+                if n is None:
+                    error_sink.append((fileid, n))
                 else:
-                    ns[n].append(fileid)
+                    n = raw_int(convert_value(n, CONVERT_INT))
+                    if n not in ns:
+                        ns[n] = [fileid]
+                    else:
+                        ns[n].append(fileid)
             for n in ns.keys():
                 removes.append(('fileid_file%i' % n, 1 << n, ns[n]))
             for (_db, _len, _list) in removes:
                 db = SpikeDB(SPIKE_PATH.replace('%', '%%') + ('var/%s%s.%%i' % ('priv_' if private else '', _db)), _len)
                 db.remove(error_sink, _list)
             db = SpikeDB(SPIKE_PATH.replace('%', '%%') + ('var/%s%s.%%i' % ('priv_' if private else '', 'id_fileid')), DB_SIZE_FILEID)
-            sink = []
-            _id = ''
-            for c in id:
-                if (c != '0') or (len(_id) > 0):
-                    _id += chr(c)
-            if _id == '':
-                _id = '0'
-            db.fetch(sink, [_id])
+            _id = value_convert(id, CONVERT_INT)
+            sink = db.fetch([], [_id])
             pairs = []
             for id_fileid in sink:
                 if id_fileid[1] not in raw_ids:
                     pairs.append(id_fileid)
             db.remove(sink, [_id])
             db.insert(pairs)
+        
+        # Disclaim shared files
         if len(shared) > 0:
+            # Fetch ID of scrolls owning shared files
             db = SpikeDB(SPIKE_PATH.replace('%', '%%') + ('var/%s%s.%%i' % ('priv_' if private else '', 'file_id')), DB_SIZE_ID)
-            sink = []
-            db.fetch(sink, shared)
+            sink = db.fetch([], shared)
+            
+            # Get other owners of a file
             pairs = []
             files = set()
             for (file, _id) in sink:
@@ -734,8 +738,11 @@ class LibSpike():
                 elif _id != id:
                     pairs.append((file, _id))
                     files.add(file)
+            
+            # Remove the file from the pony, but not from the other ponies
             db.remove(list(files))
             db.insert(pairs)
+        
         return 0 if len(error_sink) == 0 else 27
     
     
@@ -813,17 +820,22 @@ class LibSpike():
         @param   private:bool  Whether to uninstall user private ponies rather than user shared ponies
         @return  :byte         Exit value, see description of `LibSpike`, the possible ones are: 0, 27 (TODO same as `erase`)
         '''
+        # Create id → scroll map
         db = SpikeDB(SPIKE_PATH.replace('%', '%%') + ('var/%s%s.%%i' % ('priv_' if private else '', 'scroll_id')), DB_SIZE_ID)
         sink = db.list([])
         id_scroll = {}
         for (scroll, id) in sink:
             id_scroll[id] = scroll
+        
+        # Queues for removable ponies
         queue = []
         newqueue = []
         def found(id):
             queue.append(id)
             newqueue.append(id)
             aggregator(id_scroll[id], 0, 1)
+        
+        # Get all ponies mapped to which packages have those as a dependency
         db = SpikeDB(SPIKE_PATH.replace('%', '%%') + ('var/%s%s.%%i' % ('priv_' if private else '', 'deps_id')), DB_SIZE_ID)
         sink = db.list([])
         deps_id = {}
@@ -832,16 +844,17 @@ class LibSpike():
                 return 27
             if deps not in deps_id:
                 deps_id[deps] = set()
-            _id = 0
-            for d in id:
-                _id = (_id << 8) | int(d)
-            deps_id[deps].add(_id)
+            deps_id[deps].add(value_convert(id, CONVERT_INT))
+        
+        # Forget explicitly installed ponies
         remove = []
         for deps in deps_id.keys():
             if deps in deps_id[deps]:
                 remove.append(deps)
         for deps in remove:
             del deps_id[dels]
+        
+        # Get minimal set of ponies that must be removed at the same time that can be cleaned (Not the normal meaning of 'clique')
         def get_clique(deps, clique, visited):
             if deps in visited:
                 return None
@@ -857,6 +870,8 @@ class LibSpike():
                     if get_clique(id, clique, visited) is None:
                         return None
             return clique
+        
+        # Enqueue cleanable ponies
         while True:
             newqueue[:] = []
             for deps in deps_id.keys():
@@ -874,6 +889,8 @@ class LibSpike():
                     break
             for deps in newqueue:
                 del deps_id[deps]
+        
+        # Erase ponies
         class Agg:
             def __init__(self):
                 pass
@@ -950,25 +967,11 @@ class LibSpike():
                 if nones[a] == len(pres):
                     aggregator(a, None)
             else:
-                _ab = ''
-                if midConv == CONVERT_STR:
-                    for c in ab:
-                        if c == 0:
-                            break
-                        _ab += chr(c)
-                elif midConv == CONVERT_INT:
-                    for c in ab:
-                        if (c != '0') or (len(_ab) > 0):
-                            _ab += chr(c)
-                    if _ab == '':
-                        _ab = '0'
+                ab = value_convert(ab, midConv)
+                if ab in ab_as:
+                    ab_as[ab].append(a)
                 else:
-                    for c in ab:
-                        _ab += chr(c)
-                if _ab in ab_as:
-                    ab_as[_ab].append(a)
-                else:
-                    ab_as[_ab] = [a]
+                    ab_as[ab] = [a]
         
         # Fetch ab → b and send (a, b)
         (nones, error) = ({}, 0)
@@ -985,26 +988,53 @@ class LibSpike():
                         if nones[ab] == len(pres):
                             error = 27
                     break
-                _b = ''
-                if toConv == CONVERT_STR:
-                    for c in b:
-                        if c == 0:
-                            break
-                        _b += chr(c)
-                elif toConv == CONVERT_INT:
-                    for c in b:
-                        if (c != '0') or (len(_b) > 0):
-                            _b += chr(c)
-                    if _b == '':
-                        _b = '0'
-                else:
-                    for c in b:
-                        _b += chr(c)
+                b = value_convert(b, toConv)
                 for a in ab_as[ab]:
-                    aggregator(a, _b)
+                    aggregator(a, b)
         for _mid_to in mid_to:
             _mid_to.fetch(Agg(), ab_as.keys())
         return error
+    
+    
+    @staticmethod
+    def value_convert(value, method):
+        '''
+        Convert a value from bytes to string
+        
+        @param   value:bytes  The value
+        @param   method:int   Convertion method
+        @return  :str         The value as string
+        '''
+        rc = ''
+        if method == CONVERT_STR:
+            for c in value:
+                if c == 0:
+                    break
+                rc += chr(c)
+        elif method == CONVERT_INT:
+            for c in value:
+                if (c != 0) or (len(rc) > 0):
+                    rc += chr(c)
+            if rc == '':
+                return '\0'
+        else:
+            for c in value:
+                rc += chr(c)
+        return rc
+    
+    
+    @staticmethod
+    def raw_int(raw):
+        '''
+        Convert a raw integer stored in a string to an integer object
+        
+        @param   raw:str  Raw string
+        @return  :int     Integer
+        '''
+        rc = 0
+        for d in raw:
+            rc = (rc << 8) | ord(d)
+        return rc
     
     
     @staticmethod
