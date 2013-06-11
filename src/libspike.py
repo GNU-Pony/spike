@@ -333,7 +333,7 @@ class LibSpike():
         Execute pony after best effort
         
         @param   private:bool  Whether the pony is user private rather than user shared
-        @return  :byte         Exit value, see description of `LibSpike`, the possible ones are: 0, 7, 21, 27, 255
+        @return  :byte         Exit value, see description of `LibSpike`, the possible ones are: 0, 6, 7, 21, 27, 255
         '''
         db = SpikeDB(SPIKE_PATH.replace('%', '%%') + ('var/%s%s_%s.%%i' % ('priv_' if private else '', 'scroll', 'id')), DB_SIZE_ID)
         sink = db.fetch([], [pony])
@@ -350,6 +350,9 @@ class LibSpike():
                 if var not in os.environ or os.environ[var] != value:
                     os.environ[var] = value
             code = None
+            scroll = locate_scroll(pony)
+            if scroll == None:
+                return 6
             with open(scroll, 'rb') as file:
                 code = file.read().decode('utf8', 'replace') + '\n'
                 code = compile(code, scroll, 'exec')
@@ -752,9 +755,22 @@ class LibSpike():
                      Feed a scroll, 1, error message:str when a error is found
         
         @param   scrolls:list<str>  Scrolls to proofread
-        @return  :byte              Exit value, see description of `LibSpike`, the possible ones are: 0 (TODO)
+        @return  :byte              Exit value, see description of `LibSpike`, the possible ones are: 0, 6, 22
         '''
-        return 0
+        (error, n) = (0, len(scrolls))
+        scrollfiles = [(scrolls[i], locate_scroll(scrolls[i]), i) for i in range(n)]
+        for (scroll, scrollfile, i) in scrollfiles:
+            aggregator(scroll, 0, i, n)
+            if scrollfile is None:
+                error = max(error, 6)
+                aggregator(scroll, 1, 'Scroll not found')
+            else:
+                try:
+                    pass # TODO proofread `scrollfile`
+                except Exception as err:
+                    error = max(error, 22)
+                    aggregator(scroll, 1, str(err))
+        return error
     
     
     @staticmethod
