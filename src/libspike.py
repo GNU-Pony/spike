@@ -900,6 +900,56 @@ class LibSpike():
         for _mid_to in mid_to:
             _mid_to.fetch(Agg(), ab_as.keys())
         return error
+    
+    
+    @staticmethod
+    def locate_scroll(scroll):
+        '''
+        Locate the file for a scroll
+        
+        @param   scroll:str  The scroll
+        @return  :str        The file of the scroll
+        '''
+        repositories = {}
+        for file in [SPIKE_PATH + 'repositories'] + get_confs('repositories'):
+            if os.path.isdir(file):
+                for repo in os.listdir(file):
+                    reponame = repo
+                    repo = os.path.realpath(file + '/' + repo)
+                    if os.path.isdir(repo) and (reponame not in repositories):
+                        repositories[reponame] = repo
+        (cat, scrl) = (None, None)
+        parts = scroll.split('/')
+        if len(parts) == 1:
+            scrl = parts[0]
+        elif len(parts) == 2:
+            (cat, scrl) = parts
+        elif len(parts) == 3:
+            (repo, cat, scrl) = parts
+            if repo not in repositories:
+                return None
+            repositories = {repo : repositories[repo]}
+        else:
+            return None
+        paths = []
+        if cat not is None:
+            for repo in repositories:
+                paths.append('%s/%s' % (repositories[repo], cat))
+        else:
+            for repo in repositories:
+                repo = repositories[repo]
+                for cat in os.listdir(repo):
+                    path = '%s/%s' % (repo, cat)
+                    if os.path.isdir(path):
+                        paths.append(path)
+        paths = ['%s/%s.scroll' % (path, scrl) for path in paths]
+        rc = []
+        for path in paths:
+            if os.path.lexists(path) and os.path.isfile(path):
+                rc.append(path)
+        if len(rc) > 1:
+            printerr('%s: \033[01;31m%s\033[00m' % (SPIKE_PROGNAME, 'Multiple scrolls found, there should only be one!'));
+        return rc[0] if len(rc) == 1 else None
 
 
 
