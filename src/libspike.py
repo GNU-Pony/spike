@@ -240,6 +240,7 @@ class LibSpike():
         @return  :byte            Exit value, see description of `LibSpike`, the possible ones are: 0, 27
         '''
         # TODO support claim --entire
+        files = [os.path.abspath(file) for file in files]
         return joined_lookup(aggregator, 'file', 'scroll', files, DB_SIZE_SCROLL, CONVERT_STR)
     
     
@@ -481,6 +482,7 @@ class LibSpike():
         @param   force:bool         Whether to extend current file claim
         @return  :byte              Exit value, see description of `LibSpike`, the possible ones are: 0, 10, 11, 12, 27, 255
         '''
+        files = [os.path.abspath(file) for file in files]
         for file in files:
             if not os.path.lexists(file):
                 return 12
@@ -645,6 +647,7 @@ class LibSpike():
         @return  :byte              Exit value, see description of `LibSpike`, the possible ones are: 0, 27
         '''
         # TODO support claim --entire
+        files = [os.path.abspath(file) for file in files]
         file_scrolls = {}
         class Agg:
             def __init__(self):
@@ -669,7 +672,7 @@ class LibSpike():
         db = SpikeDB(SPIKE_PATH.replace('%', '%%') + ('var/%s%s.%%i' % ('priv_' if private else '', 'scroll_id')), DB_SIZE_ID)
         sink = []
         db.fetch(sink, [pony])
-        if len(sink) != 1:
+        if (len(sink) != 1) or (sink[0][1] is None):
             return 27
         id = sink[0][1]
         if len(exclusive) > 0:
@@ -910,7 +913,7 @@ class LibSpike():
     
     
     @staticmethod
-    def joined_lookup(aggregator, fromName, toName, fromInput, toSize, toConv = CONVERT_NONE, midName = 'id', midSize = DB_SIZE_ID, private = None):
+    def joined_lookup(aggregator, fromName, toName, fromInput, toSize, toConv = CONVERT_NONE, midName = 'id', midSize = DB_SIZE_ID, midConv = CONVERT_INT, private = None):
         '''
         Perform a joined database lookup from on type to another, joined using an intermediary
         
@@ -922,20 +925,22 @@ class LibSpike():
         @param   toName:str     The output type
         @param   fromInput:str  Input
         @param   toSize:str     The output type size
-        @param   toConv:int     How to convert the size
+        @param   toConv:int     How to convert the outout
         @param   midName:str    The intermediary type, must be numeric
         @param   midSize:str    The intermediary type size
+        @param   midConv:int    How to convert the intermediary
         @param   private:bool?  Whether to look in the private files rather then the public, `None` for both
         @return  :byte          Exit value, see description of `LibSpike`, the possible ones are: 0, 27
         '''
+        # Open databases
         pres = ([''] if ((not private) or (private is None)) else []) else (['priv_'] if (private or (private is None)) else [])
         from_mid = [SpikeDB(SPIKE_PATH.replace('%', '%%') + ('var/%s%s_%s.%%i' % (pre, fromName, midName)), midSize) for pre in pres]
         mid_to   = [SpikeDB(SPIKE_PATH.replace('%', '%%') + ('var/%s%s_%s.%%i' % (pre, midName,   toName)),  toSize) for pre in pres]
-        sink = []
-        ab_as = {}
+        
+        # Fetch from → mid and map mid ← from
+        (sink, nones, ab_as) = ([], {}, {})
         for _from_mid in from_mid:
             _from_mid.fetch(sink, fromInput)
-        nones = {}
         for (a, ab) in sink:
             if ab is None:
                 if a in nones:
@@ -946,17 +951,27 @@ class LibSpike():
                     aggregator(a, None)
             else:
                 _ab = ''
-                for c in ab:
-                    if (c != '0') or (len(_ab) > 0):
+                if midConv == CONVERT_STR:
+                    for c in ab:
+                        if c == 0:
+                            break
                         _ab += chr(c)
-                if _ab == '':
-                    _ab = '0'
+                elif midConv == CONVERT_INT:
+                    for c in ab:
+                        if (c != '0') or (len(_ab) > 0):
+                            _ab += chr(c)
+                    if _ab == '':
+                        _ab = '0'
+                else:
+                    for c in ab:
+                        _ab += chr(c)
                 if _ab in ab_as:
                     ab_as[_ab].append(a)
                 else:
                     ab_as[_ab] = [a]
-        nones = {}
-        error = 0
+        
+        # Fetch ab → b and send (a, b)
+        (nones, error) = ({}, 0)
         class Agg:
             def __init__(self):
                 pass
@@ -1000,6 +1015,7 @@ class LibSpike():
         @param   scroll:str  The scroll
         @return  :str        The file of the scroll
         '''
+        # Get repository names and paths
         repositories = {}
         for file in [SPIKE_PATH + 'repositories'] + get_confs('repositories'):
             if os.path.isdir(file):
@@ -1008,6 +1024,8 @@ class LibSpike():
                     repo = os.path.realpath(file + '/' + repo)
                     if os.path.isdir(repo) and (reponame not in repositories):
                         repositories[reponame] = repo
+        
+        # Split scroll parameter into logical parts
         (cat, scrl) = (None, None)
         parts = scroll.split('/')
         if len(parts) == 1:
@@ -1016,11 +1034,14 @@ class LibSpike():
             (cat, scrl) = parts
         elif len(parts) == 3:
             (repo, cat, scrl) = parts
+            # Limit to choosen repository
             if repo not in repositories:
                 return None
             repositories = {repo : repositories[repo]}
         else:
             return None
+        
+        # Get category paths
         paths = []
         if cat not is None:
             for repo in repositories:
@@ -1032,7 +1053,11 @@ class LibSpike():
                     path = '%s/%s' % (repo, cat)
                     if os.path.isdir(path):
                         paths.append(path)
+        
+        # Get scroll candidates
         paths = ['%s/%s.scroll' % (path, scrl) for path in paths]
+        
+        # Choose scroll file
         rc = []
         for path in paths:
             if os.path.lexists(path) and os.path.isfile(path):
