@@ -811,7 +811,7 @@ class LibSpike():
             deps_id[deps].add(_id)
         remove = []
         for deps in deps_id.keys():
-            if deps in deps_id[deps]:
+            if deps not in deps_id[deps]:
                 remove.append(deps)
         for deps in remove:
             del deps_id[dels]
