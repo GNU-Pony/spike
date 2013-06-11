@@ -333,8 +333,36 @@ class LibSpike():
         Execute pony after best effort
         
         @param   private:bool  Whether the pony is user private rather than user shared
-        @return  :byte         Exit value, see description of `LibSpike`, the possible ones are: 0 (TODO)
+        @return  :byte         Exit value, see description of `LibSpike`, the possible ones are: 0, 7, 21, 27, 255
         '''
+        db = SpikeDB(SPIKE_PATH.replace('%', '%%') + ('var/%s%s_%s.%%i' % ('priv_' if private else '', 'scroll', 'id')), DB_SIZE_ID)
+        sink = db.fetch([], [pony])
+        if len(sink) > 1:
+            return 27
+        if len(sink) == 0:
+            return 7
+        try:
+            global ride
+            ride = None
+            for (var, value) in [('ARCH', os.uname()[4]), ('HOST', '$ARCH-unknown-linux-gnu')]:
+                value = os.getenv(var, value.replace('$ARCH', os.getenv('ARCH')))
+                os.putenv(var, value)
+                if var not in os.environ or os.environ[var] != value:
+                    os.environ[var] = value
+            code = None
+            with open(scroll, 'rb') as file:
+                code = file.read().decode('utf8', 'replace') + '\n'
+                code = compile(code, scroll, 'exec')
+            exec(code, globals())
+            if ride is None:
+                return 21
+            else:
+                try:
+                    ride(private)
+                except:
+                    return 21
+        except:
+            return 255
         return 0
     
     
