@@ -481,7 +481,6 @@ class LibSpike():
         @param   force:bool         Whether to extend current file claim
         @return  :byte              Exit value, see description of `LibSpike`, the possible ones are: 0, 10, 11, 12, 27, 255
         '''
-        # TODO support claim --entire
         for file in files:
             if not os.path.lexists(file):
                 return 12
@@ -489,9 +488,30 @@ class LibSpike():
             files = find(files)
         if len(pony.encode('utf-8')) > DB_SIZE_SCROLL:
             return 255
+        dirs = []
+        has_root = (len(files) > 0) and files[0].startswith(os.sep)
+        for file in files:
+            parts = (file[1:] if has_root else file).split(os.sep)
+            for i in range(len(parts)):
+                dirs.append(os.sep.join(parts[:i + 1]))
+        dirs.sort()
+        dirs = unique(dirs)
+        if has_root:
+            dirs = [os.sep + dir for dir in dirs]
+            dirs = [os.sep] + dirs
+        db = SpikeDB(SPIKE_PATH.replace('%', '%%') + ('var/%s%s.%%i' % ('priv_' if private else '', 'fileid_+')), 0)
+        sink = db.fetch([], dirs)
+        fileids = []
+        for (fileid, _) in sink:
+            if _ is not None:
+                fileids.append(fileid)
+                error = 10
+        if len(fileids) > 0:
+            error = max(error, joined_lookup(aggregator, 'fileid', 'scroll', fileids, DB_SIZE_SCROLL, CONVERT_STR))
+        if error != 0:
+            return error
         db = SpikeDB(SPIKE_PATH.replace('%', '%%') + ('var/%s%s.%%i' % ('priv_' if private else '', 'scroll_id')), DB_SIZE_ID)
-        sink = []
-        db.fetch(sink, [pony])
+        sink = db.fetch([], [pony])
         if len(sink) != 1:
             return 27
         new = sink[0][1] is None
@@ -597,6 +617,10 @@ class LibSpike():
                 db.insert([(fileid, name) for (fileid, name) in len_fileid_name[n]])
         db = SpikeDB(SPIKE_PATH.replace('%', '%%') + ('var/%s%s.%%i' % ('priv_' if private else '', 'id_fileid')), DB_SIZE_FILEID)
         db.insert((id, value(fileid)) for (file, fileid) in file_id])
+        if recursiveness == 3:
+            db = SpikeDB(SPIKE_PATH.replace('%', '%%') + ('var/%s%s.%%i' % ('priv_' if private else '', 'fileid_+')), 0)
+            _ = bytes([])
+            db.insert((fileid, _) for (file, fileid) in file_id])
         inserts = [(file, _id) for (file, fileid) in file_id]
         db = SpikeDB(SPIKE_PATH.replace('%', '%%') + ('var/%s%s.%%i' % ('priv_' if private else '', 'file_id')), DB_SIZE_ID)
         if force:

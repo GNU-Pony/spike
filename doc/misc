@@ -14,4 +14,5 @@ Database files, prepended by priv_ for private:
 	 scroll_id	scroll name → scroll id		value_size = DB_SIZE_ID = 4
 	 id_deps	scroll id → deps scrolls id	value_size = DB_SIZE_ID = 4		(with reflection for installed as explicit)
 	 deps_id	deps scroll id → scrolls id	value_size = DB_SIZE_ID = 4		(with reflection for installed as explicit)
+	 fileid_+	file id → (void)		value_size = 0		  		(claimed with --entire if listed)
 
