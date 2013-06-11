@@ -240,7 +240,7 @@ class LibSpike():
         @return  :byte            Exit value, see description of `LibSpike`, the possible ones are: 0, 27
         '''
         # TODO support claim --entire
-        return joinedLookup(aggregator, 'file', 'scroll', files, DB_SIZE_SCROLL, CONVERT_STR)
+        return joined_lookup(aggregator, 'file', 'scroll', files, DB_SIZE_SCROLL, CONVERT_STR)
     
     
     @staticmethod
@@ -366,7 +366,7 @@ class LibSpike():
                         fileid_scrolls[fileid].append(scroll)
                     else:
                         fileid_scrolls[fileid] = [scroll]
-        error = max(error, joinedLookup(Agg(), 'scroll', 'fileid', files, DB_SIZE_FILEID, CONVERT_INT))
+        error = max(error, joined_lookup(Agg(), 'scroll', 'fileid', files, DB_SIZE_FILEID, CONVERT_INT))
         sink = []
         fileid_file = SpikeDB(SPIKE_PATH.replace('%', '%%') + ('var/%s_%s.%%i' % ('fileid', 'file')), DB_SIZE_FILELEN)
         fileid_file.fetch(sink, fileid_scrolls.keys())
@@ -600,7 +600,7 @@ class LibSpike():
                         file_scrolls[file] = [scroll]
                     else:
                         file_scrolls[file].append(scroll)
-        error = joinedLookup(Agg(), 'file', 'scroll', files, DB_SIZE_SCROLL, CONVERT_STR, private = private)
+        error = joined_lookup(Agg(), 'file', 'scroll', files, DB_SIZE_SCROLL, CONVERT_STR, private = private)
         error_sink = []
         if error != 0:
             return error
@@ -820,7 +820,7 @@ class LibSpike():
     
     
     @staticmethod
-    def joinedLookup(aggregator, fromName, toName, fromInput, toSize, toConv = CONVERT_NONE, midName = 'id', midSize = DB_SIZE_ID, private = None):
+    def joined_lookup(aggregator, fromName, toName, fromInput, toSize, toConv = CONVERT_NONE, midName = 'id', midSize = DB_SIZE_ID, private = None):
         '''
         Perform a joined database lookup from on type to another, joined using an intermediary
         
