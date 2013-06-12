@@ -496,11 +496,13 @@ class LibSpike():
             files = find(files)
         if len(pony.encode('utf-8')) > DB_SIZE_SCROLL:
             return 255
+        
+        # Check that the files are not owned by a recursively owned directory
         dirs = []
         has_root = (len(files) > 0) and files[0].startswith(os.sep)
         for file in files:
             parts = (file[1:] if has_root else file).split(os.sep)
-            for i in range(len(parts)):
+            for i in range(len(parts) - 1):
                 dirs.append(os.sep.join(parts[:i + 1]))
         dirs.sort()
         dirs = unique(dirs)
@@ -514,10 +516,20 @@ class LibSpike():
             if _ is not None:
                 fileids.append(fileid)
                 error = 10
+        
+        # Fetch and send already claimed files
         if len(fileids) > 0:
-            error = max(error, joined_lookup(aggregator, 'fileid', 'scroll', fileids, DB_SIZE_SCROLL, CONVERT_STR))
+            class Agg:
+                def __init__(self):
+                    pass
+                def __call__(self, fileid, scroll):
+                    if scroll is not None:
+                        aggregator(fileid, scroll)
+            error = max(error, joined_lookup(Agg(), 'fileid', 'scroll', fileids, DB_SIZE_SCROLL, CONVERT_STR))
         if error != 0:
             return error
+        
+        # Get the ID of the pony
         db = SpikeDB(SPIKE_PATH.replace('%', '%%') + ('var/%s%s.%%i' % ('priv_' if private else '', 'scroll_id')), DB_SIZE_ID)
         sink = db.fetch([], [pony])
         if len(sink) != 1:
@@ -525,16 +537,12 @@ class LibSpike():
         new = sink[0][1] is None
         if new:
             sink = db.list([])
-        def conv(val):
-            rc = 0
-            for d in val:
-                rc = (rc << 8) | int(d)
-            return rc
-        sink = [conv(item[1]) for item in sink]
+        sink = [raw_int(item[1]) for item in sink]
         sink.sort()
         id = sink[len(sink) - 1]
         if new:
             id += 1
+            # If the highest ID is used, find the first unused
             if id >> (DB_SIZE_ID << 3) > 0:
                 last = -1
                 for id in sink:
@@ -542,12 +550,11 @@ class LibSpike():
                         id = last + 1
                         break
                     last = id
-        _id = ('0' * DB_SIZE_ID + str(id))[:DB_SIZE_ID]
-        _id = bytes([int(d) for d in _id])
+        _id = int_bytes(id, DB_SIZE_ID)
+        
+        # Identify unclaimable files and report them with their owners
         _db = SpikeDB(SPIKE_PATH.replace('%', '%%') + ('var/%s%s.%%i' % ('priv_' if private else '', 'file_id')), DB_SIZE_ID)
-        file_scroll = []
-        _db.fetch(file_scroll, files)
-        error = 0
+        file_scroll = _db.fetch([], files)
         scrolls = None
         for (file, scroll) in file_scroll:
             if scroll == _id:
@@ -560,36 +567,39 @@ class LibSpike():
                     scrolls = {}
                     for (scroll_id, scroll_name) in id_scroll:
                         scrolls[scroll_id] = scroll_name.replace('\0', '')
-                aggregator(file, scrolls[conv(scroll)])
+                aggregator(file, scrolls[raw_int(scroll)])
         if (not force) and (error == 11):
             return error
+        
+        # Store scroll name → scroll id and scroll id → scroll name if the pony is not installed
         if new:
+            db = SpikeDB(SPIKE_PATH.replace('%', '%%') + ('var/%s%s.%%i' % ('priv_' if private else '', 'scroll_id')), DB_SIZE_ID)
             db.insert([(pony, _id)])
-        id = str(id)
+        id = int_raw(id)
         if new:
             db = SpikeDB(SPIKE_PATH.replace('%', '%%') + ('var/%s%s.%%i' % ('priv_' if private else '', 'id_scroll')), DB_SIZE_SCROLL)
             db.insert([id, (pony + '\0' * DB_SIZE_SCROLL)[DB_SIZE_SCROLL:]])
+        
+        
+        # Claim the file name for the pony
         db = SpikeDB(SPIKE_PATH.replace('%', '%%') + ('var/%s%s.%%i' % ('priv_' if private else '', 'file_id')), DB_SIZE_ID)
         db.insert([(file, _id) for file in files])
-        sink = []
+        
+        # Fetch file name → file ID and identify files without an assigned ID
         db = SpikeDB(SPIKE_PATH.replace('%', '%%') + ('var/%s%s.%%i' % ('priv_' if private else '', 'file_fileid')), DB_SIZE_FILEID)
-        db.fetch(sink, files)
+        sink = db.fetch([], files)
         (file_id, files_withoutid) = ([], [])
         for (file, fileid) in sink:
             if fileid is None:
                 files_withoutid.append(file)
             else:
                 file_id.append((file, fileid))
+        
+        # Store information about new files
         new_files = []
-        def value(val, len):
-            rc = []
-            for i in range(len):
-                rc.append(val & 255)
-                val = val >> 8
-            return bytes(reversed(rc))
         if len(files_withoutid) > 0:
-            fileid_len = []
-            len_fileid_name = {}
+            # Assign ID to new files
+            (fileid_len, len_fileid_name) = ([], {})
             _db = SpikeDB(SPIKE_PATH.replace('%', '%%') + ('var/%s%s.%%i' % ('priv_' if private else '', 'id_fileid')), DB_SIZE_FILEID)
             ids = [fileid for (_, fileid) in _db.list([])]
             ids.sort()
@@ -597,6 +607,7 @@ class LibSpike():
             fid = ids[len(ids) - 1] + 1
             (last, jump) = (-1, 0)
             for file in files_withoutid:
+                # Look for unused ID:s if the highest is already used
                 if (last != -1) or (fid >> (DB_SIZE_FILEID << 3) > 0):
                     if fid >> (DB_SIZE_FILEID << 3) > 0:
                         last = -1
@@ -609,6 +620,8 @@ class LibSpike():
                         last = fid
                 file_id.append((file, fid))
                 fid += 1
+                
+                # Map file name lenght → (file ID, file name) and list all (file name, file name length, storable value of file name)
                 n = lb32(len(file)) # limiting to 4,3 milliard (2²³) bytes rather than 115,8 duodecilliard (2²⁵⁶) bytes
                 name = file.encode('utf-8')
                 name += '\0' * ((1 << n) - len(name))
@@ -616,22 +629,35 @@ class LibSpike():
                 if n not in len_fileid_name:
                     len_fileid_name[n] = []
                 len_fileid_name[n].append((fileid, name))
+            
+            # Store file name → file ID
             db = SpikeDB(SPIKE_PATH.replace('%', '%%') + ('var/%s%s.%%i' % ('priv_' if private else '', 'file_fileid')), DB_SIZE_FILEID)
-            db.insert([(file, value(fileid, DB_SIZE_FILEID)) for (file, fileid) in new_files])
+            db.insert([(file, int_bytes(fileid, DB_SIZE_FILEID)) for (file, fileid) in new_files])
+            
+            # Store file ID → file name length
             db = SpikeDB(SPIKE_PATH.replace('%', '%%') + ('var/%s%s.%%i' % ('priv_' if private else '', 'fileid_file')), DB_SIZE_FILELEN)
-            db.insert([(fileid, value(n, DB_SIZE_FILELEN)) for (fileid, n) in fileid_len])
+            db.insert([(fileid, int_bytes(n, DB_SIZE_FILELEN)) for (fileid, n) in fileid_len])
+            
+            # Store file ID → file name based on file name length
             for n in len_fileid_name.keys():
                 db = SpikeDB(SPIKE_PATH.replace('%', '%%') + ('var/%s%s.%%i' % ('priv_' if private else '', 'fileid_file%i' % n)), 1 << n)
                 db.insert([(fileid, name) for (fileid, name) in len_fileid_name[n]])
+        
+        # Store scroll ID → file name ID
         db = SpikeDB(SPIKE_PATH.replace('%', '%%') + ('var/%s%s.%%i' % ('priv_' if private else '', 'id_fileid')), DB_SIZE_FILEID)
-        db.insert((id, value(fileid)) for (file, fileid) in file_id])
+        db.insert((id, int_bytes(fileid, DB_SIZE_FILEID)) for (file, fileid) in file_id])
+        
+        # Store --entire information
         if recursiveness == 3:
             db = SpikeDB(SPIKE_PATH.replace('%', '%%') + ('var/%s%s.%%i' % ('priv_' if private else '', 'fileid_+')), 0)
             _ = bytes([])
             db.insert((fileid, _) for (file, fileid) in file_id])
+        
+        # Store file name → owner scroll ID
         inserts = [(file, _id) for (file, fileid) in file_id]
         db = SpikeDB(SPIKE_PATH.replace('%', '%%') + ('var/%s%s.%%i' % ('priv_' if private else '', 'file_id')), DB_SIZE_ID)
         if force:
+            # Keep previous owners if using --force
             db.fetch(sink, files)
             for (a, b) in sink:
                 if b is not None:
@@ -689,13 +715,17 @@ class LibSpike():
         
         # Disclaim exclusive files
         if len(exclusive) > 0:
+            removes = [('file_fileid', DB_SIZE_FILEID, exclusive), ('file_id', DB_SIZE_ID, exclusive), ('fileid_file', DB_SIZE_FILELEN, fileids)]
+            
+            # Fetch file ID → file names
             db = SpikeDB(SPIKE_PATH.replace('%', '%%') + ('var/%s%s.%%i' % ('priv_' if private else '', 'file_fileid')), DB_SIZE_FILEID)
             sink = db.fetch([], exclusive)
             (raw_ids, fileids) = (set(), [])
             for fileid in unique(sorted([item[1] for item in sink])):
                 raw_ids.add(fileid)
                 fileids.append(value_convert(fileid, CONVERT_STR))
-            removes = [('file_fileid', DB_SIZE_FILEID, exclusive), ('file_id', DB_SIZE_ID, exclusive), ('fileid_file', DB_SIZE_FILELEN, fileids)]
+            
+            # Fetch file name lenght → file ID:s
             db = SpikeDB(SPIKE_PATH.replace('%', '%%') + ('var/%s%s.%%i' % ('priv_' if private else '', 'fileid_file')), DB_SIZE_FILELEN)
             sink = db.fetch([], fileids)
             ns = {}
@@ -708,11 +738,15 @@ class LibSpike():
                         ns[n] = [fileid]
                     else:
                         ns[n].append(fileid)
+            
+            # Remove files from databases
             for n in ns.keys():
                 removes.append(('fileid_file%i' % n, 1 << n, ns[n]))
             for (_db, _len, _list) in removes:
                 db = SpikeDB(SPIKE_PATH.replace('%', '%%') + ('var/%s%s.%%i' % ('priv_' if private else '', _db)), _len)
                 db.remove(error_sink, _list)
+            
+            # Remove files from listed as installed under their scrolls
             db = SpikeDB(SPIKE_PATH.replace('%', '%%') + ('var/%s%s.%%i' % ('priv_' if private else '', 'id_fileid')), DB_SIZE_FILEID)
             _id = value_convert(id, CONVERT_INT)
             sink = db.fetch([], [_id])
@@ -720,6 +754,7 @@ class LibSpike():
             for id_fileid in sink:
                 if id_fileid[1] not in raw_ids:
                     pairs.append(id_fileid)
+            # but keep other files for the scrolls
             db.remove(sink, [_id])
             db.insert(pairs)
         
@@ -1035,6 +1070,42 @@ class LibSpike():
         for d in raw:
             rc = (rc << 8) | ord(d)
         return rc
+    
+    
+    @staticmethod
+    def int_raw(value, len):
+        '''
+        Convert an integer object to a raw integer stored in a string
+        
+        @param   value:int  Integer
+        @parma   len:int    The length of the raw string
+        @return  :str       Raw string
+        '''
+        arr = []
+        for i in range(len):
+            arr.append(value & 255)
+            value >>= 8
+        arr = reversed(arr)
+        rc = ''
+        for c in arr:
+            rc += chr(c)
+        return rc
+    
+    
+    @staticmethod
+    def int_bytes(value, len):
+        '''
+        Convert an integer object to a raw integer stored in a byte array
+        
+        @param   value:int  Integer
+        @parma   len:int    The length of the raw byte array
+        @return  :bytes     Raw byte array
+        '''
+        rc = []
+        for i in range(len):
+            rc.append(value & 255)
+            value >>= 8
+        return bytes(reversed(rc))
     
     
     @staticmethod
