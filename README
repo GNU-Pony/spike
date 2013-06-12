@@ -12,7 +12,7 @@ a packages does not need signing, but git does support GPG-signing and
 verification [Git 1.8.2-rc4].
 
 Spike is designed to be minimal to reduce the risk of bugs, while
-supporting installation to another OS installation, hive nice package
+supporting installation to another OS installation, have nice package
 organisation, package patches, as well as being secure.
 
 Spikes security features includes secure removal of files, using the
