@@ -24,6 +24,7 @@ import os
 from gitcord import *
 from sha3sum import *
 from spikedb import *
+from dbctrl import *
 from algospike import *
 from dragonsuite import *
 
@@ -37,45 +38,6 @@ Spike's location
 SPIKE_PROGNAME = 'spike'
 '''
 The program name of Spike
-'''
-
-
-
-CONVERT_NONE = 0
-'''
-Do not convert database values
-'''
-
-CONVERT_INT = 1
-'''
-Do not convert database values as if numerical
-'''
-
-CONVERT_STR = 2
-'''
-Do not convert database values as if text
-'''
-
-
-
-DB_SIZE_ID = 4
-'''
-The maximum length of scroll ID
-'''
-
-DB_SIZE_SCROLL = 64
-'''
-The maximum length of scroll name
-'''
-
-DB_SIZE_FILEID = 8
-'''
-The maximum length of file ID
-'''
-
-DB_SIZE_FILELEN = 1
-'''
-The maximum length of lb(file name length)
 '''
 
 
@@ -109,6 +71,8 @@ class LibSpike():
                  26 - File is of wrong type, normally a directory or regular file when the other is expected
                  27 - Corrupt database
                 255 - Unknown error
+    
+    @author  Mattias Andrée (maandree@member.fsf.org)
     '''
     
     
@@ -244,7 +208,7 @@ class LibSpike():
         '''
         # TODO support claim --entire
         files = [os.path.abspath(file) for file in files]
-        return joined_lookup(aggregator, 'file', 'scroll', files, DB_SIZE_SCROLL, CONVERT_STR)
+        return joined_lookup(aggregator, files, [DB_FILE_NAME(-1), DB_PONY_ID, DB_PONY_NAME])
     
     
     @staticmethod
@@ -395,20 +359,17 @@ class LibSpike():
         # Files belonging to specified ponies and map pony → files
         error = [0]
         fileid_scrolls = {}
-        class Agg:
-            def __init__(self):
-                pass
-            def __call__(self, scroll_fileid):
-                (scroll, fileid) = scroll_fileid
-                if fileid is None:
-                    aggregator(scroll, None)
-                    error[0] = 7
+        def agg(scroll_fileid):
+            (scroll, fileid) = scroll_fileid
+            if fileid is None:
+                aggregator(scroll, None)
+                error[0] = 7
+            else:
+                if fileid in fileid_scrolls:
+                    fileid_scrolls[fileid].append(scroll)
                 else:
-                    if fileid in fileid_scrolls:
-                        fileid_scrolls[fileid].append(scroll)
-                    else:
-                        fileid_scrolls[fileid] = [scroll]
-        error = max(error[0], joined_lookup(Agg(), 'scroll', 'fileid', ponies, DB_SIZE_FILEID, CONVERT_INT))
+                    fileid_scrolls[fileid] = [scroll]
+        error = max(error[0], joined_lookup(agg, ponies, [DB_PONY_NAME, DB_PONY_ID, DB_FILE_ID]))
         
         # Fetch file name lengths for files
         sink = []
@@ -427,7 +388,7 @@ class LibSpike():
                 else:
                     nones.add(file)
                 continue
-            file = raw_int(value_convert(file, CONVERT_INT))
+            file = DBCtrl.raw_int(DBCtrl.value_convert(file, CONVERT_INT))
             if file in file_fileid:
                 file_fileid[file].append(fileid)
             else:
@@ -436,7 +397,7 @@ class LibSpike():
         # Fetch file names for files based on file name lengths and send (file name, scroll) 
         nones = set()
         for file in file_fileid.keys():
-            class Sink:
+            class Sink():
                 def __init__(self):
                     pass
                 def append(self, fileid__file):
@@ -519,13 +480,10 @@ class LibSpike():
         
         # Fetch and send already claimed files
         if len(fileids) > 0:
-            class Agg:
-                def __init__(self):
-                    pass
-                def __call__(self, fileid, scroll):
-                    if scroll is not None:
-                        aggregator(fileid, scroll)
-            error = max(error, joined_lookup(Agg(), 'fileid', 'scroll', fileids, DB_SIZE_SCROLL, CONVERT_STR))
+            def agg(fileid, scroll):
+                if scroll is not None:
+                    aggregator(fileid, scroll)
+            error = max(error, joined_lookup(agg, fileids, [DB_FILE_ID, DB_PONY_ID, DB_PONY_NAME]))
         if error != 0:
             return error
         
@@ -537,7 +495,7 @@ class LibSpike():
         new = sink[0][1] is None
         if new:
             sink = db.list([])
-        sink = [raw_int(item[1]) for item in sink]
+        sink = [DBCtrl.raw_int(item[1]) for item in sink]
         sink.sort()
         id = sink[len(sink) - 1]
         if new:
@@ -550,7 +508,7 @@ class LibSpike():
                         id = last + 1
                         break
                     last = id
-        _id = int_bytes(id, DB_SIZE_ID)
+        _id = DBCtrl.int_bytes(id, DB_SIZE_ID)
         
         # Identify unclaimable files and report them with their owners
         _db = SpikeDB(SPIKE_PATH.replace('%', '%%') + ('var/%s%s.%%i' % ('priv_' if private else '', 'file_id')), DB_SIZE_ID)
@@ -567,7 +525,7 @@ class LibSpike():
                     scrolls = {}
                     for (scroll_id, scroll_name) in id_scroll:
                         scrolls[scroll_id] = scroll_name.replace('\0', '')
-                aggregator(file, scrolls[raw_int(scroll)])
+                aggregator(file, scrolls[DBCtrl.raw_int(scroll)])
         if (not force) and (error == 11):
             return error
         
@@ -575,7 +533,7 @@ class LibSpike():
         if new:
             db = SpikeDB(SPIKE_PATH.replace('%', '%%') + ('var/%s%s.%%i' % ('priv_' if private else '', 'scroll_id')), DB_SIZE_ID)
             db.insert([(pony, _id)])
-        id = int_raw(id)
+        id = DBCtrl.int_raw(id)
         if new:
             db = SpikeDB(SPIKE_PATH.replace('%', '%%') + ('var/%s%s.%%i' % ('priv_' if private else '', 'id_scroll')), DB_SIZE_SCROLL)
             db.insert([id, (pony + '\0' * DB_SIZE_SCROLL)[DB_SIZE_SCROLL:]])
@@ -632,11 +590,11 @@ class LibSpike():
             
             # Store file name → file ID
             db = SpikeDB(SPIKE_PATH.replace('%', '%%') + ('var/%s%s.%%i' % ('priv_' if private else '', 'file_fileid')), DB_SIZE_FILEID)
-            db.insert([(file, int_bytes(fileid, DB_SIZE_FILEID)) for (file, fileid) in new_files])
+            db.insert([(file, DBCtrl.int_bytes(fileid, DB_SIZE_FILEID)) for (file, fileid) in new_files])
             
             # Store file ID → file name length
             db = SpikeDB(SPIKE_PATH.replace('%', '%%') + ('var/%s%s.%%i' % ('priv_' if private else '', 'fileid_file')), DB_SIZE_FILELEN)
-            db.insert([(fileid, int_bytes(n, DB_SIZE_FILELEN)) for (fileid, n) in fileid_len])
+            db.insert([(fileid, DBCtrl.int_bytes(n, DB_SIZE_FILELEN)) for (fileid, n) in fileid_len])
             
             # Store file ID → file name based on file name length
             for n in len_fileid_name.keys():
@@ -645,7 +603,7 @@ class LibSpike():
         
         # Store scroll ID → file name ID
         db = SpikeDB(SPIKE_PATH.replace('%', '%%') + ('var/%s%s.%%i' % ('priv_' if private else '', 'id_fileid')), DB_SIZE_FILEID)
-        db.insert((id, int_bytes(fileid, DB_SIZE_FILEID)) for (file, fileid) in file_id])
+        db.insert((id, DBCtrl.int_bytes(fileid, DB_SIZE_FILEID)) for (file, fileid) in file_id])
         
         # Store --entire information
         if recursiveness == 3:
@@ -683,16 +641,13 @@ class LibSpike():
         
         # Fetch and map file name → scroll
         file_scrolls = {}
-        class Agg:
-            def __init__(self):
-                pass
-            def __call__(self, file, scroll):
-                if scroll is not None:
-                    if file not in file_scrolls:
-                        file_scrolls[file] = [scroll]
-                    else:
-                        file_scrolls[file].append(scroll)
-        error = joined_lookup(Agg(), 'file', 'scroll', files, DB_SIZE_SCROLL, CONVERT_STR, private = private)
+        def agg(file, scroll):
+            if scroll is not None:
+                if file not in file_scrolls:
+                    file_scrolls[file] = [scroll]
+                else:
+                    file_scrolls[file].append(scroll)
+        error = joined_lookup(agg, files, [DB_FILE_NAME(-1), DB_PONY_ID, DB_PONY_NAME])
         if error != 0:
             return error
         
@@ -723,7 +678,7 @@ class LibSpike():
             (raw_ids, fileids) = (set(), [])
             for fileid in unique(sorted([item[1] for item in sink])):
                 raw_ids.add(fileid)
-                fileids.append(value_convert(fileid, CONVERT_STR))
+                fileids.append(DBCtrl.value_convert(fileid, CONVERT_STR))
             
             # Fetch file name lenght → file ID:s
             db = SpikeDB(SPIKE_PATH.replace('%', '%%') + ('var/%s%s.%%i' % ('priv_' if private else '', 'fileid_file')), DB_SIZE_FILELEN)
@@ -733,7 +688,7 @@ class LibSpike():
                 if n is None:
                     error_sink.append((fileid, n))
                 else:
-                    n = raw_int(convert_value(n, CONVERT_INT))
+                    n = DBCtrl.raw_int(convert_value(n, CONVERT_INT))
                     if n not in ns:
                         ns[n] = [fileid]
                     else:
@@ -748,7 +703,7 @@ class LibSpike():
             
             # Remove files from listed as installed under their scrolls
             db = SpikeDB(SPIKE_PATH.replace('%', '%%') + ('var/%s%s.%%i' % ('priv_' if private else '', 'id_fileid')), DB_SIZE_FILEID)
-            _id = value_convert(id, CONVERT_INT)
+            _id = DBCtrl.value_convert(id, CONVERT_INT)
             sink = db.fetch([], [_id])
             pairs = []
             for id_fileid in sink:
@@ -879,7 +834,7 @@ class LibSpike():
                 return 27
             if deps not in deps_id:
                 deps_id[deps] = set()
-            deps_id[deps].add(value_convert(id, CONVERT_INT))
+            deps_id[deps].add(DBCtrl.value_convert(id, CONVERT_INT))
         
         # Forget explicitly installed ponies
         remove = []
@@ -926,13 +881,10 @@ class LibSpike():
                 del deps_id[deps]
         
         # Erase ponies
-        class Agg:
-            def __init__(self):
-                pass
-            def __call__(self, scroll, state, end):
-                if state != 0:
-                    aggregator(scroll, state, end)
-        return erase(Agg(), queue, private = private, shred = shred)
+        def agg(scroll, state, end):
+            if state != 0:
+                aggregator(scroll, state, end)
+        return erase(agg, queue, private = private, shred = shred)
     
     
     @staticmethod
@@ -965,147 +917,20 @@ class LibSpike():
     
     
     @staticmethod
-    def joined_lookup(aggregator, fromName, toName, fromInput, toSize, toConv = CONVERT_NONE, midName = 'id', midSize = DB_SIZE_ID, midConv = CONVERT_INT, private = None):
+    def joined_lookup(aggregator, input, types, private = None):
         '''
-        Perform a joined database lookup from on type to another, joined using an intermediary
+        Perform a database lookup by joining tables
         
         @param  aggregator:(str, str?)→void
                     Feed a input with its output when an output value has been found,
                     but with `None` as output if there is no output
         
-        @param   fromName:str   The input type
-        @param   toName:str     The output type
-        @param   fromInput:str  Input
-        @param   toSize:str     The output type size
-        @param   toConv:int     How to convert the outout
-        @param   midName:str    The intermediary type, must be numeric
-        @param   midSize:str    The intermediary type size
-        @param   midConv:int    How to convert the intermediary
-        @param   private:bool?  Whether to look in the private files rather then the public, `None` for both
-        @return  :byte          Exit value, see description of `LibSpike`, the possible ones are: 0, 27
+        @param   input:list<str>          Input
+        @param   type:itr<(str,int,int)>  The type in order of fetch and join
+        @param   private:bool?            Whether to look in the private files rather then the public, `None` for both
+        @return  :byte                    Exit value, see description of `LibSpike`, the possible ones are: 0, 27
         '''
-        # Open databases
-        pres = ([''] if ((not private) or (private is None)) else []) else (['priv_'] if (private or (private is None)) else [])
-        from_mid = [SpikeDB(SPIKE_PATH.replace('%', '%%') + ('var/%s%s_%s.%%i' % (pre, fromName, midName)), midSize) for pre in pres]
-        mid_to   = [SpikeDB(SPIKE_PATH.replace('%', '%%') + ('var/%s%s_%s.%%i' % (pre, midName,   toName)),  toSize) for pre in pres]
-        
-        # Fetch from → mid and map mid ← from
-        (sink, nones, ab_as) = ([], {}, {})
-        for _from_mid in from_mid:
-            _from_mid.fetch(sink, fromInput)
-        for (a, ab) in sink:
-            if ab is None:
-                if a in nones:
-                    nones[a] += 1
-                else:
-                    nones[a] = 1
-                if nones[a] == len(pres):
-                    aggregator(a, None)
-            else:
-                ab = value_convert(ab, midConv)
-                if ab in ab_as:
-                    ab_as[ab].append(a)
-                else:
-                    ab_as[ab] = [a]
-        
-        # Fetch ab → b and send (a, b)
-        (nones, error) = ({}, 0)
-        class Agg:
-            def __init__(self):
-                pass
-            def append(self, ab_b):
-                (ab, b) = ab_b
-                if b is None:
-                    if ab in nones:
-                        nones[ab] += 1
-                    else:
-                        nones[ab] = 1
-                        if nones[ab] == len(pres):
-                            error = 27
-                    break
-                b = value_convert(b, toConv)
-                for a in ab_as[ab]:
-                    aggregator(a, b)
-        for _mid_to in mid_to:
-            _mid_to.fetch(Agg(), ab_as.keys())
-        return error
-    
-    
-    @staticmethod
-    def value_convert(value, method):
-        '''
-        Convert a value from bytes to string
-        
-        @param   value:bytes  The value
-        @param   method:int   Convertion method
-        @return  :str         The value as string
-        '''
-        rc = ''
-        if method == CONVERT_STR:
-            for c in value:
-                if c == 0:
-                    break
-                rc += chr(c)
-        elif method == CONVERT_INT:
-            for c in value:
-                if (c != 0) or (len(rc) > 0):
-                    rc += chr(c)
-            if rc == '':
-                return '\0'
-        else:
-            for c in value:
-                rc += chr(c)
-        return rc
-    
-    
-    @staticmethod
-    def raw_int(raw):
-        '''
-        Convert a raw integer stored in a string to an integer object
-        
-        @param   raw:str  Raw string
-        @return  :int     Integer
-        '''
-        rc = 0
-        for d in raw:
-            rc = (rc << 8) | ord(d)
-        return rc
-    
-    
-    @staticmethod
-    def int_raw(value, len):
-        '''
-        Convert an integer object to a raw integer stored in a string
-        
-        @param   value:int  Integer
-        @parma   len:int    The length of the raw string
-        @return  :str       Raw string
-        '''
-        arr = []
-        for i in range(len):
-            arr.append(value & 255)
-            value >>= 8
-        arr = reversed(arr)
-        rc = ''
-        for c in arr:
-            rc += chr(c)
-        return rc
-    
-    
-    @staticmethod
-    def int_bytes(value, len):
-        '''
-        Convert an integer object to a raw integer stored in a byte array
-        
-        @param   value:int  Integer
-        @parma   len:int    The length of the raw byte array
-        @return  :bytes     Raw byte array
-        '''
-        rc = []
-        for i in range(len):
-            rc.append(value & 255)
-            value >>= 8
-        return bytes(reversed(rc))
+        return 0 if DBCtrl(SPIKE_PATH).joined_fetch(aggregator, input, types, private) else 27
     
     
     @staticmethod
