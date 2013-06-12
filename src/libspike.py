@@ -471,12 +471,9 @@ class LibSpike():
             dirs = [os.sep + dir for dir in dirs]
             dirs = [os.sep] + dirs
         db = SpikeDB(SPIKE_PATH.replace('%', '%%') + ('var/%s%s.%%i' % ('priv_' if private else '', 'fileid_+')), 0)
-        sink = db.fetch([], dirs)
-        fileids = []
-        for (fileid, _) in sink:
-            if _ is not None:
-                fileids.append(fileid)
-                error = 10
+        fileids = DBCtrl.get_existing([], db.fetch([], dirs))
+        if len(fileids) > 0:
+            error = 10
         
         # Fetch and send already claimed files
         if len(fileids) > 0:

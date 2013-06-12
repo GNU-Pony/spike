@@ -65,31 +65,36 @@ The maximum length of lb(file name length)
 
 ## Value/key type, these are (typeName:str, valueSize:int, valueType:int)-tuples
 
-DB_FILE_NAME = lambda n : ('file'          if n < 0 else ('file%i' % n),
-                           DB_SIZE_FILELEN if n < 0 else (1 << n),
-                           CONVERT_INT     if n < 0 else CONVERT_STR)
+DB_FILE_NAME   = lambda n : ('file'          if n < 0 else ('file%i' % n),
+                             DB_SIZE_FILELEN if n < 0 else (1 << n),
+                             CONVERT_INT     if n < 0 else CONVERT_STR)
 '''
 Value/key type for file name or file name length.
 Call with a negative value for file name length, and with the value
 fetch using that value/key type for file name
 '''
 
-DB_FILE_ID   = ('fileid', DB_SIZE_FILEID,  CONVERT_INT)
+DB_FILE_ID     = ('fileid', DB_SIZE_FILEID,  CONVERT_INT)
 '''
 Value/key type for file ID
 '''
 
-DB_PONY_NAME = ('scroll', DB_SIZE_SCROLL,  CONVERT_STR)
+DB_FILE_ENTIRE = ('+',      0,               CONVERT_NONE)
+'''
+Value/key type for file claimed recursively at detection time
+'''
+
+DB_PONY_NAME   = ('scroll', DB_SIZE_SCROLL,  CONVERT_STR)
 '''
 Value/key type for pony name
 '''
 
-DB_PONY_ID   = ('id',     DB_SIZE_ID,      CONVERT_INT)
+DB_PONY_ID     = ('id',     DB_SIZE_ID,      CONVERT_INT)
 '''
 Value/key type for pony ID
 '''
 
-DB_PONY_DEPS = ('deps',   DB_SIZE_ID,      CONVERT_INT)
+DB_PONY_DEPS   = ('deps',   DB_SIZE_ID,      CONVERT_INT)
 '''
 Value/key type for pony ID dependency
 '''
@@ -209,16 +214,50 @@ class DBCtrl():
     
     
     @staticmethod
+    def get_existing(rc, pairs):
+        '''
+        Get keys that have values, there will be duplicates if the are multiple values
+        
+        @param   rc:append(str)?→void  The list to which existing keys is added
+        @param   pairs:itr<(str,?)>    Key–value pairs
+        @return  rc:append(str)→void   `rc` is returned, if `None`, a list<str> is created
+        '''
+        if rc is None:
+            rc = []
+        for (key, value) in pairs:
+            if value is not None:
+                rc.append(key)
+        return rc
+    
+    
+    @staticmethod
+    def get_nonexisting(rc, pairs):
+        '''
+        Get keys that does not have values
+        
+        @param   rc:append(str)?→void  The list to which existing keys is added
+        @param   pairs:itr<(str,?)>    Key–value pairs
+        @return  rc:append(str)→void   `rc` is returned, if `None`, a list<str> is created
+        '''
+        if rc is None:
+            rc = []
+        for (key, value) in pairs:
+            if value is None:
+                rc.append(key)
+        return rc
+    
+    
+    @staticmethod
     def transpose(rc, pairs, value, noneAggregator, aggregateNone = True):
         '''
         Create a transposed dictionary form a pair list, the value is converted
         
-        @param   rc:dict<str,str>?                   The dictionary to add the data to
+        @param   rc:dict<str,str>?                   The dictionary to which the data is added
         @param   pairs:itr<(str,bytes?)>             Key–value pairs
         @param   value:(str,int,int)                 The value type of the database
         @param   noneAggregator:(str)|(str,?)?→void  Object for which a key is passed when a key is no value
         @param   aggregateNone:bool                  Whether to also pass `None` to `noneAggregator`
-        @return  :dict<str,str>                      `rc` is returned, if `None`, it is created
+        @return  rc:dict<str,str>                    `rc` is returned, if `None`, it is created
         '''
         conv = value[1]
         if rc is None:
@@ -259,12 +298,12 @@ class DBCtrl():
         '''
         Create a dictionary form a pair list, the value is converted
         
-        @param   rc:dict<str,str>?                   The dictionary to add the data to
+        @param   rc:dict<str,str>?                   The dictionary to which the data is added
         @param   pairs:itr<(str,bytes?)>             Key–value pairs
         @param   value:(str,int,int)                 The value type of the database
         @param   noneAggregator:(str)|(str,?)?→void  Object for which a key is passed when a key is no value
         @param   aggregateNone:bool                  Whether to also pass `None` to `noneAggregator`
-        @return  :dict<str,str>                      `rc` is returned, if `None`, it is created
+        @return  rc:dict<str,str>                    `rc` is returned, if `None`, it is created
         '''
         conv = value[1]
         if rc is None:
