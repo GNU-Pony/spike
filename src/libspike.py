@@ -208,7 +208,7 @@ class LibSpike():
         '''
         # TODO support claim --entire
         files = [os.path.abspath(file) for file in files]
-        return joined_lookup(aggregator, files, [DB_FILE_NAME(-1), DB_PONY_ID, DB_PONY_NAME])
+        return joined_lookup(aggregator, files, [DB_FILE_NAME(-1), DB_FILE_ID, DB_PONY_ID, DB_PONY_NAME])
     
     
     @staticmethod
@@ -504,19 +504,19 @@ class LibSpike():
         _id = DBCtrl.int_bytes(id, DB_SIZE_ID)
         
         # Identify unclaimable files and report them with their owners
-        file_scroll = DB.open_db(private, DB_FILE_NAME(-1), DB_PONY_ID).fetch([], files)
-        scrolls = None
-        for (file, scroll) in file_scroll:
+        (scrolls, error) = ({}, [0])
+        def agg(file, scroll):
             if scroll == _id:
-                error = max(error, 10)
+                error[0] = max(error[0], 10)
             else:
-                error = 11
-                if scrolls is None:
+                error[0] = 11
+                if len(scrolls.keys()) == 0:
                     id_scroll = DB.open_db(private, DB_PONY_ID, DB_PONY_NAME).list([])
-                    scrolls = {}
                     for (scroll_id, scroll_name) in id_scroll:
                         scrolls[scroll_id] = scroll_name.replace('\0', '')
                 aggregator(file, scrolls[DBCtrl.raw_int(scroll)])
+        DB.open_db(agg, files, [DB_FILE_NAME(-1), DB_FILE_ID, DB_PONY_ID], private)
+        error = error[0]
         if (not force) and (error == 11):
             return error
         
@@ -526,10 +526,7 @@ class LibSpike():
         id = DBCtrl.int_raw(id)
         if new:
             _pony = (pony + '\0' * DB_SIZE_SCROLL)[DB_SIZE_SCROLL:]
-            DB.open_db(private, DB_PONY_ID, DB_PONY_NAME).insert([id, _pony])
-        
-        # Claim the file name for the pony
-        DB.open_db(private, DB_FILE_NAME(-1), DB_PONY_ID).insert([(file, _id) for file in files])
+            DB.open_db(private, DB_PONY_ID, DB_PONY_NAME).insert([(id, _pony)])
         
         # Fetch file name → file ID and identify files without an assigned ID
         sink = DB.open_db(private, DB_FILE_NAME(-1), DB_FILE_ID).fetch([], files)
@@ -590,17 +587,17 @@ class LibSpike():
         
         # Store scroll ID → file name ID
         db = DB.open_db(private, DB_PONY_ID, DB_FILE_ID)
-        db.insert((id, DBCtrl.int_bytes(fileid, DB_SIZE_FILEID)) for (file, fileid) in file_id])
+        db.insert([(id, DBCtrl.int_bytes(fileid, DB_SIZE_FILEID)) for (file, fileid) in file_id])
         
         # Store --entire information
         if recursiveness == 3:
             _ = bytes([])
             db = DB.open_db(private, DB_FILE_ID, DB_FILE_ENTIRE)
-            db.insert((fileid, _) for (file, fileid) in file_id])
+            db.insert([(fileid, _) for (file, fileid) in file_id])
         
         # Store file name → owner scroll ID
-        inserts = [(file, _id) for (file, fileid) in file_id]
-        db = DB.open_db(private, DB_FILE_NAME(-1), DB_PONY_ID)
+        inserts = [(fileid, _id) for (file, fileid) in file_id]
+        db = DB.open_db(private, DB_FILE_ID, DB_PONY_ID)
         if force:
             # Keep previous owners if using --force
             db.fetch(sink, files)
@@ -628,10 +625,12 @@ class LibSpike():
         DB = DBCtrl(SPIKE_PATH)
         
         # Fetch and map file name → scroll
+        db = DB.open_db(private, DB_FILE_NAME(-1), DB_FILE_ID)
+        fileid_file = DBCtrl.transpose({}, db.fetch([], files), DB_FILE_ID, None)
         sink = []
         def agg(file, scroll):
-            sink.append((file, scroll))
-        error = joined_lookup(agg, files, [DB_FILE_NAME(-1), DB_PONY_ID, DB_PONY_NAME])
+            sink.append(file, scroll))
+        error = joined_lookup(agg, fileid_file.keys(), [DB_FILE_ID, DB_PONY_ID, DB_PONY_NAME])
         if error != 0:
             return error
         file_scrolls = DBCtrl.transpose(None, sink, DB_PONY_NAME, None)
@@ -654,10 +653,11 @@ class LibSpike():
         
         # Disclaim exclusive files
         if len(exclusive) > 0:
-            removes = [(DB_FILE_NAME(-1), DB_FILE_ID, exclusive), (DB_FILE_NAME(-1), DB_PONY_ID, exclusive), (DB_FILE_ID, DB_FILE_NAME(-1), fileids)]
+            exclusiveNames = [fileid_file[file] for file in exclusive]
+            removes = [(DB_FILE_NAME(-1), DB_FILE_ID, exclusiveNames), (DB_FILE_ID, DB_PONY_ID, exclusive), (DB_FILE_ID, DB_FILE_NAME(-1), fileids)]
             
             # Fetch file ID → file names
-            sink = DB.open_db(private, DB_FILE_NAME(-1), DB_FILE_ID).fetch([], exclusive)
+            sink = DB.open_db(private, DB_FILE_NAME(-1), DB_FILE_ID).fetch([], exclusiveNames)
             (raw_ids, fileids) = (set(), [])
             for fileid in unique(sorted([item[1] for item in sink])):
                 raw_ids.add(fileid)
@@ -698,7 +698,7 @@ class LibSpike():
         # Disclaim shared files
         if len(shared) > 0:
             # Fetch ID of scrolls owning shared files
-            db = DB.open_db(prviate, DB_FILE_ID, DB_PONY_ID
+            db = DB.open_db(private, DB_FILE_ID, DB_PONY_ID)
             sink = db.fetch([], shared)
             
             # Get other owners of a file
