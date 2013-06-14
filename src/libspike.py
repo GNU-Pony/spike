@@ -561,8 +561,8 @@ class LibSpike():
         if new:
             id += 1
             # If the highest ID is used, find the first unused
-            if id >> (DB_SIZE_ID << 3) > 0:
-                last = -1
+            if id >> ((DB_SIZE_ID << 3) - (0 if private else 1)) > 0:
+                last = ((1 << ((DB_SIZE_ID << 3) - 1)) if private else 0) - 1
                 for id in sink:
                     if id > last + 1:
                         id = last + 1
@@ -614,12 +614,13 @@ class LibSpike():
             ids.sort()
             ids = unique(ids)
             fid = ids[-1] + 1
-            (last, jump) = (-1, 0)
+            start = ((1 << ((DB_SIZE_FILEID << 3) - 1)) if private else 0) -1 
+            (last, jump) = (start, 0)
             for file in files_withoutid:
                 # Look for unused ID:s if the highest is already used
-                if (last != -1) or (fid >> (DB_SIZE_FILEID << 3) > 0):
+                if (last != -1) or (fid >> ((DB_SIZE_FILEID << 3) - (0 if private else 1)) > 0):
                     if fid >> (DB_SIZE_FILEID << 3) > 0:
-                        last = -1
+                        last = start
                         jump = 0
                     for fid in ids[jump:]:
                         jump += 1
