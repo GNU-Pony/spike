@@ -209,12 +209,14 @@ class LibSpike():
         files = [os.path.abspath(file) for file in files]
         has_root = (len(files) > 0) and files[0].startswith(os.sep)
         dirs = {}
+        found = {}
         class Agg():
             def __init__(self):
                 pass
             def __call__(self, file, scroll):
                 if scroll is not None:
                     aggregator(file, scroll)
+                    found[file] = [scroll]
                 else:
                     parts = (file[1:] if has_root else file).split(os.sep)
                     if has_root:
@@ -232,7 +234,6 @@ class LibSpike():
         if error != 0:
             return error
         not_found = set()
-        found = {}
         class Sink():
             def __init__(self):
                 pass
@@ -248,12 +249,19 @@ class LibSpike():
                         elif scroll not in found[file]:
                             found[file].add(scroll)
                             aggregator(file, scroll)
-        db = DBCtrl(SPIKE_PATH).open_db(private, DB_FILE_ID, DB_FILE_ENTIRE)
-        db.fetch(Sink(), dirs.keys())
-        for dir in not_found:
-            for file in not_found[dir]:
-                if file not in found:
-                    aggregator(file, None)
+        if len(dirs.keys()) > 0:
+            sink = DBCtrl(SPIKE_PATH).open_db(private, DB_FILE_NAME, DB_FILE_ID).fetch([], dirs.keys())
+            ids = []
+            for (dirname, dirid) in sink:
+                if dirid in dirs:
+                    return 27
+                dirs[dirid] = dirs[dirname]
+                del dirs[name]
+            DBCtrl(SPIKE_PATH).open_db(private, DB_FILE_ID, DB_FILE_ENTIRE).fetch(Sink(), dirs.keys())
+            for dir in not_found:
+                for file in not_found[dir]:
+                    if file not in found:
+                        aggregator(file, None)
     
     
     @staticmethod
