@@ -251,12 +251,12 @@ class DBCtrl():
         '''
         Create a transposed dictionary form a pair list, the value is converted
         
-        @param   rc:dict<str,str>?                   The dictionary to which the data is added
+        @param   rc:dict<str,list<str>>?             The dictionary to which the data is added
         @param   pairs:itr<(str,bytes?)>             Key–value pairs
         @param   value:(str,int,int)                 The value type of the database
         @param   noneAggregator:(str)|(str,?)?→void  Object for which a key is passed when a key is no value
         @param   aggregateNone:bool                  Whether to also pass `None` to `noneAggregator`
-        @return  rc:dict<str,str>                    `rc` is returned, if `None`, it is created
+        @return  rc:dict<str,list<str>>              `rc` is returned, if `None`, it is created
         '''
         conv = value[1]
         if rc is None:
@@ -297,12 +297,12 @@ class DBCtrl():
         '''
         Create a dictionary form a pair list, the value is converted
         
-        @param   rc:dict<str,str>?                   The dictionary to which the data is added
+        @param   rc:dict<str,list<str>>?             The dictionary to which the data is added
         @param   pairs:itr<(str,bytes?)>             Key–value pairs
         @param   value:(str,int,int)                 The value type of the database
         @param   noneAggregator:(str)|(str,?)?→void  Object for which a key is passed when a key is no value
         @param   aggregateNone:bool                  Whether to also pass `None` to `noneAggregator`
-        @return  rc:dict<str,str>                    `rc` is returned, if `None`, it is created
+        @return  rc:dict<str,list<str>>              `rc` is returned, if `None`, it is created
         '''
         conv = value[1]
         if rc is None:
