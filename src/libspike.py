@@ -253,7 +253,7 @@ class LibSpike():
             sink = DBCtrl(SPIKE_PATH).open_db(private, DB_FILE_NAME, DB_FILE_ID).fetch([], dirs.keys())
             ids = []
             for (dirname, dirid) in sink:
-                if dirid in dirs:
+                if (dirid is None) or (dirid in dirs):
                     return 27
                 dirs[dirid] = dirs[dirname]
                 del dirs[name]
