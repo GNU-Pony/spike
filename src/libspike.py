@@ -233,35 +233,46 @@ class LibSpike():
         error = joined_lookup(Agg(), files, [DB_FILE_NAME(-1), DB_FILE_ID, DB_PONY_ID, DB_PONY_NAME])
         if error != 0:
             return error
-        not_found = set()
-        class Sink():
-            def __init__(self):
-                pass
-            def append(self, dir_scroll):
-                (dir, scroll) = dir_scroll
-                if scroll is None:
-                    not_found.add(dir)
-                else:
-                    for file in dirs[dir]:
-                        if file not in found:
-                            found[file] = set([scroll])
-                            aggregator(file, scroll)
-                        elif scroll not in found[file]:
-                            found[file].add(scroll)
-                            aggregator(file, scroll)
         if len(dirs.keys()) > 0:
-            sink = DBCtrl(SPIKE_PATH).open_db(private, DB_FILE_NAME, DB_FILE_ID).fetch([], dirs.keys())
+            sink = DBCtrl(SPIKE_PATH).open_db(False, DB_FILE_NAME, DB_FILE_ID).fetch([], dirs.keys())
+            sink = DBCtrl(SPIKE_PATH).open_db(True,  DB_FILE_NAME, DB_FILE_ID).fetch([], dirs.keys())
             ids = []
+            nones = set()
             for (dirname, dirid) in sink:
-                if (dirid is None) or (dirid in dirs):
+                if dirid is None::
+                    if dirname in nones:
+                        return 27
+                    else:
+                        nones.add(dirname)
+                if dirid in dirs:
                     return 27
                 dirs[dirid] = dirs[dirname]
-                del dirs[name]
-            DBCtrl(SPIKE_PATH).open_db(private, DB_FILE_ID, DB_FILE_ENTIRE).fetch(Sink(), dirs.keys())
+                del dirs[dirname]
+            not_found = set()
+            class Sink():
+                def __init__(self):
+                    pass
+                def append(self, dir_scroll):
+                    (dir, scroll) = dir_scroll
+                    if scroll is None:
+                        not_found.add(dir)
+                    else:
+                        if scroll in not_found:
+                            del not_found[scroll]
+                        for file in dirs[dir]:
+                            if file not in found:
+                                found[file] = set([scroll])
+                                aggregator(file, scroll)
+                            elif scroll not in found[file]:
+                                found[file].add(scroll)
+                                aggregator(file, scroll)
+            DBCtrl(SPIKE_PATH).open_db(False, DB_FILE_ID, DB_FILE_ENTIRE).fetch(Sink(), dirs.keys())
+            DBCtrl(SPIKE_PATH).open_db(True,  DB_FILE_ID, DB_FILE_ENTIRE).fetch(Sink(), dirs.keys())
             for dir in not_found:
                 for file in not_found[dir]:
                     if file not in found:
                         aggregator(file, None)
+        return 0
     
     
     @staticmethod
