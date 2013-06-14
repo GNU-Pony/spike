@@ -206,9 +206,54 @@ class LibSpike():
         @param   files:list<str>  Files for which to do lookup
         @return  :byte            Exit value, see description of `LibSpike`, the possible ones are: 0, 27
         '''
-        # TODO support claim --entire
         files = [os.path.abspath(file) for file in files]
-        return joined_lookup(aggregator, files, [DB_FILE_NAME(-1), DB_FILE_ID, DB_PONY_ID, DB_PONY_NAME])
+        has_root = (len(files) > 0) and files[0].startswith(os.sep)
+        dirs = {}
+        class Agg():
+            def __init__(self):
+                pass
+            def __call__(self, file, scroll):
+                if scroll is not None:
+                    aggregator(file, scroll)
+                else:
+                    parts = (file[1:] if has_root else file).split(os.sep)
+                    if has_root:
+                        if os.dep not in dirs:
+                            dirs[os.dep] = [file]
+                        else:
+                            dirs[os.dep].append(file)
+                    for i in range(len(parts) - 1):
+                        dir = (os.sep + os.sep.join(parts[:i + 1])) if has_root else os.sep.join(parts[:i + 1])
+                        if dir not in dirs:
+                            dirs[dir] = [file]
+                        else:
+                            dirs[dir].append(file)
+        error = joined_lookup(Agg(), files, [DB_FILE_NAME(-1), DB_FILE_ID, DB_PONY_ID, DB_PONY_NAME])
+        if error != 0:
+            return error
+        not_found = set()
+        found = {}
+        class Sink():
+            def __init__(self):
+                pass
+            def append(self, dir_scroll):
+                (dir, scroll) = dir_scroll
+                if scroll is None:
+                    not_found.add(dir)
+                else:
+                    for file in dirs[dir]:
+                        if file not in found:
+                            found[file] = set([scroll])
+                            aggregator(file, scroll)
+                        elif scroll not in found[file]:
+                            found[file].add(scroll)
+                            aggregator(file, scroll)
+        db = DBCtrl(SPIKE_PATH).open_db(private, DB_FILE_ID, DB_FILE_ENTIRE)
+        db.fetch(Sink(), dirs.keys())
+        for dir in not_found:
+            for file in not_found[dir]:
+                if file not in found:
+                    aggregator(file, None)
     
     
     @staticmethod
@@ -772,7 +817,7 @@ class LibSpike():
                 aggregator(scroll, 1, 'Scroll not found')
             else:
                 try:
-                    pass # TODO proofread `scrollfile`
+                     pass # TODO proofread `scrollfile`
                 except Exception as err:
                     error = max(error, 22)
                     aggregator(scroll, 1, str(err))
