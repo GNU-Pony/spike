@@ -3,6 +3,10 @@ To freeze Spike from updating when running --bootstrap put a file named `frozen.
 Similarly, you can put .git/frozen.spike in a repository directory to freeze it.
 
 
+To prevent errors when using public and private at the same time, public ID:s have the most significant bit turned off while the
+private ID:s have the most significant bit turned on.
+
+
 Database files, prepended by priv_ for private:
 
 	 fileid_id	file id  → owner scroll id	value_size = DB_SIZE_ID = 4		(→ max installed pony count = 4294967296)
