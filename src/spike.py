@@ -971,15 +971,20 @@ class Spike():
         '''
         class Agg:
             '''
-            aggregator:(str, str?)→void
+            aggregator:(str, str?, [bool])→void
                 Feed the pony and the file when a file is detected,
                 but `None` as the file if the pony is not installed.
+                If `None` is not passed, an additional argument is
+                passed: False normally, and True if the file is
+                recursively claimed at detection time.
             '''
             def __init__(self):
                 pass
-            def __call__(self, owner, filename):
+            def __call__(self, owner, filename, entire = False):
                 if filename is None:
                     printerr('%s is not installed')
+                elif entire:
+                    print('%s:recursive: %s' % (owner, filename))
                 else:
                     print('%s: %s' % (owner, filename))
         

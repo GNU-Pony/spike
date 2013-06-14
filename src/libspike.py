@@ -391,9 +391,12 @@ class LibSpike():
         '''
         List files installed for ponies
         
-        @param   aggregator:(str, str?)→void
+        @param   aggregator:(str, str?, [bool])→void
                      Feed the pony and the file when a file is detected,
                      but `None` as the file if the pony is not installed.
+                     If `None` is not passed, an additional argument is
+                     passed: False normally, and True if the file is
+                     recursively claimed at detection time.
         
         @param   ponies:list<str>  Installed ponies for which to list claimed files
         @return  :byte             Exit value, see description of `LibSpike`, the possible ones are: 0, 7, 27
