@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import os
 # TODO use git in commands
 
+from libspikehelper import *
 from gitcord import *
 from sha3sum import *
 from spikedb import *
