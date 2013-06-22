@@ -1001,14 +1001,23 @@ class Spike():
         '''
         class Agg:
             '''
-            aggregator:(str, str, str)→void
+            aggregator:(str, str?, str?)→void
                 Feed the scroll, the field name and the information in the field when a scroll's information is read,
                 all (desired) fields for a scroll will come once, in an uninterrupted sequence.
+                If a scroll is not found the field name and the value is returned as `None`. If the field name is
+                not defined, the value is returned as `None`.
             '''
             def __init__(self):
-                pass
+                self.metaerr = set()
             def __call__(self, scroll, meta, info):
-                print('%s: %s: %s' % (scroll, meta, info))
+                if meta is None:
+                    printerr('Scroll %s was not found' % scroll)
+                elif info is None:
+                    if meta not in self.metaerr:
+                        printerr('Field %s was defined' % meta)
+                        self.metaerr.add(meta)
+                else:
+                    print('%s: %s: %s' % (scroll, meta, info))
         
         return LibSpike.read_info(Agg(), scrolls, field)
     

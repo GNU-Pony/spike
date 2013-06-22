@@ -463,9 +463,11 @@ class LibSpike(LibSpikeHelper):
         '''
         List information about scrolls
         
-        @param   aggregator:(str, str, str)→void
+        @param   aggregator:(str, str?, str?)→void
                      Feed the scroll, the field name and the information in the field when a scroll's information is read,
                      all (desired) fields for a scroll will come once, in an uninterrupted sequence.
+                     If a scroll is not found the field name and the value is returned as `None`. If the field name is
+                     not defined, the value is returned as `None`.
         
         @param   scrolls:list<str>     Scrolls for which to list information
         @param   field:str?|list<str>  Information field or fields to fetch, `None` for everything
