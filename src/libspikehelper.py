@@ -184,7 +184,7 @@ class LibSpikeHelper():
 
 
 
-SPIKE_PATH = LibSpike.parse_filename(SPIKE_PATH)
+SPIKE_PATH = LibSpikeHelper.parse_filename(SPIKE_PATH)
 if not SPIKE_PATH.endswith('/'):
     SPIKE_PATH += '/'
 
