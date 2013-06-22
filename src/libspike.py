@@ -924,7 +924,7 @@ class LibSpike(LibSpikeHelper):
                     `None` is returned as the checksum if it is not a regular file or does not exist.
         
         @param   files:list<str>  Files for which to calculate the checksum
-        @return  :byte            Exit value, see description of `LibSpike`, the possible ones are: 0, 12, 16
+        @return  :byte            Exit value, see description of `LibSpike`, the possible ones are: 0, 12, 26
         '''
         error = 0
         sha3 = SHA3()
@@ -936,7 +936,7 @@ class LibSpike(LibSpikeHelper):
             elif not os.path.isfile(filename):
                 aggregator(filename, None)
                 if error == 0:
-                    error = 16
+                    error = 26
             else:
                 aggregator(filename, sha3.digestFile(filename));
                 sha3.reinitialise()
