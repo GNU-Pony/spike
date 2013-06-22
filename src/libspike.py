@@ -710,7 +710,6 @@ class LibSpike():
         @param   private:bool       Whether the pony is user private rather the user shared
         @return  :byte              Exit value, see description of `LibSpike`, the possible ones are: 0, 27
         '''
-        # TODO support claim --entire
         files = [os.path.abspath(file) for file in files]
         DB = DBCtrl(SPIKE_PATH)
         
@@ -772,6 +771,7 @@ class LibSpike():
                 removes.append((DB_FILE_ID, DB_FILE_NAME(n), ns[n]))
             for (db_from, db_to, rm_list) in removes:
                 DB.open_db(private, db_from, db_to).remove(error_sink, rm_list)
+            DB.open_db(private, DB_FILE_ID, DB_FILE_ENTIRE).remove([], exclusive)
             
             # Remove files from listed as installed under their scrolls
             db = DB.open_db(private, DB_PONY_ID, DB_FILE_ID)
