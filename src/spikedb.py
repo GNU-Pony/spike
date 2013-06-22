@@ -447,7 +447,7 @@ class SpikeDB():
                 multibinsearch(Agg(removelist, rc, bucket, list), list, bbucket)
                 diminishamount = len(removelist) - curremove
                 if diminishamount > 0:
-                    diminish.append(position - 1, diminishamount))
+                    diminish.append((position - 1, diminishamount))
             end = 0
             pos = 0
             while pos < masterseeklen:
