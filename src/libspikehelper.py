@@ -184,6 +184,10 @@ class LibSpikeHelper():
 
 
 
+if 'SPIKE_PATH' not in os.environ:
+    spike_path = os.path.realpath(sys.argv[0])
+    spike_path = os.path.dirname(os.path.dirname(spike_path))
+    os.environ['SPIKE_PATH'] = spike_path
 SPIKE_PATH = LibSpikeHelper.parse_filename(SPIKE_PATH)
 if not SPIKE_PATH.endswith('/'):
     SPIKE_PATH += '/'
