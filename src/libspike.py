@@ -321,7 +321,7 @@ class LibSpike(LibSpikeHelper):
         Execute pony after best effort
         
         @param   private:bool  Whether the pony is user private rather than user shared
-        @return  :byte         Exit value, see description of `LibSpike`, the possible ones are: 0, 6, 7, 21, 27, 255
+        @return  :byte         Exit value, see description of `LibSpike`, the possible ones are: 0, 6, 7, 20, 21, 27, 255
         '''
         # Verify that the scroll has been installed
         sink = DB.open_db(private, DB_PONY_NAME, DB_PONY_ID).fetch([], [pony])
@@ -331,7 +331,7 @@ class LibSpike(LibSpikeHelper):
             return 7
         
         try:
-            # Set $ARCH
+            # Set $ARCH and $HOST
             for (var, value) in [('ARCH', os.uname()[4]), ('HOST', '$ARCH-unknown-linux-gnu')]:
                 value = os.getenv(var, value.replace('$ARCH', os.getenv('ARCH', '')))
                 os.putenv(var, value)
@@ -339,23 +339,26 @@ class LibSpike(LibSpikeHelper):
                     os.environ[var] = value
             
             # Open scroll
-            global ride
-            (ride, code, scroll) = (None, None, locate_scroll(pony, True))
-            if scroll == None:
-                return 6
-            with open(scroll, 'rb') as file:
-                code = file.read().decode('utf8', 'replace') + '\n'
-                code = compile(code, scroll, 'exec')
-            
-            # Ride pony
-            exec(code, globals())
-            if ride is None:
-                return 21
-            else:
-                try:
-                    ride(private)
-                except:
+            try:
+                global ride
+                (ride, code, scroll) = (None, None, locate_scroll(pony, True))
+                if scroll == None:
+                    return 6
+                with open(scroll, 'rb') as file:
+                    code = file.read().decode('utf8', 'replace') + '\n'
+                    code = compile(code, scroll, 'exec')
+                
+                # Ride pony
+                exec(code, globals())
+                if ride is None:
                     return 21
+                else:
+                    try:
+                        ride(private)
+                    except:
+                        return 21
+            except:
+                return 20
         except:
             return 255
         return 0
@@ -475,9 +478,112 @@ class LibSpike(LibSpikeHelper):
         @param   field:str?|list<str>  Information field or fields to fetch, `None` for everything
         @param   installed:bool        Whether to include installed scrolls
         @param   notinstalled:bool     Whether to include not installed scrolls
-        @return  :byte                 Exit value, see description of `LibSpike`, the possible ones are: 0 (TODO)
+        @return  :byte                 Exit value, see description of `LibSpike`, the possible ones are: 0, 6, 14, 20, 255
         '''
-        return 0
+        # Fields
+        preglobals = set(globals().keys())
+        global pkgname, pkgver, pkgrel, epoch, pkgdesc, upstream, arch, freedom, license
+        global private, interactive, conflicts, replaces, provides, extension, variant
+        global patch, reason, patchbefore, patchafter, groups, depends, makedepends
+        global checkdepends, optdepends, backup, options
+        postglobals = list(globals().keys())
+        allowedfields = set()
+        for globalvar in postglobals:
+            if globalvar not in preglobals:
+                allowedfields.add(globalvar)
+        allowedfields.add('repository')
+        allowedfields.add('category')
+        
+        allfields = field is None
+        fields = list(allowedfields) if allfields else ([field] if isinstance(field, str) else field)
+        error = 0
+        try:
+            # Set $ARCH and $HOST
+            for (var, value) in [('ARCH', os.uname()[4]), ('HOST', '$ARCH-unknown-linux-gnu')]:
+                value = os.getenv(var, value.replace('$ARCH', os.getenv('ARCH', '')))
+                os.putenv(var, value)
+                if var not in os.environ or os.environ[var] != value:
+                    os.environ[var] = value
+            
+            # Define arbitrary to str convertion function
+            def convert(val, first = None):
+                if val is None:
+                    return '-'
+                elif isinstance(val, bool):
+                    return 'yes' if val else 'no'
+                elif isinstance(val, int) or isinstance(val, float):
+                    return str(val)
+                elif isinstance(val, str):
+                    return val
+                elif (first is not None) and (len(first) > 0) and first[0]:
+                    return convert(val[0], first[1:])
+                else:
+                    f = None if first is None else first[1:]
+                    return [convert(v, f) for v in val]
+            
+            for scroll in scrolls:
+                # Locate installed and not installed version of scroll
+                scroll_installed    = None if not    installed else pass locate_scroll(scroll, True)
+                scroll_notinstalled = None if not notinstalled else pass locate_scroll(scroll, False)
+                if (scroll_installed is None) and (scroll_notinstalled is None):
+                    aggregator(scroll, None, None, installed)
+                    error = max(error, 6)
+                    continue
+                
+                report = {}
+                for scrollfile in [scroll_installed, scroll_notinstalled]:
+                    if scrollfile is not None:
+                        try:
+                            installed = scrollfile is scroll_installed
+                            
+                            # Fields' default value
+                            (pkgname, pkgver, pkgdesc, upstream, arch, freedom, license) = [None] * 6
+                            (private, extension, variant, patch, reason) = [None] * 5
+                            pkgrel, epoch, interactive, backup, options = 1, 0, False, [], []
+                            conflicts, replaces, provides, patchbefore, patchafter = [], [], [], [], []
+                            groups, depends, makedepends, checkdepends, optdepends = [], [], [], [], []
+                            
+                            # Scroll location
+                            global repository, category
+                            repository = scrollfile.split('/')[-3]
+                            category = scrollfile.split('/')[-2]
+                            
+                            # Open installed scroll
+                            (code, scroll) = (None, scrollfile)
+                            if scroll == None:
+                                return 6
+                            with open(scroll, 'rb') as file:
+                                code = file.read().decode('utf8', 'replace') + '\n'
+                                code = compile(code, scroll, 'exec')
+                            
+                            # Fetch fields
+                            exec(code, globals())
+                            
+                            # Prepare for report
+                            for field in fields:
+                                if field not in allowedfields:
+                                    aggregator(scroll, field, None, installed)
+                                    continue
+                                value = globals()[field]
+                                value = convert(value)
+                                if isinstance(value, str):
+                                    value = [value]
+                                else:
+                                    value = [str(v) for v in value]
+                                for v in value:
+                                    if field not in report:
+                                        report[field] = []
+                                    report.append((v, installed))
+                        except:
+                            return 20
+                
+                # Report findings
+                for field in report.keys():
+                    for data in report[field]:
+                        aggregator(scroll, field, date[0], date[1])
+        except:
+            error = 255
+        return error
     
     
     @staticmethod
