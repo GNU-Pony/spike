@@ -673,7 +673,7 @@ class LibSpike(LibSpikeHelper):
         fileid_file = DBCtrl.transpose({}, db.fetch([], files), DB_FILE_ID, None)
         sink = []
         def agg(file, scroll):
-            sink.append(file, scroll))
+            sink.append((file, scroll))
         error = joined_lookup(agg, fileid_file.keys(), [DB_FILE_ID, DB_PONY_ID, DB_PONY_NAME])
         if error != 0:
             return error
