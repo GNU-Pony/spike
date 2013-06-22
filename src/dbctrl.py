@@ -202,7 +202,7 @@ class DBCtrl():
                         self.nones[key] = 1
                         if self.nones[key] == self.err:
                             error[0] = True
-                    break
+                    return
                 value = DBCtrl.value_convert(value, self.valueType)
                 for start in end_start[key]:
                     aggregator(start, value)
