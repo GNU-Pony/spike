@@ -138,17 +138,22 @@ class LibSpike(LibSpikeHelper):
         @return  :byte            Exit value, see description of `LibSpike`, the possible ones are: 0, 27
         '''
         files = [os.path.abspath(file) for file in files]
+        DB = DBCtrl(SPIKE_PATH)
+        
+        # Fetch filename to pony mapping
         has_root = (len(files) > 0) and files[0].startswith(os.sep)
         dirs = {}
-        found = {}
-        class Agg():
+        found = set()
+        class Agg1():
             def __init__(self):
                 pass
             def __call__(self, file, scroll):
                 if scroll is not None:
+                    # Send and store found file
                     aggregator(file, scroll)
-                    found[file] = [scroll]
+                    found.add(file)
                 else:
+                    # List all superpaths to files without found scroll
                     parts = (file[1:] if has_root else file).split(os.sep)
                     if has_root:
                         if os.dep not in dirs:
@@ -164,46 +169,65 @@ class LibSpike(LibSpikeHelper):
         error = joined_lookup(Agg(), files, [DB_FILE_NAME(-1), DB_FILE_ID, DB_PONY_ID, DB_PONY_NAME])
         if error != 0:
             return error
+        
         if len(dirs.keys()) > 0:
-            sink = DBCtrl(SPIKE_PATH).open_db(False, DB_FILE_NAME, DB_FILE_ID).fetch([], dirs.keys())
-            sink = DBCtrl(SPIKE_PATH).open_db(True,  DB_FILE_NAME, DB_FILE_ID).fetch([], dirs.keys())
-            ids = []
+            # Fetch file id for filenames
+            sink = []
+            DB.open_db(False, DB_FILE_NAME, DB_FILE_ID).fetch(sink, dirs.keys())
+            DB.open_db(True,  DB_FILE_NAME, DB_FILE_ID).fetch(sink, dirs.keys())
+            
+            # Rekey superpaths to use id rather then filename and discard unfound superpath
             nones = set()
             for (dirname, dirid) in sink:
-                if dirid is None::
-                    if dirname in nones:
-                        return 27
-                    else:
+                if dirid is None:
+                    if dirname not in nones:
                         nones.add(dirname)
-                if dirid in dirs:
-                    return 27
-                dirs[dirid] = dirs[dirname]
+                        continue
+                else:
+                    if dirid in dirs:
+                        return 27
+                    dirs[dirid] = dirs[dirname]
                 del dirs[dirname]
+            
+            # Determine if superpaths are --entire claimed and store information
             not_found = set()
+            did_find = set()
             class Sink():
                 def __init__(self):
                     pass
-                def append(self, dir_scroll):
-                    (dir, scroll) = dir_scroll
-                    if scroll is None:
-                        not_found.add(dir)
+                def append(self, dir_entire):
+                    (dir, entire) = dir_entire
+                    if entire is None:
+                        if dir not in did_find:
+                            not_found.add(dir)
                     else:
-                        if scroll in not_found:
-                            del not_found[scroll]
+                        did_find.add(dir)
+                        if dir in not_found:
+                            del not_found[dir]
                         for file in dirs[dir]:
-                            if file not in found:
-                                found[file] = set([scroll])
-                                aggregator(file, scroll)
-                            elif scroll not in found[file]:
-                                found[file].add(scroll)
-                                aggregator(file, scroll)
-            DBCtrl(SPIKE_PATH).open_db(False, DB_FILE_ID, DB_FILE_ENTIRE).fetch(Sink(), dirs.keys())
-            DBCtrl(SPIKE_PATH).open_db(True,  DB_FILE_ID, DB_FILE_ENTIRE).fetch(Sink(), dirs.keys())
+                            found.add(file)
+            DB.open_db(False, DB_FILE_ID, DB_FILE_ENTIRE).fetch(Sink(), dirs.keys())
+            DB.open_db(True,  DB_FILE_ID, DB_FILE_ENTIRE).fetch(Sink(), dirs.keys())
+            
+            # Report all non-found files
             for dir in not_found:
                 for file in not_found[dir]:
                     if file not in found:
                         aggregator(file, None)
-        return 0
+            
+            # Determine owner of found directories and send ownership
+            class Agg2():
+                def __init__(self):
+                    pass
+                def __call__(self, dirid, scroll):
+                    if scroll is None:
+                        error = 27
+                    else:
+                        for file in dirs[dirid]:
+                            aggregator(file, scroll)
+            error = joined_lookup(Agg2(), list(did_find), [DB_FILE_ID, DB_PONY_ID, DB_PONY_NAME])
+        
+        return error
     
     
     @staticmethod
@@ -402,7 +426,7 @@ class LibSpike(LibSpikeHelper):
                             error = 27
                         else:
                             nones.add(_file)
-                        break
+                        return
                     _file = convert_value(_file, CONVERT_STR)
                     for scroll in fileid_scrolls[fileid]:
                         if fileid not in fileid_scroll_files:
@@ -519,7 +543,7 @@ class LibSpike(LibSpikeHelper):
                 for id in sink:
                     if id > last + 1:
                         id = last + 1
-                        break
+                        continue
                     last = id
         _id = DBCtrl.int_bytes(id, DB_SIZE_ID)
         
@@ -579,7 +603,7 @@ class LibSpike(LibSpikeHelper):
                         jump += 1
                         if fid > last + 1:
                             fid = last + 1
-                            break
+                            continue
                         last = fid
                 file_id.append((file, fid))
                 fid += 1
