@@ -159,7 +159,7 @@ class LibSpikeHelper():
         
         # Get category paths
         paths = []
-        if cat not is None:
+        if cat is not None:
             for repo in repositories:
                 paths.append('%s/%s' % (repositories[repo], cat))
         else:
