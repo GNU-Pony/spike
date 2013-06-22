@@ -377,7 +377,7 @@ class LibSpike():
         try:
             # Set $ARCH
             for (var, value) in [('ARCH', os.uname()[4]), ('HOST', '$ARCH-unknown-linux-gnu')]:
-                value = os.getenv(var, value.replace('$ARCH', os.getenv('ARCH')))
+                value = os.getenv(var, value.replace('$ARCH', os.getenv('ARCH', '')))
                 os.putenv(var, value)
                 if var not in os.environ or os.environ[var] != value:
                     os.environ[var] = value
