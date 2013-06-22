@@ -420,7 +420,6 @@ class LibSpike():
         @param   ponies:list<str>  Installed ponies for which to list claimed files
         @return  :byte             Exit value, see description of `LibSpike`, the possible ones are: 0, 7, 27
         '''
-        # TODO support claim --entire
         DB = DBCtrl(SPIKE_PATH)
         error = [0]
         
@@ -458,8 +457,9 @@ class LibSpike():
             else:
                 file_fileid[file] = [fileid]
         
-        # Fetch file names for files based on file name lengths and send (file name, scroll) 
+        # Fetch file names for files based on file name lengths
         nones = set()
+        fileid_scroll_files = {}
         for file in file_fileid.keys():
             class Sink():
                 def __init__(self):
@@ -473,10 +473,32 @@ class LibSpike():
                             nones.add(_file)
                         break
                     _file = convert_value(_file, CONVERT_STR)
-                    for scroll in fileid_scrolls(fileid):
-                        aggregator(_file, scroll)
+                    for scroll in fileid_scrolls[fileid]:
+                        if fileid not in fileid_scroll_files:
+                            fileid_scroll_files[fileid] = []
+                        fileid_scroll_files[fileid].append((scroll, _file))
             DB.open_db(False, DB_FILE_ID, DB_FILE_NAME(file)).fetch(Sink(), file_fileid[file])
             DB.open_db(True,  DB_FILE_ID, DB_FILE_NAME(file)).fetch(Sink(), file_fileid[file])
+        
+        # Identify --entire claims and send (pony, file name, entire)
+        nones = set()
+        fileid = fileid_scroll_files.keys()
+        class Sink():
+            def __init__(self):
+                pass
+            def append(self, fileid_entire):
+                (fileid, entire) = fileid_entire
+                if entire is None:
+                    if fileid in nones:
+                        aggregator(fileid_scroll_files)
+                    else:
+                        nones.add(fileid)
+                else:
+                    for (scroll, filename) in fileid_scroll_files[fileid]:
+                        aggregator(scroll, filename, entire is not None)
+        DB.open_db(False, DB_FILE_ID, DB_FILE_ENTIRE).fetch(Sink(), fileids)
+        DB.open_db(True,  DB_FILE_ID, DB_FILE_ENTIRE).fetch(Sink(), fileids)
+        
         return error
     
     
