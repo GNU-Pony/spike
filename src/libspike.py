@@ -341,7 +341,7 @@ class LibSpike(LibSpikeHelper):
             # Open scroll
             try:
                 global ride
-                (ride, code, scroll) = (None, None, locate_scroll(pony, True))
+                (ride, code, scroll) = (None, None, locate_scroll(pony, True, private))
                 if scroll == None:
                     return 6
                 with open(scroll, 'rb') as file:
