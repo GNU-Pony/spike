@@ -124,16 +124,18 @@ class LibSpikeHelper():
     
     
     @staticmethod
-    def locate_scroll(scroll):
+    def locate_scroll(scroll, installed = False):
         '''
         Locate the file for a scroll
         
-        @param   scroll:str  The scroll
-        @return  :str        The file of the scroll
+        @param   scroll:str      The scroll
+        @parm    installed:bool  Whether the scroll is installed
+        @return  :str            The file of the scroll
         '''
         # Get repository names and paths
         repositories = {}
-        for file in [SPIKE_PATH + 'repositories'] + get_confs('repositories'):
+        superrepo = 'installed' if installed else 'repositories'
+        for file in [SPIKE_PATH + superrepo] + get_confs(superrepo):
             if os.path.isdir(file):
                 for repo in os.listdir(file):
                     reponame = repo

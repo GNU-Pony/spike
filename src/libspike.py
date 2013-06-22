@@ -340,7 +340,7 @@ class LibSpike(LibSpikeHelper):
             
             # Open scroll
             global ride
-            (ride, code, scroll) = (None, None, locate_scroll(pony))
+            (ride, code, scroll) = (None, None, locate_scroll(pony, True))
             if scroll == None:
                 return 6
             with open(scroll, 'rb') as file:
@@ -459,18 +459,22 @@ class LibSpike(LibSpikeHelper):
     
     
     @staticmethod
-    def read_info(aggregator, scrolls, field = None):
+    def read_info(aggregator, scrolls, field = None, installed = True, notinstalled = True):
         '''
         List information about scrolls
         
-        @param   aggregator:(str, str?, str?)→void
+        @param   aggregator:(str, str?, str?, bool)→void
                      Feed the scroll, the field name and the information in the field when a scroll's information is read,
-                     all (desired) fields for a scroll will come once, in an uninterrupted sequence.
-                     If a scroll is not found the field name and the value is returned as `None`. If the field name is
-                     not defined, the value is returned as `None`.
+                     all (desired) fields for a scroll will come once, in an uninterrupted sequence. Additionally it is
+                     feed whether or not the information concerns a installed or not installed scroll. The values for a
+                     field is returned in an uninterrupted sequence, first the non-installed scroll, then the installed
+                     scroll. If a scroll is not found the field name and the value is returned as `None`. If the field
+                     name is not defined, the value is returned as `None`.
         
         @param   scrolls:list<str>     Scrolls for which to list information
         @param   field:str?|list<str>  Information field or fields to fetch, `None` for everything
+        @param   installed:bool        Whether to include installed scrolls
+        @param   notinstalled:bool     Whether to include not installed scrolls
         @return  :byte                 Exit value, see description of `LibSpike`, the possible ones are: 0 (TODO)
         '''
         return 0

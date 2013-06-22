@@ -149,7 +149,7 @@ class Spike():
         opts.add_argumented(  ['-X', '--ride'],      arg = 'SCROLL',  help = 'Execute a scroll after best effort\n'
                                                              'slaves: [--private]')
         opts.add_argumentless(['-R', '--read'],                       help = 'Get scroll information\n'
-                                                             'slaves: [--list | --info=...]')
+                                                             'slaves: (--list | [--info=...] [--written=])')
         opts.add_argumentless(['-C', '--claim'],                      help = 'Claim one or more files as owned by a pony\n'
                                                              'slaves: [--recursive | --entire] [--private] [--force]')
         opts.add_argumentless(['-D', '--disclaim'],                   help = 'Disclaim one or more files as owned by a pony\n'
@@ -168,7 +168,7 @@ class Spike():
                                                                              '(do not expect files to be listed in order)')
         
         opts.add_argumentless(['-o', '--owner'],                      help = 'Find owner pony for file')
-        opts.add_argumented(  ['-w', '--written'],   arg = 'boolean', help = 'Search only for installed ("yes") or not installed ("no") ponies')
+        opts.add_argumented(  ['-w', '--written'],   arg = 'boolean', help = 'Search only for installed (\'yes\' or \'y\') or not installed (\'no\' or \'n\') ponies')
         opts.add_argumented(  [      '--pinpal'],    arg = 'ROOT',    help = 'Mounted system for which to do installation or unstallation')
         opts.add_argumentless(['-u', '--private'],                    help = 'Private pony installation')
         opts.add_argumentless([      '--asdep'],                      help = 'Install pony as implicitly installed (a dependency)')
@@ -276,12 +276,12 @@ class Spike():
                 allowed.add('-o')
                 allowed.add('-w')
                 if opts.opts['-w'] is not None:
-                    if opts.opts['-w'][0] not in ('yes', 'no'):
-                        printerr(self.execprog + ': only \'yes\' and \'no\' are allowed for -w(--written)')
+                    if opts.opts['-w'][0] not in ('y', 'yes', 'n', 'no'):
+                        printerr(self.execprog + ': only \'yes\',  \'y\', \'no\' and \'n\' are allowed for -w(--written)')
                         exit(4)
                     exitValue = self.find_scroll(opts.files,
-                                                 installed    = opts.opts['-w'][0] == 'yes',
-                                                 notinstalled = opts.opts['-w'][0] == 'no')
+                                                 installed    = opts.opts['-w'][0][0] == 'y',
+                                                 notinstalled = opts.opts['-w'][0][0] == 'n')
                 elif opts.opts['-o'] is not None:
                     self.test_files(opts.files, 2, True)
                     exitValue = self.find_owner(opts.files)
@@ -351,12 +351,22 @@ class Spike():
                 self.test_exclusiveness(opts.opts, exclusives, longmap, True)
                 allowed.add('-l')
                 allowed.add('-f')
+                if opts.opts['-l'] is None:
+                    allowed.add('-w')
                 self.test_allowed(opts.opts, allowed, longmap, True)
                 self.test_files(opts.files, 1, True)
                 if opts.opts['-l'] is not None:
                     exitValue = self.read_files(opt.files)
                 else:
-                    exitValue = self.read_info(opt.files, field = opts.opts['-f'])
+                    if opts.opts['-w'] is not None:
+                        if opts.opts['-w'][0] not in ('y', 'yes', 'n', 'no'):
+                            printerr(self.execprog + ': only \'yes\',  \'y\', \'no\' and \'n\' are allowed for -w(--written)')
+                            exit(4)
+                        exitValue = self.read_info(opt.files, field = opts.opts['-f'],
+                                                   installed = opts.opts['-w'][0][0] == 'y',
+                                                   notinstalled = opts.opts['-w'][0][0] == 'n')
+                    else:
+                        exitValue = self.read_info(opt.files, field = opts.opts['-f'])
                     
             elif opts.opts['-C'] is not None:
                 exclusives.add('--recursive')
@@ -991,25 +1001,29 @@ class Spike():
         return LibSpike.read_files(Agg(), ponies)
     
     
-    def read_info(self, scrolls, field = None):
+    def read_info(self, scrolls, field = None, installed = True, notinstalled = True):
         '''
         List information about scrolls
         
         @param   scrolls:list<str>     Scrolls for which to list information
         @param   field:str?|list<str>  Information field or fields to fetch, `None` for everything
+        @param   installed:bool        Whether to include installed scrolls
+        @param   notinstalled:bool     Whether to include not installed scrolls
         @return  :byte                 Exit value, see description of `mane`
         '''
         class Agg:
             '''
-            aggregator:(str, str?, str?)→void
+            aggregator:(str, str?, str?, bool)→void
                 Feed the scroll, the field name and the information in the field when a scroll's information is read,
-                all (desired) fields for a scroll will come once, in an uninterrupted sequence.
-                If a scroll is not found the field name and the value is returned as `None`. If the field name is
-                not defined, the value is returned as `None`.
+                all (desired) fields for a scroll will come once, in an uninterrupted sequence. Additionally it is
+                feed whether or not the information concerns a installed or not installed scroll. The values for a
+                field is returned in an uninterrupted sequence, first the non-installed scroll, then the installed
+                scroll. If a scroll is not found the field name and the value is returned as `None`. If the field
+                name is not defined, the value is returned as `None`.
             '''
             def __init__(self):
                 self.metaerr = set()
-            def __call__(self, scroll, meta, info):
+            def __call__(self, scroll, meta, info, isinstalled):
                 if meta is None:
                     printerr('Scroll %s was not found' % scroll)
                 elif info is None:
@@ -1017,7 +1031,10 @@ class Spike():
                         printerr('Field %s was defined' % meta)
                         self.metaerr.add(meta)
                 else:
-                    print('%s: %s: %s' % (scroll, meta, info))
+                    if installed == notinstalled:
+                        print('%s: %s: %s: %s' % (scroll, meta, "installed" if isinstalled else "not installed", info))
+                    else:
+                        print('%s: %s: %s' % (scroll, meta, info))
         
         return LibSpike.read_info(Agg(), scrolls, field)
     
