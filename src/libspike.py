@@ -469,12 +469,40 @@ class LibSpike(LibSpikeHelper):
                 
                 # Remove files and remove them from the databases
                 if len(id_fileid[id]):
+                    progress = 0
+                    
+                    # Get shared and exclusive files
+                    sink = DB.open_db(private, DB_FILE_ID, DB_PONY_ID).fetch([], id_fileid[id])
+                    table = tablise({}, sink, DB_PONY_ID, None)
+                    shared = []
+                    exclusive = []
+                    for fileid in table.keys:
+                        if len(fileid) == 1:
+                            exclusive.append(fileid)
+                        else:
+                            shared.append(fileid)
                     pass
-                    # fileid_id
-                    # fileid_file
-                    # fileid_file¤
-                    # file_fileid
-                    # fileid_+
+                    
+                    # Disclaim shared files
+                    if len(shared) > 0:
+                        pairs = []
+                        for fileid in shared:
+                            for ponyid in table[fileid]:
+                                if ponyid != id:
+                                    pairs.append((fileid, ponyid))
+                        DB.open_db(private, DB_FILE_ID, DB_PONY_ID).remove([], shared)
+                        DB.open_db(private, DB_FILE_ID, DB_PONY_ID).insert([], pairs)
+                        progress += len(shared)
+                        aggregator(scroll, progress, endstate)
+                    
+                    # Remove exclusive files
+                    if len(exclusive) > 0:
+                        pass
+                        # fileid_id
+                        # fileid_file
+                        # fileid_file¤
+                        # file_fileid
+                        # fileid_+
                 
                 # Remove file as a dependee in dependency → scroll database
                 sink = DB.open_db(private, DB_PONY_ID, DB_PONY_DEPS).fetch([], [id])
