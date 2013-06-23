@@ -148,10 +148,7 @@ class ScrollVersion():
                 if _n != _m:
                     return _n - _m
             
-            if n != m:
-                return n - m
-            
-            return 0
+            return n - m
         
         
         def __lt__(self, other):
