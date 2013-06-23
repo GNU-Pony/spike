@@ -234,10 +234,10 @@ class ScrollVersion():
             return True
         elif self.complement and other.complement:
             return True
-        elif  self.lower is None:  return other.complement or ( self.upper >= other.lower)
-        elif  self.upper is None:  return other.complement or (other.upper >=  self.lower)
-        elif other.upper is None:  return  self.complement or (other.lower <=  self.upper)
-        elif other.lower is None:  return  self.complement or (other.upper >=  self.lower)
+        elif  self.lower is None:  return other.complement or (other.lower <= self.upper)
+        elif  self.upper is None:  return other.complement or (other.upper >= self.lower)
+        elif other.upper is None:  return  self.complement or (other.lower <= self.upper)
+        elif other.lower is None:  return  self.complement or (other.upper >= self.lower)
         elif other.complement:     return ( self.lower !=  self.upper) or (self.lower != other.lower)
         elif  self.complement:     return (other.lower != other.upper) or (self.lower != other.lower)
         else:
