@@ -150,11 +150,11 @@ def tsort(rc, lostrc, data):
     Cyclic dependencies are optimised to be break so that each break queues a item before as few transveral dependencies
     as possible. That does not been that the total of each break is optimised, just each break.
     
-    @param  rc:append((str, list<bool>?))→void  Feed the items on topological order, accompanied by all items a list
-                                                cyclic dependencies it has that has yes not been feed. Instead of a
-                                                empty list it will feed `None` it the item is not used to break a cycle.
-    @param  lostrc:append((str, str))→void      Feed a dependency and what requires it when a dependency cannot be found.
-    @param  data:dict<str, set<str>>            Dictionary from item to dependencies
+    @param  rc:append((str, list<str>?))→void  Feed the items on topological order, accompanied by all items a list
+                                               cyclic dependencies it has that has yes not been feed. Instead of a
+                                               empty list it will feed `None` it the item is not used to break a cycle.
+    @param  lostrc:append((str, str))→void     Feed a dependency and what requires it when a dependency cannot be found.
+    @param  data:dict<str, set<str>>           Dictionary from item to dependencies
     '''
     removed = {}
     for req in data.keys():
