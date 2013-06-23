@@ -153,7 +153,7 @@ def tsort(rc, lostrc, data):
     @param  rc:append((¿E?, list<¿E?>?))→void  Feed the items on topological order, accompanied by all items a list
                                                cyclic dependencies it has that has yes not been feed. Instead of a
                                                empty list it will feed `None` it the item is not used to break a cycle.
-    @param  lostrc:append((¿E?, ¿E?))→void     Feed a dependency and what requires it when a dependency cannot be found.
+    @param  lostrc:append((¿E?, ¿E?))→void     Feed a dependency and what requires it when a dependency cannot be found
     @param  data:dict<¿E?, set<¿E?>>           Dictionary from item to dependencies
     '''
     # Find, report and remove missing dependencies
