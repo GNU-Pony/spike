@@ -216,29 +216,3 @@ def tsort(rc, lostrc, data):
                 if bestitem in data[item]:
                     data[item].remove(bestitem)
 
-
-data = {}
-try:
-    while True:
-        line = input()
-        if len(line) == 0:
-            break
-        item = line.split(' ')[0]
-        deps = line.split(' ')[1:]
-        if item in data:
-            data[item] = set(list(data[item]) + deps)
-        else:
-            data[item] = set(deps)
-except:
-    pass
-tsorted = []
-lost = []
-tsort(tsorted, lost, data)
-for (element, deps) in tsorted:
-    if deps is None:
-        print(element)
-    else:
-        print(element + ' before ' + str(deps))
-for (deps, req) in lost:
-    print(deps + ' is required by ' + req)
-
