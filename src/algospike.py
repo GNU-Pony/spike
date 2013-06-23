@@ -150,12 +150,15 @@ def tsort(rc, lostrc, data):
     Cyclic dependencies are optimised to be break so that each break queues a item before as few transveral dependencies
     as possible. That does not been that the total of each break is optimised, just each break.
     
-    @param  rc:append((str, list<str>?))→void  Feed the items on topological order, accompanied by all items a list
+    @param  rc:append((¿E?, list<¿E?>?))→void  Feed the items on topological order, accompanied by all items a list
                                                cyclic dependencies it has that has yes not been feed. Instead of a
                                                empty list it will feed `None` it the item is not used to break a cycle.
-    @param  lostrc:append((str, str))→void     Feed a dependency and what requires it when a dependency cannot be found.
-    @param  data:dict<str, set<str>>           Dictionary from item to dependencies
+    @param  lostrc:append((¿E?, ¿E?))→void     Feed a dependency and what requires it when a dependency cannot be found.
+    @param  data:dict<¿E?, S<¿E?>>             Dictionary from item to dependencies
+    
+    @type   S<E>;itr<E>;__delitem__(E)→void;__contains__(E)→bool;__len__()→int
     '''
+    # Find, report and remove missing dependencies
     removed = {}
     for req in data.keys():
         for dep in data[req]:
@@ -167,22 +170,30 @@ def tsort(rc, lostrc, data):
     for remove in removed.keys():
         for req in removed[remove]:
             data[req].remove(remove)
+    
+    # Sort cyclic graph topologically
     removed = [None]
     while len(removed) > 0:
+        # Sort acyclic graph topologically
         while len(removed) > 0:
             removed = []
+            # Report and remove items with no unresolved dependency
             for item in list(data.keys()):
                 if len(data[item]) == 0:
                     rc.append((item, None))
                     removed.append(item)
                     del data[item]
+            # Remove reported items from dependency lists
             for item in data.keys():
                 deps = data[item]
                 for old in removed:
                     if old in deps:
                         deps.remove(old)
+        
+        # Break one cycle with as few transversial dependencies as possible
         if len(data.keys()) > 0:
             best = None
+            # Find best cycle break
             for item in data.keys():
                 deps = set()
                 queue = list(data[item])
@@ -197,10 +208,12 @@ def tsort(rc, lostrc, data):
                 deps.remove(item)
                 if (best is None) or (len(best[0]) > len(deps)):
                     best = (item, list(deps))
+            # Report cycle break and remove item
             rc.append(best)
             bestitem = best[0]
             removed.append(bestitem)
             del data[bestitem]
+            # Remove item from dependency lists
             for item in data.keys():
                 if bestitem in data[item]:
                     data[item].remove(bestitem)
