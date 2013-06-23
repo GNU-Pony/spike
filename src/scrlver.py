@@ -88,7 +88,7 @@ class ScrollVersion():
         
         def __init__(self, version):
             self.epoch = 0
-            self.release = 1
+            self.release = -1
             self.parts = []
             if ':' in version:
                 self.epoch = int(version[:version.find(':')])
