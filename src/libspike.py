@@ -418,7 +418,7 @@ class LibSpike(LibSpikeHelper):
         @param   root:str          Mounted filesystem from which to perform uninstallation
         @param   private:bool      Whether to uninstall user private ponies rather than user shared ponies
         @param   shred:bool        Whether to preform secure removal when possible
-        @return  :byte             Exit value, see description of `LibSpike`, the possible ones are: 0, 7, 27, 28, 255
+        @return  :byte             Exit value, see description of `LibSpike`, the possible ones are: 0, 7, 23, 27, 28, 255
         '''
         error = 0
         try:
@@ -458,14 +458,14 @@ class LibSpike(LibSpikeHelper):
                     return 28
                 if id not in id_fileid:
                     id_fileid[id] = []
-                    aggregator(id_scroll[id], 0, 6)
+                    aggregator(id_scroll[id], 0, 7)
                 else:
-                    aggregator(id_scroll[id], 0, len(id_fileid[id]) + 6)
+                    aggregator(id_scroll[id], 0, len(id_fileid[id]) + 7)
             
             # Erase ponies
             for id in id_scroll.keys():
                 scroll = id_scroll[id]
-                endstate = len(id_fileid[id]) + 6
+                endstate = len(id_fileid[id]) + 7
                 
                 # Remove files and remove them from the databases
                 if len(id_fileid[id]):
@@ -485,6 +485,8 @@ class LibSpike(LibSpikeHelper):
                     
                     # Disclaim shared files
                     if len(shared) > 0:
+                        progress += len(shared)
+                        aggregator(scroll, progress, endstate)
                         pairs = []
                         for fileid in shared:
                             for ponyid in table[fileid]:
@@ -492,17 +494,56 @@ class LibSpike(LibSpikeHelper):
                                     pairs.append((fileid, ponyid))
                         DB.open_db(private, DB_FILE_ID, DB_PONY_ID).remove([], shared)
                         DB.open_db(private, DB_FILE_ID, DB_PONY_ID).insert([], pairs)
-                        progress += len(shared)
-                        aggregator(scroll, progress, endstate)
                     
                     # Remove exclusive files
                     if len(exclusive) > 0:
-                        pass
-                        # fileid_id
-                        # fileid_file
-                        # fileid_file¤
-                        # file_fileid
-                        # fileid_+
+                        # Get filenames
+                        sink = DB.open_db(private, DB_FILE_ID, DB_FILE_NAME(-1)).fetch([], exclusive)
+                        table = transpose({}, sink, DB_FILE_NAME(-1), None)
+                        filenames = []
+                        for file in table.keys():
+                            sink = DB.open_db(private, DB_FILE_ID, DB_FILE_NAME(file)).fetch([], table[file])
+                            for (fileid, filename) in sink:
+                                if filename is None:
+                                    continue
+                                filename = DBCtrl.value_convert(filename, CONVERT_STR)
+                                filenames.append((filename, fileid))
+                        
+                        # Remove files from disc ## TODO support backup variable
+                        dirs = {}
+                        for (filename, fileid) in filenames:
+                            try:
+                                if os.path.lexists(filename):
+                                    if os.path.islink(filename) or not os.path.isdir(filename):
+                                        rm(filename)
+                                        progress += 1
+                                        aggregator(scroll, progress, endstate)
+                                    elif len(os.listdir(filename)) == 0:
+                                        rm(filename, directories = True)
+                                        progress += 1
+                                        aggregator(scroll, progress, endstate)
+                                    else
+                                        dirs[fileid] = filename
+                            except:
+                                error = max(error, 23)
+                        sink = DB.open_db(private, DB_FILE_ID, DB_FILE_ENTIRE).fetch([], dirs.keys())
+                        for (dirid, entire) in sink:
+                            if entire is None:
+                                progress += 1
+                                aggregator(scroll, progress, endstate)
+                            else:
+                                rm(dirs[dirid], recursive = True)
+                                progress += 1
+                                aggregator(scroll, progress, endstate)
+                        
+                        # Remove from database
+                        DB.open_db(private, DB_FILE_ID, DB_PONY_ID).remove([], exclusive)
+                        DB.open_db(private, DB_FILE_ID, DB_FILE_ENTIRE).remove([], exclusive)
+                        DB.open_db(private, DB_FILE_ID, DB_FILE_NAME(-1)).remove([], exclusive)
+                        for file in table.keys():
+                            DB.open_db(private, DB_FILE_ID, DB_FILE_NAME(file)).remove([], table[file])
+                        DB.open_db(private, DB_FILE_NAME(-1), DB_FILE_ID).remove([], [name for (name, _) in filenames])
+                aggregator(scroll, len(id_fileid[id]) + 1, endstate)
                 
                 # Remove file as a dependee in dependency → scroll database
                 sink = DB.open_db(private, DB_PONY_ID, DB_PONY_DEPS).fetch([], [id])
@@ -524,23 +565,23 @@ class LibSpike(LibSpikeHelper):
                         pairs.append((dependency, dependee))
                 db.remove([], list(deps))
                 db.insert(pairs)
-                aggregator(scroll, len(id_fileid[id]) + 1, endstate)
+                aggregator(scroll, len(id_fileid[id]) + 2, endstate)
                 
                 # Remove pony from database
                 DB.open_db(private, DB_PONY_NAME, DB_PONY_ID).remove([], [scroll])
-                aggregator(scroll, len(id_fileid[id]) + 2, endstate)
-                DB.open_db(private, DB_PONY_ID, DB_PONY_DEPS).remove([], [id])
                 aggregator(scroll, len(id_fileid[id]) + 3, endstate)
-                DB.open_db(private, DB_PONY_ID, DB_PONY_NAME).remove([], [id])
+                DB.open_db(private, DB_PONY_ID, DB_PONY_DEPS).remove([], [id])
                 aggregator(scroll, len(id_fileid[id]) + 4, endstate)
-                DB.open_db(private, DB_PONY_ID, DB_FILE_ID).remove([], [id])
+                DB.open_db(private, DB_PONY_ID, DB_PONY_NAME).remove([], [id])
                 aggregator(scroll, len(id_fileid[id]) + 5, endstate)
+                DB.open_db(private, DB_PONY_ID, DB_FILE_ID).remove([], [id])
+                aggregator(scroll, len(id_fileid[id]) + 6, endstate)
                 
                 # Remove save scroll file
                 scrollfile = locate_scroll(scroll, True, private)
                 if os.path.exists(scrollfile):
                     try:
-                        remove(scrollfile)
+                        rm(scrollfile)
                     except:
                         error = max(error, 23)
                 aggregator(scroll, endstate, endstate)
