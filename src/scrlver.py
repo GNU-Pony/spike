@@ -99,6 +99,15 @@ class ScrollVersion():
             self.open = open
     
     
+    def __hash__(self):
+        '''
+        Returns hash of the scroll name
+        
+        @return  The hash of the scroll name
+        '''
+        return hash(self.name)
+    
+    
     def __contains__(self, other):
         '''
         Checks if two scrolls intersects
