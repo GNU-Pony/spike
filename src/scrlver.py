@@ -30,12 +30,11 @@ class ScrollVersion():
     '''
     Scroll with name and version range
     
+    @variable  full:str         The scroll with its version range represent as a string
     @variable  name:str         The name of the scroll
     @variable  lower:Version?   The lower bound in the version range
     @variable  upper:Version?   The upper bound in the version range
-    @variable  open_lower:bool  Whether the lower bound is open
-    @variable  open_upper:bool  Whether the upper bound is open
-    @variable  complement:bool  Whether the range is stored in its complement
+    @variable  complement:bool  Whether the range is stored in its complement, can only be true one exact version is specified
     '''
     
     def __init__(self, scroll):
@@ -45,11 +44,10 @@ class ScrollVersion():
         @param  scroll:version  Scroll with version range
         '''
         parts = scroll.replace('<', '\0<\0').replace('>', '\0>\0').replace('=', '\0=\0').replace('\0\0', '').split('\0')
+        self.full = scroll
         self.name = None
         self.lower = None
         self.upper = None
-        self.open_lower = False
-        self.open_upper = False
         self.complement = False
         
         if len(parts) == 1:
@@ -58,35 +56,36 @@ class ScrollVersion():
             if part[1] not in ('<', '<=', '>', '>=', '=', '<>'):
                 return
             self.name = parts[0]
-            ver = __Version(parts[2])
+            ver = __Version(parts[2], not in parts[1])
             islower = '>' in parts[1]
             isupper = '<' in parts[1]
-            closed = '=' in parts[1]
             if islower == isupper:
                 self.complement = islower and isupper
+                ver.isopen = False
                 (self.lower, self.upper) = (ver, ver)
             elif islower:
                 self.lower = ver
-                self.open_lower = not closed
             else:
                 self.upper = ver
-                self.open_upper = not closed
         elif len(parts) == 5:
             if (part[1] not in ('>', '>=')) or (part[3] not in ('<', '<=')):
                 return
             self.name = parts[0]
-            self.lower = __Version(parts[2])
-            self.upper = __Version(parts[4])
-            self.open_lower = '=' not in parts[1]
-            self.open_upper = '=' not in parts[3]
+            self.lower = __Version(parts[2], '=' not in parts[1])
+            self.upper = __Version(parts[4], '=' not in parts[3])
     
     
     class __Version():
         '''
-        A scroll version, not a range and not a scroll name
+        A scroll version, not a range and not a scroll name, but with other or not it is open
         '''
         
-        def __init__(self, version):
+        def __init__(self, version, open):
+            '''
+            Constructor
+            
+            @param  version:str  The version represented in text
+            '''
             self.epoch = 0
             self.release = -1
             self.parts = []
@@ -97,4 +96,31 @@ class ScrollVersion():
                 self.release = int(version[version.find('-') + 1:])
                 version[:version.find('-')]
             self.parts = version.split('-')
+            self.open = open
+    
+    
+    def __contains__(self, other):
+        '''
+        Checks if two scrolls intersects
+        
+        @param   other:ScrollVersion  The other scroll
+        @return  :bool                Whether the two scrolls have the same name and their version ranges intersects
+        '''
+        if self.name != other.name:
+            return False
+        
+        if ((other.lower is None) and (other.upper is None)) or ((self.lower is None) and (self.upper is None)):
+            return True
+        elif ((self.lower is None) and (other.lower is None)) or ((self.upper is None) and (other.upper is None)):
+            return True
+        elif self.complement and other.complement:
+            return True
+        elif  self.lower is None:  return other.complement or ( self.upper >= other.lower)
+        elif  self.upper is None:  return other.complement or (other.upper >=  self.lower)
+        elif other.upper is None:  return  self.complement or (other.lower <=  self.upper)
+        elif other.lower is None:  return  self.complement or (other.upper >=  self.lower)
+        elif other.complement:     return ( self.lower !=  self.upper) or (self.lower != other.lower)
+        elif  self.complement:     return (other.lower != other.upper) or (self.lower != other.lower)
+        else:
+            return (self.lower <= other.lower <= self.upper) or (self.lower <= other.upper <= self.upper)
 
