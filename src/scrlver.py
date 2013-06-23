@@ -245,4 +245,13 @@ class ScrollVersion():
         elif  self.complement:     return (other.lower != other.upper) or (self.lower != other.lower)
         else:
             return (self.lower <= other.lower <= self.upper) or (self.lower <= other.upper <= self.upper)
+    
+    
+    def __eq__(self, other):
+        '''
+        Operator: ==
+        
+        Implemented as a synomym for `other in self`, checking if they intersect
+        '''
+        return other in self
 
