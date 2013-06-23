@@ -703,7 +703,7 @@ class LibSpike(LibSpikeHelper):
     
     
     @staticmethod
-    def claim(aggregator, files, pony, recursiveness = 0, private = False, force = False): ## TODO proofread this code
+    def claim(aggregator, files, pony, recursiveness = 0, private = False, force = False):
         '''
         Claim one or more files as a part of a pony
         
