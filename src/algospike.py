@@ -147,6 +147,8 @@ def lb32(x):
 def tsort(rc, data):
     '''
     Sorts a data set on topologically
+    Cyclic dependencies are optimised to be break so that each break queues a item before as few transveral dependencies
+    as possible. That does not been that the total of each break is optimised, just each break.
     
     @param  rc:append((str, list<bool>?))→void  Feed the items on topological order, accompanied by all items a list
                                                 cyclic dependencies it has that has yes not been feed. Instead of a
