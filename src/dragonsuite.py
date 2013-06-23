@@ -43,6 +43,11 @@ _dragonsuite_verbose = True
 Whether to be verbose
 '''
 
+_dragonsuite_output = None
+'''
+Output channel for dragonsuite
+'''
+
 
 def __print(text):
     '''
@@ -50,8 +55,9 @@ def __print(text):
     
     @param  text:__str__()→str  The string to print
     '''
-    sys.stdout.buffer.write(('\033[34m' + str(text) + '\033[00m\n').encode('utf-8'))
-    sys.stdout.buffer.flush()
+    if _dragonsuite_output is not None:
+        _dragonsuite_output.write(('\033[34m' + str(text) + '\033[00m\n').encode('utf-8'))
+        _dragonsuite_output.flush()
 
 
 def pipe(data, *commands):

@@ -53,6 +53,9 @@ class Spikeless():
                                                                                 The functors takes the files installed by the scrolls, before and after the installation, respectively.
                                                                                 Between calling the functor you just install file files in the returned directory
         '''
+        global _dragonsuite_output
+        _dragonsuite_output = sys.stdout.buffer
+        
         global build, check, package, patch_build, patch_check, patch_package, pre_install, post_install, pre_upgrade, post_upgrade, noextract, source, sha3sums, options
         (build, check, package, patch_build, patch_check, patch_package, pre_install, post_install, pre_upgrade, post_upgrade) = 10 * [None]
         (noextract, source, sha3sums, options) = ([], None, None, [])
