@@ -154,9 +154,7 @@ def tsort(rc, lostrc, data):
                                                cyclic dependencies it has that has yes not been feed. Instead of a
                                                empty list it will feed `None` it the item is not used to break a cycle.
     @param  lostrc:append((¿E?, ¿E?))→void     Feed a dependency and what requires it when a dependency cannot be found.
-    @param  data:dict<¿E?, S<¿E?>>             Dictionary from item to dependencies
-    
-    @type   S<E>;itr<E>;__delitem__(E)→void;__contains__(E)→bool;__len__()→int
+    @param  data:dict<¿E?, set<¿E?>>           Dictionary from item to dependencies
     '''
     # Find, report and remove missing dependencies
     removed = {}
@@ -178,23 +176,23 @@ def tsort(rc, lostrc, data):
         while len(removed) > 0:
             removed = []
             # Report and remove items with no unresolved dependency
-            for item in list(data.keys()):
+            for item in list(data):
                 if len(data[item]) == 0:
                     rc.append((item, None))
                     removed.append(item)
                     del data[item]
             # Remove reported items from dependency lists
-            for item in data.keys():
+            for item in data:
                 deps = data[item]
                 for old in removed:
                     if old in deps:
                         deps.remove(old)
         
         # Break one cycle with as few transversial dependencies as possible
-        if len(data.keys()) > 0:
+        if len(data) > 0:
             best = None
             # Find best cycle break
-            for item in data.keys():
+            for item in data:
                 deps = set()
                 queue = list(data[item])
                 deps.add(item)
@@ -214,7 +212,7 @@ def tsort(rc, lostrc, data):
             removed.append(bestitem)
             del data[bestitem]
             # Remove item from dependency lists
-            for item in data.keys():
+            for item in data:
                 if bestitem in data[item]:
                     data[item].remove(bestitem)
 
