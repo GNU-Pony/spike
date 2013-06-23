@@ -144,7 +144,7 @@ def lb32(x):
     return rc
 
 
-def tsort(rc, data):
+def tsort(rc, lostrc, data):
     '''
     Sorts a data set on topologically
     Cyclic dependencies are optimised to be break so that each break queues a item before as few transveral dependencies
@@ -153,8 +153,20 @@ def tsort(rc, data):
     @param  rc:append((str, list<bool>?))→void  Feed the items on topological order, accompanied by all items a list
                                                 cyclic dependencies it has that has yes not been feed. Instead of a
                                                 empty list it will feed `None` it the item is not used to break a cycle.
+    @param  lostrc:append((str, str))→void      Feed a dependency and what requires it when a dependency cannot be found.
     @param  data:dict<str, set<str>>            Dictionary from item to dependencies
     '''
+    removed = {}
+    for req in data.keys():
+        for dep in data[req]:
+            if dep not in data:
+                lostrc.append((dep, req))
+                if dep not in removed:
+                    removed[dep] = []
+                removed[dep].append(req)
+    for remove in removed.keys():
+        for req in removed[remove]:
+            data[req].remove(remove)
     removed = [None]
     while len(removed) > 0:
         while len(removed) > 0:
@@ -209,10 +221,13 @@ try:
 except:
     pass
 tsorted = []
-tsort(tsorted, data)
+lost = []
+tsort(tsorted, lost, data)
 for (element, deps) in tsorted:
     if deps is None:
         print(element)
     else:
         print(element + ' before ' + str(deps))
+for (deps, req) in lost:
+    print(deps + ' is required by ' + req)
 
