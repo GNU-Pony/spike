@@ -101,7 +101,7 @@ class ScrollVersion():
         
         def __cmp(self, other):
             '''
-            Preforms a comparison of two version numbers
+            Preforms a comparison of two version numbers, does not compare release number
             
             @param   other:__Version  The other version number
             @return  :int             negative if `self` is less, zero if `self` equals `other`, and positive if `other` is less
