@@ -148,26 +148,48 @@ def tsort(rc, data):
     '''
     Sorts a data set on topologically
     
-    @param  rc:append(str)→void       Feed the items on topological order
-    @param  data:dict<str, set<str>>  Dictionary from item to dependencies
+    @param  rc:append((str, list<bool>?))→void  Feed the items on topological order, accompanied by all items a list
+                                                cyclic dependencies it has that has yes not been feed. Instead of a
+                                                empty list it will feed `None` it the item is not used to break a cycle.
+    @param  data:dict<str, set<str>>            Dictionary from item to dependencies
     '''
     removed = [None]
     while len(removed) > 0:
-        removed = []
-        for item in list(data.keys()):
-            if len(data[item]) == 0:
-                rc.append(item)
-                removed.append(item)
-                del data[item]
-        for item in data.keys():
-            deps = data[item]
-            for old in removed:
-                if old in deps:
-                    deps.remove(old)
-    if len(data.keys()) > 0:
-        rc.append('-------')
-        for item in data.keys():
-            rc.append(item + ' → ' + str(data[item]))
+        while len(removed) > 0:
+            removed = []
+            for item in list(data.keys()):
+                if len(data[item]) == 0:
+                    rc.append((item, None))
+                    removed.append(item)
+                    del data[item]
+            for item in data.keys():
+                deps = data[item]
+                for old in removed:
+                    if old in deps:
+                        deps.remove(old)
+        if len(data.keys()) > 0:
+            best = None
+            for item in data.keys():
+                deps = set()
+                queue = list(data[item])
+                deps.add(item)
+                while len(queue) > 0:
+                    dep = queue[0]
+                    queue[:] = queue[1:]
+                    if dep in deps:
+                        continue
+                    deps.add(dep)
+                    queue += list(data[dep])
+                deps.remove(item)
+                if (best is None) or (len(best[0]) > len(deps)):
+                    best = (item, list(deps))
+            rc.append(best)
+            bestitem = best[0]
+            removed.append(bestitem)
+            del data[bestitem]
+            for item in data.keys():
+                if bestitem in data[item]:
+                    data[item].remove(bestitem)
 
 
 data = {}
@@ -186,5 +208,9 @@ except:
     pass
 tsorted = []
 tsort(tsorted, data)
-for element in tsorted:
-    print(element)
+for (element, deps) in tsorted:
+    if deps is None:
+        print(element)
+    else:
+        print(element + ' before ' + str(deps))
+
