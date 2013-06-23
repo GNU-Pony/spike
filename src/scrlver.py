@@ -97,6 +97,61 @@ class ScrollVersion():
                 version[:version.find('-')]
             self.parts = version.split('-')
             self.open = open
+        
+        
+        def __cmp(self, other):
+            '''
+            Preforms a comparison of two version numbers
+            
+            @param   other:__Version  The other version number
+            @return  :int             negative if `self` is less, zero if `self` equals `other`, and positive if `other` is less
+            '''
+            if self.epoch != other.epoch:
+                return self.epoch - other.epoch
+            
+            (n, m) = (len(self.parts), len(other.parts))
+            for i in range(min(n, m)):
+                (a, b) = (self.parts[i], other.parts[i])
+                if a == b:
+                    continue
+                (_a, _b) = ([], [])
+                if len(a) > 0:
+                    buf = ''
+                    for j in range(len(a)):
+                        isnum = '0' <= a[j] <= '9'
+                        wantnum = (len(_a) & 1) == 1
+                        if isnum != wantnum:
+                            _a.append(buf)
+                            buf = a[j]
+                        else:
+                            buf += a[j]
+                    _a.append(buf)
+                if len(b) > 0:
+                    buf = ''
+                    for j in range(len(b)):
+                        isnum = '0' <= a[j] <= '9'
+                        wantnum = (len(_b) & 1) == 1
+                        if isnum != wantnum:
+                            _b.append(buf)
+                            buf = b[j]
+                        else:
+                            buf += b[j]
+                    _b.append(buf)
+                (_n, _m) = (len(_a), len(_b))
+                for j in range(min(_n, _m)):
+                    (a, b) = (_a[j], _b[j])
+                    if a != b:
+                        if (j & 1) == 1:
+                            return int(a) - int(b)
+                        else:
+                            return a < b ? -1 : 1
+                if _n != _m:
+                    return _n - _m
+            
+            if n != m:
+                return n - m
+            
+            return 0
     
     
     def __hash__(self):
