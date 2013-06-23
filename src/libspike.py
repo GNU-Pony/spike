@@ -418,7 +418,7 @@ class LibSpike(LibSpikeHelper):
         @param   root:str          Mounted filesystem from which to perform uninstallation
         @param   private:bool      Whether to uninstall user private ponies rather than user shared ponies
         @param   shred:bool        Whether to preform secure removal when possible
-        @return  :byte             Exit value, see description of `LibSpike`, the possible ones are: 0, 7, 23, 27, 28, 255
+        @return  :byte             Exit value, see description of `LibSpike`, the possible ones are: 0, 6, 7, 14(internal bug), 20, 23, 27, 28, 255
         '''
         error = 0
         try:
@@ -448,6 +448,28 @@ class LibSpike(LibSpikeHelper):
                     return 27
                 found.add(id_scroll[id])
             
+            # Get backups
+            backups = set()
+            def backup(filename):
+                if os.path.lexists('%s.spikesave' % filename):
+                    mv(filename, '%s.spikesave' % filename)
+                else:
+                    no = 1
+                    while os.path.lexists('%s.spikesave.%i' % (filename, no)):
+                        no += 1
+                    mv(filename, '%s.spikesave.%i' % (filename, no))
+            class Agg():
+                def __init__(self):
+                    pass
+                def __call__(pony, field, value, installed):
+                    if field is None:
+                        error = 6
+                    if value is not None:
+                        backup.add(value)
+            error = max(error, read_info(Agg(), ponies, field = 'backup', installed = True, notinstalled = False))
+            if error != 0:
+                return error
+            
             # Get files for each scroll and check for dependencies
             sink = DB.open_db(private, DB_PONY_ID, DB_FILE_ID).fetch([], id_scroll.key())
             id_fileid = transpose({}, sink, DB_FILE_ID, None)
@@ -474,7 +496,7 @@ class LibSpike(LibSpikeHelper):
                     # Get shared and exclusive files
                     sink = DB.open_db(private, DB_FILE_ID, DB_PONY_ID).fetch([], id_fileid[id])
                     table = tablise({}, sink, DB_PONY_ID, None)
-                    shared = []
+                    shared = {}
                     exclusive = []
                     for fileid in table.keys:
                         if len(fileid) == 1:
@@ -509,30 +531,44 @@ class LibSpike(LibSpikeHelper):
                                 filename = DBCtrl.value_convert(filename, CONVERT_STR)
                                 filenames.append((filename, fileid))
                         
-                        # Remove files from disc ## TODO support backup variable
+                        # Remove files from disc
                         dirs = {}
                         for (filename, fileid) in filenames:
                             try:
                                 if os.path.lexists(filename):
                                     if os.path.islink(filename) or not os.path.isdir(filename):
-                                        rm(filename)
+                                        if filename in backups:
+                                            backup(filename)
+                                        else:
+                                            rm(filename)
                                         progress += 1
                                         aggregator(scroll, progress, endstate)
                                     elif len(os.listdir(filename)) == 0:
-                                        rm(filename, directories = True)
+                                        if filename in backups:
+                                            backup(filename)
+                                        else:
+                                            rm(filename, directories = True)
                                         progress += 1
                                         aggregator(scroll, progress, endstate)
                                     else
                                         dirs[fileid] = filename
                             except:
                                 error = max(error, 23)
+                                progress += 1
+                                aggregator(scroll, progress, endstate)
                         sink = DB.open_db(private, DB_FILE_ID, DB_FILE_ENTIRE).fetch([], dirs.keys())
                         for (dirid, entire) in sink:
                             if entire is None:
                                 progress += 1
                                 aggregator(scroll, progress, endstate)
                             else:
-                                rm(dirs[dirid], recursive = True)
+                                try:
+                                    if filename in backups:
+                                        backup(filename)
+                                    else:
+                                        rm(dirs[dirid], recursive = True)
+                                except:
+                                    error = max(error, 23)
                                 progress += 1
                                 aggregator(scroll, progress, endstate)
                         
