@@ -353,6 +353,14 @@ class LibSpike(LibSpikeHelper):
         @param   shred:bool         Whether to preform secure removal when possible
         @return  :byte              Exit value, see description of `LibSpike`, the possible ones are: 0 (TODO)
         '''
+        # Set shred and root
+        if shred:
+            export('shred', 'yes')
+        if root is not None:
+            if root.endswith('/'):
+                root = root[:-1]
+            SPIKE_PATH = root + SPIKE_PATH
+        
         return 0
     
     
@@ -384,6 +392,14 @@ class LibSpike(LibSpikeHelper):
         @param   shred:bool         Whether to preform secure removal when possible
         @return  :byte              Exit value, see description of `LibSpike`, the possible ones are: 0 (TODO)
         '''
+        # Set shred and root
+        if shred:
+            export('shred', 'yes')
+        if root is not None:
+            if root.endswith('/'):
+                root = root[:-1]
+            SPIKE_PATH = root + SPIKE_PATH
+        
         return 0
     
     
@@ -402,6 +418,15 @@ class LibSpike(LibSpikeHelper):
         @param   shred:bool        Whether to preform secure removal when possible
         @return  :byte             Exit value, see description of `LibSpike`, the possible ones are: 0 (TODO)
         '''
+        # Set shred and root
+        if shred:
+            export('shred', 'yes')
+        if root is not None:
+            if root.endswith('/'):
+                root = root[:-1]
+            SPIKE_PATH = root + SPIKE_PATH
+        
+        
         return 0
     
     
@@ -996,6 +1021,8 @@ class LibSpike(LibSpikeHelper):
         @param   shred:bool     Whether to preform secure removal when possible
         @return  :byte          Exit value, see description of `LibSpike`, the possible ones are: 0 (TODO)
         '''
+        if shred:
+            export('shred', 'yes')
         return 0
     
     
