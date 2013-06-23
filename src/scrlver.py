@@ -251,4 +251,13 @@ class ScrollVersion():
         Implemented as a synomym for `other in self`, checking if they intersect
         '''
         return other in self
+    
+    
+    def __str__(self):
+        '''
+        Return the object as a string
+        
+        @return  The object as a string
+        '''
+        return self.full
 
