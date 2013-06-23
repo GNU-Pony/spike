@@ -98,7 +98,7 @@ def lb128(x):
     Calculates the floored binary logarithm of an integer that is at most 128 bits
     
     @param   x:int  The input number
-    @return  :int   The floored binary logarithn of the input number
+    @return  :int   The floored binary logarithm of the input number
     '''
     rc = 0
     if (x & 0xFFFFFFFFFFFFFFFF0000000000000000) != 0:  rc += 64 ;  x >>= 64
@@ -116,7 +116,7 @@ def lb64(x):
     Calculates the floored binary logarithm of an integer that is at most 64 bits
     
     @param   x:int  The input number
-    @return  :int   The floored binary logarithn of the input number
+    @return  :int   The floored binary logarithm of the input number
     '''
     rc = 0
     if (x & 0xFFFFFFFF00000000) != 0:  rc += 32 ;  x >>= 32
@@ -133,7 +133,7 @@ def lb32(x):
     Calculates the floored binary logarithm of an integer that is at most 32 bits
     
     @param   x:int  The input number
-    @return  :int   The floored binary logarithn of the input number
+    @return  :int   The floored binary logarithm of the input number
     '''
     rc = 0
     if (x & 0xFFFF0000) != 0:  rc += 16 ;  x >>= 16
