@@ -1036,6 +1036,8 @@ class LibSpike(LibSpikeHelper):
                 
                 # Map file name lenght → (file ID, file name) and list all (file name, file name length, storable value of file name)
                 n = lb32(len(file)) # limiting to 4,3 milliard (2²³) bytes rather than 115,8 duodecilliard (2²⁵⁶) bytes
+                if (1 << n) > len(file):
+                    n += 1
                 name = file.encode('utf-8')
                 name += '\0' * ((1 << n) - len(name))
                 fileid_len.append((file, n, name))
