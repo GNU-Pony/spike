@@ -275,6 +275,7 @@ class LibSpike(LibSpikeHelper):
                         nones.add(dirname)
                         continue
                 else:
+                    dirid = DBCtrl.value_convert(dirid, CONVERT_INT)
                     if dirid in dirs:
                         return 27
                     dirs[dirid] = dirs[dirname]
@@ -702,7 +703,7 @@ class LibSpike(LibSpikeHelper):
     
     
     @staticmethod
-    def claim(aggregator, files, pony, recursiveness = 0, private = False, force = False):
+    def claim(aggregator, files, pony, recursiveness = 0, private = False, force = False): ## TODO proofread this code
         '''
         Claim one or more files as a part of a pony
         
@@ -901,7 +902,7 @@ class LibSpike(LibSpikeHelper):
         fileid_file = DBCtrl.transpose({}, db.fetch([], files), DB_FILE_ID, None)
         sink = []
         def agg(file, scroll):
-            sink.append((file, scroll))
+            sink.append((fileid_file[file], scroll))
         error = joined_lookup(agg, fileid_file.keys(), [DB_FILE_ID, DB_PONY_ID, DB_PONY_NAME])
         if error != 0:
             return error
