@@ -102,6 +102,7 @@ class Spike():
                      25 - Cannot checkout git repository
                      26 - File is of wrong type, normally a directory or regular file when the other is expected
                      27 - Corrupt database
+                     28 - Pony is required by another pony
                     255 - Unknown error
         
         @param  args:list<str>  Command line arguments, including invoked program alias ($0)

@@ -60,6 +60,7 @@ class LibSpike(LibSpikeHelper):
                  25 - Cannot checkout git repository
                  26 - File is of wrong type, normally a directory or regular file when the other is expected
                  27 - Corrupt database
+                 28 - Pony is required by another pony
                 255 - Unknown error
     
     @author  Mattias Andrée (maandree@member.fsf.org)
@@ -417,18 +418,107 @@ class LibSpike(LibSpikeHelper):
         @param   root:str          Mounted filesystem from which to perform uninstallation
         @param   private:bool      Whether to uninstall user private ponies rather than user shared ponies
         @param   shred:bool        Whether to preform secure removal when possible
-        @return  :byte             Exit value, see description of `LibSpike`, the possible ones are: 0 (TODO)
+        @return  :byte             Exit value, see description of `LibSpike`, the possible ones are: 0, 7, 27, 28, 255
         '''
-        # Set shred and root
-        if shred:
-            export('shred', 'yes')
-        if root is not None:
-            if root.endswith('/'):
-                root = root[:-1]
-            SPIKE_PATH = root + SPIKE_PATH
-        
-        
-        return 0
+        error = 0
+        try:
+            # Set shred and root
+            if shred:
+                export('shred', 'yes')
+            if root is not None:
+                if root.endswith('/'):
+                    root = root[:-1]
+                SPIKE_PATH = root + SPIKE_PATH
+            
+            # Get scroll ID:s and map the transposition
+            sink = DB.open_db(private, DB_PONY_NAME, DB_PONY_ID).fetch([], ponies)
+            def noneagg(pony):
+                error = 7
+            id_scroll = transpose({}, sink, DB_PONY_ID, noneagg, False)
+            if error != 0:
+                return error
+            
+            # Check for database corruption
+            found = set()
+            for id in id_scroll.keys():
+                if len(id_scroll[id]) != 1:
+                    return 27
+                id_scroll[id] = id_scroll[id][0]
+                if id_scroll[id] in found:
+                    return 27
+                found.add(id_scroll[id])
+            
+            # Get files for each scroll and check for dependencies
+            sink = DB.open_db(private, DB_PONY_ID, DB_FILE_ID).fetch([], id_scroll.key())
+            id_fileid = transpose({}, sink, DB_FILE_ID, None)
+            sink = DB.open_db(private, DB_PONY_DEPS, DB_PONY_ID).fetch([], id_scroll.key())
+            deps = tablise({}, sink, DB_PONY_ID, None)
+            for id in id_scroll.keys():
+                if (id in deps) and (len(deps[id]) > 0):
+                    return 28
+                if id not in id_fileid:
+                    id_fileid[id] = []
+                    aggregator(id_scroll[id], 0, 6)
+                else:
+                    aggregator(id_scroll[id], 0, len(id_fileid[id]) + 6)
+            
+            # Erase ponies
+            for id in id_scroll.keys():
+                scroll = id_scroll[id]
+                endstate = len(id_fileid[id]) + 6
+                
+                # Remove files and remove them from the databases
+                if len(id_fileid[id]):
+                    pass
+                    # fileid_id
+                    # fileid_file
+                    # fileid_file¤
+                    # file_fileid
+                    # fileid_+
+                
+                # Remove file as a dependee in dependency → scroll database
+                sink = DB.open_db(private, DB_PONY_ID, DB_PONY_DEPS).fetch([], [id])
+                deps = []
+                for (_, dep) in sink:
+                    if dep is None:
+                        continue
+                    dep = DBCtrl.value_convert(dep, CONVERT_INT)
+                    deps.append(dep)
+                db = DB.open_db(private, DB_PONY_DEPS, DB_PONY_ID)
+                sink = db.fetch([], deps)
+                deps = set()
+                pairs = []
+                for (dependency, dependee) in sink:
+                    if dependee is None:
+                        continue
+                    deps.add(dependency)
+                    if DBCtrl.value_convert(dependee, CONVERT_INT) != id:
+                        pairs.append((dependency, dependee))
+                db.remove([], list(deps))
+                db.insert(pairs)
+                aggregator(scroll, len(id_fileid[id]) + 1, endstate)
+                
+                # Remove pony from database
+                DB.open_db(private, DB_PONY_NAME, DB_PONY_ID).remove([], [scroll])
+                aggregator(scroll, len(id_fileid[id]) + 2, endstate)
+                DB.open_db(private, DB_PONY_ID, DB_PONY_DEPS).remove([], [id])
+                aggregator(scroll, len(id_fileid[id]) + 3, endstate)
+                DB.open_db(private, DB_PONY_ID, DB_PONY_NAME).remove([], [id])
+                aggregator(scroll, len(id_fileid[id]) + 4, endstate)
+                DB.open_db(private, DB_PONY_ID, DB_FILE_ID).remove([], [id])
+                aggregator(scroll, len(id_fileid[id]) + 5, endstate)
+                
+                # Remove save scroll file
+                scrollfile = locate_scroll(scroll, True, private)
+                if os.path.exists(scrollfile):
+                    try:
+                        remove(scrollfile)
+                    except:
+                        error = max(error, 23)
+                aggregator(scroll, endstate, endstate)
+        except:
+            error = 255
+        return error
     
     
     @staticmethod
@@ -596,6 +686,8 @@ class LibSpike(LibSpikeHelper):
         @param   notinstalled:bool     Whether to include not installed scrolls
         @return  :byte                 Exit value, see description of `LibSpike`, the possible ones are: 0, 6, 14, 20, 255
         '''
+        # TODO add required by (manditory, optional, make)
+        
         # Fields
         preglobals = set(globals().keys())
         global pkgname, pkgver, pkgrel, epoch, pkgdesc, upstream, arch, freedom, license
