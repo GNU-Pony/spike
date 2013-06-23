@@ -152,6 +152,64 @@ class ScrollVersion():
                 return n - m
             
             return 0
+        
+        
+        def __lt__(self, other):
+            '''
+            Operator: <
+            '''
+            return (self <= other) and not (self == other)
+        
+        
+        def __le__(self, other):
+            '''
+            Operator: <=
+            '''
+            cmp = self.__cmp(other)
+            if cmp != 0:
+                return cmp < 0
+            if (self.release < 0) or (other.release < 0):
+                return not (self.open or other.open)
+            if self.open or other.open:
+                return self.release < other.release
+            else:
+                return self.release <= other.release
+        
+        
+        def __eq__(self, other):
+            '''
+            Operator: ==
+            '''
+            cmp = self.__cmp(other)
+            if cmp != 0:
+                return False
+            if (self.release < 0) or (other.release < 0):
+                return not (self.open or other.open)
+            if self.open or other.open:
+                return False
+            else:
+                return self.release == other.release
+        
+        
+        def __ne__(self, other):
+            '''
+            Operator: !=
+            '''
+            return not (self == other)
+        
+        
+        def __gt__(self, other):
+            '''
+            Operator: >
+            '''
+            return other < self
+        
+        
+        def __ge__(self, other):
+            '''
+            Operator: >=
+            '''
+            return other <= self
     
     
     def __hash__(self):
