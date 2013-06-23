@@ -1263,7 +1263,7 @@ class LibSpike(LibSpikeHelper):
         
         @param   shred:bool    Whether to preform secure removal when possible
         @param   private:bool  Whether to uninstall user private ponies rather than user shared ponies
-        @return  :byte         Exit value, see description of `LibSpike`, the possible ones are: 0, 27 (TODO same as `erase`)
+        @return  :byte         Exit value, see description of `LibSpike`, the possible ones are: 0, 6, 7, 14(internal bug), 20, 23, 27, 28, 255
         '''
         # Create id → scroll map
         DB = DBCtrl(SPIKE_PATH)
