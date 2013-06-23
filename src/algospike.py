@@ -71,9 +71,9 @@ def multibinsearch(rc, list, items):
     '''
     Find the indices of multiple items in a list, with time complexity 𝓞(log n + m) and memory complexity 𝓞(log m) 
     
-    @param  rc:append((int, int))→void  Object to which to append found items, the append items are of tuple (itemIndex:int, listIndex:int)
-    @param  list:[int]→¿E?;len()→int    Sorted list in which to search, the number of elements is named ‘n’ in the complexity analysis
-    @param  items:[int]→¿E?;len()→int   Sorted list of items for which to search, the number of elements is named ‘m’ in the complexity analysis
+    @param  rc:append((int, int))→void     Object to which to append found items, the append items are of tuple (itemIndex:int, listIndex:int)
+    @param  list:[int]→¿E?;__len__()→int   Sorted list in which to search, the number of elements is named ‘n’ in the complexity analysis
+    @param  items:[int]→¿E?;__len__()→int  Sorted list of items for which to search, the number of elements is named ‘m’ in the complexity analysis
     '''
     count = len(items)
     if count > 0:
@@ -143,3 +143,48 @@ def lb32(x):
     if (x & 0x00000002) != 0:  rc +=  1
     return rc
 
+
+def tsort(rc, data):
+    '''
+    Sorts a data set on topologically
+    
+    @param  rc:append(str)→void       Feed the items on topological order
+    @param  data:dict<str, set<str>>  Dictionary from item to dependencies
+    '''
+    removed = [None]
+    while len(removed) > 0:
+        removed = []
+        for item in list(data.keys()):
+            if len(data[item]) == 0:
+                rc.append(item)
+                removed.append(item)
+                del data[item]
+        for item in data.keys():
+            deps = data[item]
+            for old in removed:
+                if old in deps:
+                    deps.remove(old)
+    if len(data.keys()) > 0:
+        rc.append('-------')
+        for item in data.keys():
+            rc.append(item + ' → ' + str(data[item]))
+
+
+data = {}
+try:
+    while True:
+        line = input()
+        if len(line) == 0:
+            break
+        item = line.split(' ')[0]
+        deps = line.split(' ')[1:]
+        if item in data:
+            data[item] = set(list(data[item]) + deps)
+        else:
+            data[item] = set(deps)
+except:
+    pass
+tsorted = []
+tsort(tsorted, data)
+for element in tsorted:
+    print(element)
