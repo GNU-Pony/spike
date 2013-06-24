@@ -365,6 +365,13 @@ class LibSpike(LibSpikeHelper):
                 root = root[:-1]
             SPIKE_PATH = root + SPIKE_PATH
         
+        # Information needed in the progress and may only be extended
+        scroll_field = {}
+        freshinstalls = []
+        reinstalls = []
+        update = []
+        skipping = []
+        
         # Proofread scrolls
         def agg(scroll, state, *_):
             if state == 0:
@@ -377,7 +384,6 @@ class LibSpike(LibSpikeHelper):
         aggregator(None, 2)
         
         # Get scroll fields
-        scroll_field = {}
         store_fields = 'pkgname pkgvel pkgrel epoch arch freedom private conflicts replaces'
         store_fields += ' provides extension variant patch patchbefore patchafter groups'
         store_fields += ' depends makedepends checkdepends optdepends'
