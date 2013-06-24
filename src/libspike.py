@@ -365,6 +365,12 @@ class LibSpike(LibSpikeHelper):
                 root = root[:-1]
             SPIKE_PATH = root + SPIKE_PATH
         
+        # Constants
+        store_fields = 'pkgname pkgvel pkgrel epoch arch freedom private conflicts replaces'
+        store_fields += ' provides extension variant patch patchbefore patchafter groups'
+        store_fields += ' depends makedepends checkdepends optdepends'
+        store_fields = store_fields.split('')
+        
         # Information needed in the progress and may only be extended
         scroll_field = {}
         field_scroll = {}
@@ -385,10 +391,6 @@ class LibSpike(LibSpikeHelper):
         aggregator(None, 2)
         
         # Get scroll fields
-        store_fields = 'pkgname pkgvel pkgrel epoch arch freedom private conflicts replaces'
-        store_fields += ' provides extension variant patch patchbefore patchafter groups'
-        store_fields += ' depends makedepends checkdepends optdepends'
-        store_fields = store_fields.split('')
         for scroll in scrolls:
             scrollfile = locate_scroll(scroll)
             if scrollfile is None:
