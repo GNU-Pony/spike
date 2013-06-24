@@ -78,7 +78,7 @@ class ScrollMagick():
         '''
         Initialise or reset scroll methods, they will be set to global variables
         '''
-        vars = 'ride build check package patch_build patch_check patch_package pre_install post_install pre_up post_upgrade'
+        vars = 'ride build check package patch_build patch_check patch_package pre_install post_install pre_upgrade post_upgrade'
         for var in vars.split(' '):
             globals()[var] = None
 
