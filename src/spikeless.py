@@ -33,6 +33,8 @@ MANDITORY = 2
 class Spikeless():
     '''
     Spike but without the package managing, it just installs scrolls
+    
+    @author  Mattias Andrée (maandree@member.fsf.org)
     '''
     
     @staticmethod

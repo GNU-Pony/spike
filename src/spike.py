@@ -60,7 +60,10 @@ def printerr(text = '', end = '\n'):
 class Spike():
     '''
     Spike is your number one package manager
+    
+    @author  Mattias Andrée (maandree@member.fsf.org)
     '''
+    
     def __init__(self):
         '''
         Constructor

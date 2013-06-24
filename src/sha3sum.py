@@ -29,6 +29,7 @@ class SHA3:
     
     @author  Mattias Andrée  (maandree@member.fsf.org)
     '''
+    
     def __init__(self):
         '''
         Constructor

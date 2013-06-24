@@ -35,6 +35,8 @@ class ScrollVersion():
     @variable  lower:Version?   The lower bound in the version range
     @variable  upper:Version?   The upper bound in the version range
     @variable  complement:bool  Whether the range is stored in its complement, can only be true one exact version is specified
+    
+    @author  Mattias Andrée (maandree@member.fsf.org)
     '''
     
     def __init__(self, scroll):

@@ -40,7 +40,10 @@ Option consumes all following arguments
 class ArgParser():
     '''
     Simple argument parser, cannibalised from ponysay where it was cannibalised from paradis
+    
+    @author  Mattias Andrée (maandree@member.fsf.org)
     '''
+    
     def __init__(self, program, description, usage, longdescription = None, tty = True):
         '''
         Constructor.

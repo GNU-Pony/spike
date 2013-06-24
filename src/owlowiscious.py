@@ -28,7 +28,10 @@ class Owlowiscious(Spike):
     '''
     Owlowiscious is the night time alternative to Spike, he is
     nocturnal in constrast to the, although eversleepy, diurnal Spike.
+    
+    @author  Mattias Andrée (maandree@member.fsf.org)
     '''
+    
     def __init__(self):
         '''
         Constructor

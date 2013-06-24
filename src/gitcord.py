@@ -26,6 +26,8 @@ from subprocess import Popen, PIPE
 class Gitcord():
     '''
     Gitcord has awesome magic for manipulating the realms (git repositories)
+    
+    @author  Mattias Andrée (maandree@member.fsf.org)
     '''
     
     def __init__(directory):
