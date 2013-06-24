@@ -792,7 +792,7 @@ class LibSpike(LibSpikeHelper):
         @param   notinstalled:bool     Whether to include not installed scrolls
         @return  :byte                 Exit value, see description of `LibSpike`, the possible ones are: 0, 6, 14, 20, 255
         '''
-        # TODO add required by (manditory, optional, make)
+        # TODO add required by (manditory, optional, make, check)
         
         # Fields
         preglobals = set(globals().keys())
