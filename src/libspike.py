@@ -1360,7 +1360,13 @@ class LibSpike(LibSpikeHelper):
                     
                     ScrollMagick.check_is_list('option', False, str)
                     ScrollMagick.check_elements('option', 'strip docs info man licenses changelogs libtool docs= docs=gz docs=xz info= info=gz info=xz man= man=gz man=xz upx'.split(' '))
-                
+                    
+                    # Proofread scroll methods
+                    if ride is None:
+                        raise Exception('Method \'ride\' should be default, in worst case just echo some information')
+                    if package is None:
+                        raise Exception('Method \'package\' must be default, even if does nothing')
+                    
                 except Exception as err:
                     error = max(error, 22)
                     aggregator(scroll, 1, str(err))
