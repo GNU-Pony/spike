@@ -1264,7 +1264,7 @@ class LibSpike(LibSpikeHelper):
                     ScrollMagick.init_methods()
                     ScrollMagick.execute_scroll(scroll)
                     
-                    # Proofread scroll
+                    # Proofread scroll fields
                     ScrollMagick.check_type('pkgname', False, str)
                     ScrollMagick.check_format('epoch', ispony)
                     
