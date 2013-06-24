@@ -648,15 +648,12 @@ class LibSpike(LibSpikeHelper):
             # Open scroll
             try:
                 global ride
-                (ride, code, scroll) = (None, None, locate_scroll(pony, True, private))
+                (ride, scroll) = (None, locate_scroll(pony, True, private))
                 if scroll == None:
                     return 6
-                with open(scroll, 'rb') as file:
-                    code = file.read().decode('utf8', 'replace') + '\n'
-                    code = compile(code, scroll, 'exec')
+                ScrollMagick.execute_scroll(scroll)
                 
                 # Ride pony
-                exec(code, globals())
                 if ride is None:
                     return 21
                 else:
@@ -807,9 +804,6 @@ class LibSpike(LibSpikeHelper):
         fields = list(allowedfields) if allfields else ([field] if isinstance(field, str) else field)
         error = 0
         try:
-            # Set environment variables
-            ScrollMagick.export_environment()
-            
             # Define arbitrary to str convertion function
             def convert(val, first = None):
                 if val is None:
@@ -827,6 +821,9 @@ class LibSpike(LibSpikeHelper):
                     return [convert(v, f) for v in val]
             
             for scroll in scrolls:
+                # Set environment variables (re-export before each scroll in case a scroll changes it)
+                ScrollMagick.export_environment()
+                
                 # Locate installed and not installed version of scroll
                 scroll_installed    = None if not    installed else pass locate_scroll(scroll, True)
                 scroll_notinstalled = None if not notinstalled else pass locate_scroll(scroll, False)
@@ -854,15 +851,10 @@ class LibSpike(LibSpikeHelper):
                             category = scrollfile.split('/')[-2]
                             
                             # Open installed scroll
-                            (code, scroll) = (None, scrollfile)
-                            if scroll == None:
+                            if scrollfile == None:
                                 return 6
-                            with open(scroll, 'rb') as file:
-                                code = file.read().decode('utf8', 'replace') + '\n'
-                                code = compile(code, scroll, 'exec')
-                            
                             # Fetch fields
-                            exec(code, globals())
+                            ScrollMagick.execute_scroll(scrollfile)
                             
                             # Prepare for report
                             for field in fields:
@@ -1233,13 +1225,17 @@ class LibSpike(LibSpikeHelper):
         (error, n) = (0, len(scrolls))
         scrollfiles = [(scrolls[i], locate_scroll(scrolls[i]), i) for i in range(n)]
         for (scroll, scrollfile, i) in scrollfiles:
+            # Set environment variables (re-export before each scroll in case a scroll changes it)
+            ScrollMagick.export_environment()
+            
             aggregator(scroll, 0, i, n)
             if scrollfile is None:
                 error = max(error, 6)
                 aggregator(scroll, 1, 'Scroll not found')
             else:
                 try:
-                     pass # TODO proofread `scrollfile`
+                    ScrollMagick.execute_scroll(scroll)
+                    # TODO proofread `scrollfile`
                 except Exception as err:
                     error = max(error, 22)
                     aggregator(scroll, 1, str(err))

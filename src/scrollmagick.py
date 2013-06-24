@@ -39,4 +39,18 @@ class ScrollMagick():
             os.putenv(var, value)
             if var not in os.environ or os.environ[var] != value:
                 os.environ[var] = value
+    
+    
+    @staticmethod
+    def execute_scroll(scroll):
+        '''
+        Opens, compiles and executes a scroll
+        
+        @param  scroll:str  The scroll file
+        '''
+        code = None
+        with open(scroll, 'rb') as file:
+            code = file.read().decode('utf8', 'replace') + '\n'
+            code = compile(code, scroll, 'exec')
+        exec(code, globals())
 
