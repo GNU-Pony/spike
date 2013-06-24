@@ -746,8 +746,8 @@ class Spike():
                         if 1 <= sel <= len(args):
                             return args[0][sel - 1]
                     except:
-                        if sel in args[0]:
-                            return sel
+                        pass
+                    return None
                 else:
                     if scroll not in self.scrls[state - 7][1]:
                         self.scrls[state - 7][0] += 1
@@ -877,8 +877,8 @@ class Spike():
                         if 1 <= sel <= len(args):
                             return args[0][sel - 1]
                     except:
-                        if sel in args[0]:
-                            return sel
+                        pass
+                    return None
                 else:
                     if scroll not in self.scrls[state - 7][1]:
                         self.scrls[state - 7][0] += 1
