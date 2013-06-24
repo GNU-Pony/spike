@@ -373,6 +373,33 @@ class LibSpike(LibSpikeHelper):
         if error != 0:
             return error
         
+        # Get scroll fields
+        scroll_field = {}
+        store_fields = 'pkgname pkgvel pkgrel epoch arch freedom private conflicts replaces'
+        store_fields += ' provides extension variant patch patchbefore patchafter groups'
+        store_fields += ' depends makedepends checkdepends optdepends'
+        store_fields = store_fields.split('')
+        for scroll in scrolls:
+            scrollfile = locate_scroll(scroll)
+            if scrollfile is None:
+                return 255 # but, the proofreader already found them...
+            else:
+                try:
+                    # Set environment variables (re-export before each scroll in case a scroll changes it)
+                    ScrollMagick.export_environment()
+                    
+                    # Read scroll
+                    ScrollMagick.init_fields()
+                    ScrollMagick.execute_scroll(scrollfile)
+                    
+                    # Store fields
+                    fields = {}
+                    scroll_field[scroll] = fields
+                    for field in store_fields:
+                        fields[field] = globals()[field]
+                except:
+                    return 255 # but, the proofreader did not have any problem...
+        
         return 0
     
     
