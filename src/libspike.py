@@ -355,7 +355,7 @@ class LibSpike(LibSpikeHelper):
         @param   nodep:bool         Whether to ignore dependencies
         @param   force:bool         Whether to ignore file claims
         @param   shred:bool         Whether to preform secure removal when possible
-        @return  :byte              Exit value, see description of `LibSpike`, the possible ones are: 0 (TODO)
+        @return  :byte              Exit value, see description of `LibSpike`, the possible ones are: 0, 6, 22 (TODO)
         '''
         # Set shred and root
         if shred:
@@ -365,11 +365,19 @@ class LibSpike(LibSpikeHelper):
                 root = root[:-1]
             SPIKE_PATH = root + SPIKE_PATH
         
+        # Proofread scrolls
+        def agg(scroll, state, *_):
+            if state == 0:
+                aggregator(scroll, 0)
+        error = proofread(agg, scrolls)
+        if error != 0:
+            return error
+        
         return 0
     
     
     @staticmethod
-    def update(aggregator, root = '/', ignores = [], shred = False):
+    def update(aggregator, root = '/', ignores = [], shred = False): ## TODO sperate between private and global
         '''
         Update installed ponies
         
