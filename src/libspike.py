@@ -343,9 +343,8 @@ class LibSpike(LibSpikeHelper):
                                      7 - fetching source. Additional parameters: source:str, progress state:int, progress end:int
                                      8 - verifying source. Additional parameters: progress state:int, progress end:int
                                      9 - compiling
-                                    10 - stripping symbols. Additional parameters: file index:int, file count:int (can be 0)
-                                    11 - file conflict check: Additional parameters: progress state:int, progress end:int
-                                    12 - installing files: Additional parameters: progress state:int, progress end:int
+                                    10 - file conflict check: Additional parameters: progress state:int, progress end:int
+                                    11 - installing files: Additional parameters: progress state:int, progress end:int
         
         @param   scrolls:list<str>  Scroll to install
         @param   root:str           Mounted filesystem to which to perform installation
@@ -386,9 +385,8 @@ class LibSpike(LibSpikeHelper):
                                      7 - fetching source. Additional parameters: source:str, progress state:int, progress end:int
                                      8 - verifying source. Additional parameters: progress state:int, progress end:int
                                      9 - compiling
-                                    10 - stripping symbols. Additional parameters: file index:int, file count:int (can be 0)
-                                    11 - file conflict check: Additional parameters: progress state:int, progress end:int
-                                    12 - installing files: Additional parameters: progress state:int, progress end:int
+                                    10 - file conflict check: Additional parameters: progress state:int, progress end:int
+                                    11 - installing files: Additional parameters: progress state:int, progress end:int
         
         @param   root:str           Mounted filesystem to which to perform installation
         @param   ignores:list<str>  Ponies not to update

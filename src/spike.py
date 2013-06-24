@@ -676,9 +676,8 @@ class Spike():
                                 7 - fetching source. Additional parameters: source:str, progress state:int, progress end:int
                                 8 - verifying source. Additional parameters: progress state:int, progress end:int
                                 9 - compiling
-                               10 - stripping symbols. Additional parameters: file index:int, file count:int (can be 0)
-                               11 - file conflict check: Additional parameters: progress state:int, progress end:int
-                               12 - installing files: Additional parameters: progress state:int, progress end:int
+                               10 - file conflict check: Additional parameters: progress state:int, progress end:int
+                               11 - installing files: Additional parameters: progress state:int, progress end:int
             '''
             def __init__(self):
                 self.updateadd = []
@@ -765,15 +764,11 @@ class Spike():
                     elif state == 9:
                         print('(%i/%i) Compiling %s' % (scrli + 1, scrln, scroll))
                     elif state == 10:
-                        (filei, filen) = args
-                        if filei == 0:
-                            print('(%i/%i) Stripping symbols for %s' % (scrli, scrln, scroll))
-                    elif state == 11:
                         (progress, end) = args
                         bar = '[\033[01;3%im%s\033[00m]'
                         bar %= (2, 'DONE') if progress == end else (3, '%2.1f' % (progress / end))
                         print('[%s] (%i/%i) Checking file conflicts for %s' % (bar, scrli, scrln, scroll))
-                    elif state == 12:
+                    elif state == 11:
                         (progress, end) = args
                         bar = '[\033[01;3%im%s\033[00m]'
                         bar %= (2, 'DONE') if progress == end else (3, '%2.1f' % (progress / end))
@@ -811,9 +806,8 @@ class Spike():
                                 7 - fetching source. Additional parameters: source:str, progress state:int, progress end:int
                                 8 - verifying source. Additional parameters: progress state:int, progress end:int
                                 9 - compiling
-                               10 - stripping symbols. Additional parameters: file index:int, file count:int (can be 0)
-                               11 - file conflict check: Additional parameters: progress state:int, progress end:int
-                               12 - installing files: Additional parameters: progress state:int, progress end:int
+                               10 - file conflict check: Additional parameters: progress state:int, progress end:int
+                               11 - installing files: Additional parameters: progress state:int, progress end:int
             '''
             def __init__(self):
                 self.updateadd = []
@@ -900,15 +894,11 @@ class Spike():
                     elif state == 9:
                         print('(%i/%i) Compiling %s' % (scrli + 1, scrln, scroll))
                     elif state == 10:
-                        (filei, filen) = args
-                        if filei == 0:
-                            print('(%i/%i) Stripping symbols for %s' % (scrli, scrln, scroll))
-                    elif state == 11:
                         (progress, end) = args
                         bar = '[\033[01;3%im%s\033[00m]'
                         bar %= (2, 'DONE') if progress == end else (3, '%2.1f' % (progress / end))
                         print('[%s] (%i/%i) Checking file conflicts for %s' % (bar, scrli, scrln, scroll))
-                    elif state == 12:
+                    elif state == 11:
                         (progress, end) = args
                         bar = '[\033[01;3%im%s\033[00m]'
                         bar %= (2, 'DONE') if progress == end else (3, '%2.1f' % (progress / end))
