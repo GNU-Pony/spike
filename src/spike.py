@@ -147,7 +147,7 @@ class Spike():
         opts.add_argumentless(['-W', '--write'],                      help = 'Install a pony (package) from scroll\n'
                                                              'slaves: [--pinpal= | --private] [--asdep | --asexplicit] [--nodep] [--force] [--shred]')
         opts.add_argumentless(['-U', '--update'],                     help = 'Update to new versions of the installed ponies\n'
-                                                             'slaves: [--pinpal=] [--ignore=]... [--shred]')
+                                                             'slaves: [--pinpal=] [--ignore=]... [--private] [--shred]')
         opts.add_argumentless(['-E', '--erase'],                      help = 'Uninstall a pony\n'
                                                              'slaves: [--pinpal= | --private] [--shred]')
         opts.add_argumented(  ['-X', '--ride'],      arg = 'SCROLL',  help = 'Execute a scroll after best effort\n'
@@ -321,11 +321,13 @@ class Spike():
             elif opts.opts['-U'] is not None:
                 allowed.add('--pinpal')
                 allowed.add('-i')
+                allowed.add('-u')
                 allowed.add('--shred')
                 self.test_allowed(opts.opts, allowed, longmap, True)
                 self.test_files(opts.files, 0, True)
                 exitValue = self.update(root    = opts.opts['--pinpal'][0] if opts.opts['--pinpal'] is not None else '/',
                                         ignores = opts.opts['-i'] if opts.opts['-i'] is not None else [],
+                                        private = opts.opts['-u'] is not None,
                                         shred   = opts.opts['--shred'] is not None)
                 
             elif opts.opts['-E'] is not None:
@@ -784,12 +786,13 @@ class Spike():
         return LibSpike.write(Agg(), scrolls, root, private, explicitness, nodep, force, shred)
     
     
-    def update(self, root = '/', ignores = [], shred = False):
+    def update(self, root = '/', ignores = [], private = False, shred = False):
         '''
         Update installed ponies
         
         @param   root:str           Mounted filesystem to which to perform installation
         @param   ignores:list<str>  Ponies not to update
+        @param   private:bool       Whether to update user private packages
         @param   shred:bool         Whether to preform secure removal when possible
         @return  :byte              Exit value, see description of `mane`
         '''

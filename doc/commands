@@ -29,7 +29,7 @@ spike --claim FILE... [--recursive | --entire] [--force] [--private] SCROLL
 spike --disclaim FILE... [--recursive] [--private] SCROLL
 --> remove FILE from SCROLL, and all subfiles if --rescursive
 
-spike --update [--pinpal ROOT] [--ignore SCROLL]... [--shred]
+spike --update [--pinpal ROOT] [--ignore SCROLL]... [--private] [--shred]
 --> install updated packages
 
 spike --archive ARCHIVE [--scrolls]

@@ -377,7 +377,7 @@ class LibSpike(LibSpikeHelper):
     
     
     @staticmethod
-    def update(aggregator, root = '/', ignores = [], shred = False): ## TODO sperate between private and global
+    def update(aggregator, root = '/', ignores = [], private = False, shred = False):
         '''
         Update installed ponies
         
@@ -400,6 +400,7 @@ class LibSpike(LibSpikeHelper):
         
         @param   root:str           Mounted filesystem to which to perform installation
         @param   ignores:list<str>  Ponies not to update
+        @param   private:bool       Whether to update user private packages
         @param   shred:bool         Whether to preform secure removal when possible
         @return  :byte              Exit value, see description of `LibSpike`, the possible ones are: 0 (TODO)
         '''
