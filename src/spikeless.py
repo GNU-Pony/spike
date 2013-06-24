@@ -20,7 +20,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
 import os
 import sys
+
 from dragonsuite import *
+from scrollmagick import *
 
 
 MEDIA = 1
@@ -65,11 +67,7 @@ class Spikeless():
         scrolldir = os.path.abspath(dirname(scroll))
         cwd = os.getcwd()
         
-        for (var, value) in [('ARCH', os.uname()[4]), ('HOST', '$ARCH-unknown-linux-gnu')]:
-            value = os.getenv(var, value.replace('$ARCH', os.getenv('ARCH')))
-            os.putenv(var, value)
-            if var not in os.environ or os.environ[var] != value:
-                os.environ[var] = value
+        ScrollMagick.export_environment()
         
         environ = {}
         for var in os.environ:
@@ -97,11 +95,7 @@ class Spikeless():
         if not os.path.exists(pkgdir):
             os.mkdir(pkgdir)
         
-        code = None
-        with open(scroll, 'rb') as file:
-            code = file.read().decode('utf8', 'replace') + '\n'
-            code = compile(code, scroll, 'exec')
-        exec(code, globals())
+        ScrollMagick.execute_scroll(scroll)
         
         def sources(scrolldir):
             global noextract, source, sha3sums
