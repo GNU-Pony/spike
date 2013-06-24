@@ -417,7 +417,6 @@ class LibSpike(LibSpikeHelper):
                                     if val not in map:
                                         map[val] = []
                                     map[val].append(scroll)
-                                    
                 except:
                     return 255 # but, the proofreader did not have any problem...
         
