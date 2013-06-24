@@ -29,7 +29,8 @@ from spikedb import *
 from dbctrl import *
 from algospike import *
 from dragonsuite import *
-from srclver import *
+from scrlver import *
+from scrollmagick import *
 
 
 
@@ -641,12 +642,8 @@ class LibSpike(LibSpikeHelper):
             return 7
         
         try:
-            # Set $ARCH and $HOST
-            for (var, value) in [('ARCH', os.uname()[4]), ('HOST', '$ARCH-unknown-linux-gnu')]:
-                value = os.getenv(var, value.replace('$ARCH', os.getenv('ARCH', '')))
-                os.putenv(var, value)
-                if var not in os.environ or os.environ[var] != value:
-                    os.environ[var] = value
+            # Set environment variables
+            ScrollMagick.export_environment()
             
             # Open scroll
             try:
@@ -810,12 +807,8 @@ class LibSpike(LibSpikeHelper):
         fields = list(allowedfields) if allfields else ([field] if isinstance(field, str) else field)
         error = 0
         try:
-            # Set $ARCH and $HOST
-            for (var, value) in [('ARCH', os.uname()[4]), ('HOST', '$ARCH-unknown-linux-gnu')]:
-                value = os.getenv(var, value.replace('$ARCH', os.getenv('ARCH', '')))
-                os.putenv(var, value)
-                if var not in os.environ or os.environ[var] != value:
-                    os.environ[var] = value
+            # Set environment variables
+            ScrollMagick.export_environment()
             
             # Define arbitrary to str convertion function
             def convert(val, first = None):
