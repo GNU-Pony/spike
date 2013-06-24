@@ -60,9 +60,8 @@ class Spikeless():
         global _dragonsuite_output
         _dragonsuite_output = sys.stdout.buffer
         
-        global build, check, package, patch_build, patch_check, patch_package, pre_install, post_install, pre_upgrade, post_upgrade, noextract, source, sha3sums, options
-        (build, check, package, patch_build, patch_check, patch_package, pre_install, post_install, pre_upgrade, post_upgrade) = 10 * [None]
-        (noextract, source, sha3sums, options) = ([], None, None, [])
+        ScrollMagick.init_methods()
+        ScrollMagick.init_fields()
         
         scrolldir = os.path.abspath(dirname(scroll))
         cwd = os.getcwd()

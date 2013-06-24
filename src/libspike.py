@@ -647,8 +647,8 @@ class LibSpike(LibSpikeHelper):
             
             # Open scroll
             try:
-                global ride
-                (ride, scroll) = (None, locate_scroll(pony, True, private))
+                ScrollMagick.init_methods()
+                scroll = locate_scroll(pony, True, private)
                 if scroll == None:
                     return 6
                 ScrollMagick.execute_scroll(scroll)
@@ -788,17 +788,16 @@ class LibSpike(LibSpikeHelper):
         
         # Fields
         preglobals = set(globals().keys())
-        global pkgname, pkgver, pkgrel, epoch, pkgdesc, upstream, arch, freedom, license
-        global private, interactive, conflicts, replaces, provides, extension, variant
-        global patch, reason, patchbefore, patchafter, groups, depends, makedepends
-        global checkdepends, optdepends, backup, options
+        ScrollMagick.init_fields()
         postglobals = list(globals().keys())
         allowedfields = set()
         for globalvar in postglobals:
             if globalvar not in preglobals:
                 allowedfields.add(globalvar)
-        allowedfields.add('repository')
-        allowedfields.add('category')
+        for var in ('noextract', 'source', 'sha3sums'):
+            allowedfields.remove(var)
+        for var in ('repository', 'category'):
+            allowedfields.add(var)
         
         allfields = field is None
         fields = list(allowedfields) if allfields else ([field] if isinstance(field, str) else field)
@@ -838,12 +837,8 @@ class LibSpike(LibSpikeHelper):
                         try:
                             installed = scrollfile is scroll_installed
                             
-                            # Fields' default value
-                            (pkgname, pkgver, pkgdesc, upstream, arch, freedom, license) = [None] * 6
-                            (private, extension, variant, patch, reason) = [None] * 5
-                            pkgrel, epoch, interactive, backup, options = 1, 0, False, [], []
-                            conflicts, replaces, provides, patchbefore, patchafter = [], [], [], [], []
-                            groups, depends, makedepends, checkdepends, optdepends = [], [], [], [], []
+                            # Initalise or reset fields to their default values
+                            ScrollMagick.init_fields()
                             
                             # Scroll location
                             global repository, category

@@ -53,4 +53,32 @@ class ScrollMagick():
             code = file.read().decode('utf8', 'replace') + '\n'
             code = compile(code, scroll, 'exec')
         exec(code, globals())
+    
+    
+    @staticmethod
+    def init_fields():
+        '''
+        Initialise or reset scroll fields, they will be set to global variables
+        '''
+        vars = 'pkgname pkgver pkgdesc upstream arch freedom license private extension variant patch reason source sha3sums'
+        for var in vars.split(' '):
+            globals()[var] = None
+        
+        vars = 'conflicts replaces provides patchbefore patchafter groups depends makedepends checkdepends optdepends noextract options'
+        for var in vars.split(' '):
+            globals()[var] = []
+        
+        globals()['pkgrel'] = 1
+        globals()['epoch'] = 0
+        globals()['interactive'] = False
+    
+    
+    @staticmethod
+    def init_methods():
+        '''
+        Initialise or reset scroll methods, they will be set to global variables
+        '''
+        vars = 'ride build check package patch_build patch_check patch_package pre_install post_install pre_up post_upgrade'
+        for var in vars.split(' '):
+            globals()[var] = None
 
