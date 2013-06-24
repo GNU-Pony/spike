@@ -373,6 +373,9 @@ class LibSpike(LibSpikeHelper):
         if error != 0:
             return error
         
+        # Report that we are looking for conflicts
+        aggregator(None, 2)
+        
         # Get scroll fields
         scroll_field = {}
         store_fields = 'pkgname pkgvel pkgrel epoch arch freedom private conflicts replaces'
