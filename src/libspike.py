@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
 import os
 import re
+import inspect
 # TODO use git in commands
 
 from libspikehelper import *
@@ -1220,6 +1221,21 @@ class LibSpike(LibSpikeHelper):
         (error, n) = (0, len(scrolls))
         scrollfiles = [(scrolls[i], locate_scroll(scrolls[i]), i) for i in range(n)]
         
+        allowed_options = 'strip docs info man licenses changelogs libtool docs= docs=gz docs=xz info= info=gz info=xz man= man=gz man=xz upx'.split(' ')
+        method_specs = {'ride'           : 'private',
+                        'build'          : 'startdir srcdir pkgdir private',
+                        'check'          : 'startdir srcdir pkgdir private',
+                        'package'        : 'startdir srcdir pkgdir private',
+                        'patch_build'    : 'startdir srcdir pkgdir private',
+                        'patch_check'    : 'startdir srcdir pkgdir private',
+                        'patch_package'  : 'startdir srcdir pkgdir private',
+                        'pre_install'    : 'tmpdir rootdir private',
+                        'post_install'   : 'tmpdir rootdir installedfiles private',
+                        'pre_upgrade'    : 'tmpdir rootdir installedfiles private',
+                        'post_upgrade'   : 'tmpdir rootdir installedfiles private',
+                        'pre_uninstall'  : 'tmpdir rootdir installedfiles private',
+                        'post_uninstall' : 'tmpdir rootdir installedfiles private'}
+        
         def ishex(x):
             for i in range(x):
                 if x[i] not in '0123456789ABCDEFabcdef':
@@ -1358,14 +1374,26 @@ class LibSpike(LibSpikeHelper):
                                 raise Exception('Field \'%s\' contains duplicate file \'%s\'', (field, element))
                             have.add(element)
                     
-                    ScrollMagick.check_is_list('option', False, str)
-                    ScrollMagick.check_elements('option', 'strip docs info man licenses changelogs libtool docs= docs=gz docs=xz info= info=gz info=xz man= man=gz man=xz upx'.split(' '))
+                    ScrollMagick.check_is_list('options', False, str)
+                    ScrollMagick.check_elements('options', allowed_options)
                     
                     # Proofread scroll methods
                     if ride is None:
                         raise Exception('Method \'ride\' should be default, in worst case just echo some information')
                     if package is None:
                         raise Exception('Method \'package\' must be default, even if does nothing')
+                    
+                    if method in method_specs.keys():
+                        if globals()[method] is None:
+                            continue
+                        (args, varargs, keywords, defaults) = inspect.getargspec(globals()[method])
+                        if varargs  is not None:  raise Exception('Methods should not use varargs (i.e. *variables)')
+                        if keywords is not None:  raise Exception('Methods should not use keywords (i.e. **variables)')
+                        if defaults is not None:  raise Exception('Methods should specify default values for parameters')
+                        params_str = '(%s)' % method_specs[method].replace(' ', ', ')
+                        params_list = list(method_specs[method].split(' '))
+                        if list(args) != params_list:
+                            raise Exception('Method \'%s\' should have the parameters %s with those exact names', (method, params_str))
                     
                 except Exception as err:
                     error = max(error, 22)
