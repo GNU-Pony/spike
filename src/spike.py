@@ -734,7 +734,7 @@ class Spike():
                     print('\033[01mContinue? (y/n)\033[00m')
                     return input().lower().startswith('y')
                 elif state == 6:
-                    print('\033[01mSelect provider for virtual package: %s\033[00m' % scroll)
+                    print('\033[01mSelect provider for virtual pony: %s\033[00m' % scroll)
                     i = 0
                     for prov in args[0]:
                         i += 1
@@ -865,7 +865,7 @@ class Spike():
                     print('\033[01mContinue? (y/n)\033[00m')
                     return input().lower().startswith('y')
                 elif state == 6:
-                    print('\033[01mSelect provider for virtual package: %s\033[00m' % scroll)
+                    print('\033[01mSelect provider for virtual pony: %s\033[00m' % scroll)
                     i = 0
                     for prov in args[0]:
                         i += 1
