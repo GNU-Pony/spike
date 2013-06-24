@@ -1302,6 +1302,14 @@ class LibSpike(LibSpikeHelper):
                     ScrollMagick.check_type('epoch', False, int)
                     ScrollMagick.check_format('epoch', lambda x : x >= 0)
                     
+                    version_a = '%s=%i:%s-%i' % (pkgname, epoch, pkgver, pkgrel)
+                    version_b = scrollfile.replace(os.sep, '/').split('/')[-1][:-len('.scroll')]
+                    (version_a, version_b) = (ScrollVersion(version_a), ScrollVersion(version_b))
+                    if (version_b.name is False) or ('<' in version_b.full) or ('>' in version_b.full):
+                        raise Exception('Scroll file name is badly formated')
+                    if version_a not in version_b:
+                        raise Exception('Version and name fields conflicts with scroll file name')
+                    
                     for field in ('pkgdesc', 'upstream'):
                         ScrollMagick.check_type(field, True, str)
                         ScrollMagick.check_format(field, lambda x : len(x) > 0)
