@@ -81,4 +81,96 @@ class ScrollMagick():
         vars = 'ride build check package patch_build patch_check patch_package pre_install post_install pre_upgrade post_upgrade'
         for var in vars.split(' '):
             globals()[var] = None
+    
+    
+    @staticmethod
+    def check_type(field, withnone, *withclasses):
+        '''
+        Checks that the value of a field is of a specific class
+        
+        @param  field:str           The name of the field
+        @param  withclasses:*class  The classes of the value
+        @param  withnone:bool       Whether the value may be `None`
+        '''
+        value = globals()[field]
+        if not withnone:
+            if value is None:
+                raise Exception('Field \'%s\' may not be `None`' % field)
+        isclass = type(value)
+        if isclass not in set(withclasses):
+            allowed = ', '.join([c.__name__ for c in withclasses])
+            if ', ' in allowed:
+                allowed = allowed[:allowed.rfind(', ')] + ' and ' + allowed[allowed.rfind(', ') + 2:]
+            raise Exception('Field \'%s\' is restricted to %s' % (field, allowed))
+    
+    
+    @staticmethod
+    def check_is_list(field, withnone, *withclasses):
+        '''
+        Checks that the value of a field is a list and that its elements is of a specific class
+        
+        @param  field:str           The name of the field
+        @param  withclasses:*class  The classes of the elements
+        @param  withnone:bool       Whether the elements may be `None`
+        '''
+        withclasses = set(withclasses)
+        value = globals()[field]
+        if value is None:
+            raise Exception('Field \'%s\' must be a list' % field)
+        if not isinstance(value, list):
+            raise Exception('Field \'%s\' must be a list' % field)
+        for elem in value:
+            if not withnone:
+                if elem is None:
+                    raise Exception('Field \'%s\' may not contain `None`' % field)
+            isclass = type(elem)
+            if isclass not in withclasses:
+                allowed = ', '.join([c.__name__ for c in withclasses])
+                if ', ' in allowed:
+                    allowed = allowed[:allowed.rfind(', ')] + ' and ' + allowed[allowed.rfind(', ') + 2:]
+                raise Exception('Field \'%s\' is restricted to %s elements' % (field, allowed))
+    
+    
+    @staticmethod
+    def check_elements(field, values):
+        '''
+        Checks that the value of a field is a list and that its elements is of a specific class
+        
+        @param  field:str        The name of the field
+        @param  values:itr<¿E?>  The allowed elements
+        '''
+        values = set(values)
+        value = globals()[field]
+        for elem in value:
+            if elem not in values:
+                raise Exception('Field \'%s\' may not contain the value \'%s\'' % (field, str(elem)))
+    
+    
+    @staticmethod
+    def check_format(field, checker):
+        '''
+        Checks that a non-`None` value satisfies a format
+        
+        @param  field:str           The name of the field
+        @param  checker:(¿E?)→bool  Value checker
+        '''
+        value = globals()[field]
+        if value is not None:
+            if not checker(value):
+                raise Exception('Field \'%s\' is of bady formated value \'%s\'' % (field, value))
+    
+    
+    @staticmethod
+    def check_element_format(field, checker):
+        '''
+        Checks that non-`None` elements in a list satisfies a format
+        
+        @param  field:str           The name of the field
+        @param  checker:(¿E?)→bool  List element checker
+        '''
+        value = globals()[field]
+        for elem in value:
+            if elem is not None:
+                if not checker(elem):
+                    raise Exception('Field \'%s\' contains badly formated value \'%s\'' % (field, elem))
 

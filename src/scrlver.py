@@ -58,7 +58,7 @@ class ScrollVersion():
             if part[1] not in ('<', '<=', '>', '>=', '=', '<>'):
                 return
             self.name = parts[0]
-            ver = __Version(parts[2], not in parts[1])
+            ver = __Version(parts[2], '=' not in parts[1])
             islower = '>' in parts[1]
             isupper = '<' in parts[1]
             if islower == isupper:
@@ -146,7 +146,7 @@ class ScrollVersion():
                         if (j & 1) == 1:
                             return int(a) - int(b)
                         else:
-                            return a < b ? -1 : 1
+                            return -1 if a < b else 1
                 if _n != _m:
                     return _n - _m
             

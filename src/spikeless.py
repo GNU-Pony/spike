@@ -27,6 +27,7 @@ from scrollmagick import *
 
 MEDIA = 1
 SOFTWARE = 2
+
 UNSUPPORTED = 0
 SUPPORTED = 1
 MANDITORY = 2

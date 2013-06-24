@@ -550,7 +550,7 @@ class LibSpike(LibSpikeHelper):
                                             rm(filename, directories = True)
                                         progress += 1
                                         aggregator(scroll, progress, endstate)
-                                    else
+                                    else:
                                         dirs[fileid] = filename
                             except:
                                 error = max(error, 23)
@@ -824,8 +824,8 @@ class LibSpike(LibSpikeHelper):
                 ScrollMagick.export_environment()
                 
                 # Locate installed and not installed version of scroll
-                scroll_installed    = None if not    installed else pass locate_scroll(scroll, True)
-                scroll_notinstalled = None if not notinstalled else pass locate_scroll(scroll, False)
+                scroll_installed    = None if not    installed else locate_scroll(scroll, True)
+                scroll_notinstalled = None if not notinstalled else locate_scroll(scroll, False)
                 if (scroll_installed is None) and (scroll_notinstalled is None):
                     aggregator(scroll, None, None, installed)
                     error = max(error, 6)
@@ -1219,6 +1219,36 @@ class LibSpike(LibSpikeHelper):
         '''
         (error, n) = (0, len(scrolls))
         scrollfiles = [(scrolls[i], locate_scroll(scrolls[i]), i) for i in range(n)]
+        
+        def ishex(x):
+            for i in range(x):
+                if x[i] not in '0123456789ABCDEFabcdef':
+                    return False
+            return True
+        
+        def ispony(x):
+            chars = set(('-', '+'))
+            c = ord('0')
+            while c <= ord('9'):
+                chars.add(chr(c))
+                c += 1
+            c = ord('a')
+            while c <= ord('z'):
+                chars.add(chr(c))
+                c += 1
+            for i in range(x):
+                if x[i] not in chars:
+                    return False
+            if x.startswith('.') or x.startswith('-'):
+                return False
+            return len(x) > 0
+        
+        def isscroll(x):
+            s = ScrollVersion(x if ': ' not in x else x[:x.find(': ')])
+            if s.name is None:
+                return False
+            return ispony(s.name)
+        
         for (scroll, scrollfile, i) in scrollfiles:
             # Set environment variables (re-export before each scroll in case a scroll changes it)
             ScrollMagick.export_environment()
@@ -1229,8 +1259,108 @@ class LibSpike(LibSpikeHelper):
                 aggregator(scroll, 1, 'Scroll not found')
             else:
                 try:
+                    # Read scroll
+                    ScrollMagick.init_fields()
+                    ScrollMagick.init_methods()
                     ScrollMagick.execute_scroll(scroll)
-                    # TODO proofread `scrollfile`
+                    
+                    # Proofread scroll
+                    ScrollMagick.check_type('pkgname', False, str)
+                    ScrollMagick.check_format('epoch', ispony)
+                    
+                    ScrollMagick.check_type('pkgver', False, str)
+                    ScrollMagick.check_format('pkgver', lambda x : isscroll('x=' + x))
+                    
+                    ScrollMagick.check_type('pkgrel', False, int)
+                    ScrollMagick.check_format('pkgrel', lambda x : x >= 1)
+                    
+                    ScrollMagick.check_type('epoch', False, int)
+                    ScrollMagick.check_format('epoch', lambda x : x >= 0)
+                    
+                    for field in ('pkgdesc', 'upstream'):
+                        ScrollMagick.check_type(field, True, str)
+                        ScrollMagick.check_format(field, lambda x : len(x) > 0)
+                    
+                    ScrollMagick.check_is_list('arch', False, str)
+                    ScrollMagick.check_element_format('arch', lambda x : len(x) > 0)
+                    if len(arch) == 0:
+                        raise Exception('Field \'arch\' may not be empty')
+                    
+                    ScrollMagick.check_is_list('freedom', False, int)
+                    ScrollMagick.check_element_format('freedom', lambda x : 0 <= x < (1 << 2))
+                    
+                    ScrollMagick.check_is_list('license', False, str)
+                    ScrollMagick.check_element_format('license', lambda x : len(x) > 0)
+                    
+                    ScrollMagick.check_is_list('private', False, int)
+                    ScrollMagick.check_element_format('private', lambda x : 0 <= x < 3)
+                    
+                    ScrollMagick.check_type('interactive', False, bool)
+                    
+                    for field in ('conflicts', 'replaces', 'provides'):
+                        ScrollMagick.check_is_list(field, False, str)
+                        ScrollMagick.check_element_format(field, isscroll)
+                    
+                    for field in ('extension', 'variant', 'patch'):
+                        ScrollMagick.check_type(field, True, str)
+                        ScrollMagick.check_format(field, ispony)
+                    
+                    ScrollMagick.check_type('reason', True, str)
+                    ScrollMagick.check_format('reason', lambda x : len(x) > 0)
+                    
+                    for field in ('patchbefore', 'patchafter'):
+                        ScrollMagick.check_is_list(field, False, str)
+                        ScrollMagick.check_element_format(field, isscroll)
+                    
+                    ScrollMagick.check_is_list('groups', False, str)
+                    ScrollMagick.check_element_format('groups', ispony)
+                    
+                    for field in ('depends', 'makedepends', 'checkdepends', 'optdepends'):
+                        ScrollMagick.check_is_list(field, False, str)
+                        ScrollMagick.check_element_format(field, lambda x : len(x) == 0 or isscroll(x))
+                    
+                    ScrollMagick.check_is_list('noextract', False, str)
+                    
+                    ScrollMagick.check_is_list('source', False, str, list)
+                    elements = set()
+                    for element in source:
+                        if isinstance(element, list):
+                            if len(element) < 2:
+                                raise Exception('Lists in field \'source\' must be at least of length 2')
+                            for elem in element:
+                                if elem is None:
+                                    raise Exception('Lists in field \'source\' may not contain `None`')
+                                elif isinstance(elem, str):
+                                    raise Exception('Lists in field \'source\' is restricted to str elements')
+                            if len(element[0]):
+                                raise Exception('Source file in field \'source\' may not be empty')
+                            element = element[1]
+                        if element:
+                            raise Exception('destination file in field \'source\' may not be empty')
+                        if element in elements:
+                            raise Exception('Duplicate destination file \'%s\' in field \'source\'', element)
+                        else:
+                            elements.add(element)
+                    
+                    ScrollMagick.check_is_list('sha3sums', True, str)
+                    ScrollMagick.check_element_format('sha3sums', lambda x : len(x) == 144 and ishex(x))
+                    
+                    if len(sha3sums) != len(source):
+                        raise Exception('Fields \'sha3sums\' and \'source\' must be of same size')
+                    
+                    for field in ('noextract', 'backup'):
+                        have = set()
+                        value = globals()[field]
+                        for element in value:
+                            if element not in elements:
+                                raise Exception('Field \'%s\' may only contain destination files from \'source\'' % field)
+                            if element in have:
+                                raise Exception('Field \'%s\' contains duplicate file \'%s\'', (field, element))
+                            have.add(element)
+                    
+                    ScrollMagick.check_is_list('option', False, str)
+                    ScrollMagick.check_elements('option', 'strip docs info man licenses changelogs libtool docs= docs=gz docs=xz info= info=gz info=xz man= man=gz man=xz upx'.split(' '))
+                
                 except Exception as err:
                     error = max(error, 22)
                     aggregator(scroll, 1, str(err))
