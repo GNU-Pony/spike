@@ -367,6 +367,7 @@ class LibSpike(LibSpikeHelper):
         
         # Information needed in the progress and may only be extended
         scroll_field = {}
+        field_scroll = {}
         freshinstalls = []
         reinstalls = []
         update = []
@@ -401,11 +402,22 @@ class LibSpike(LibSpikeHelper):
                     ScrollMagick.init_fields()
                     ScrollMagick.execute_scroll(scrollfile)
                     
-                    # Store fields
+                    # Store fields and transposition
                     fields = {}
                     scroll_field[scroll] = fields
                     for field in store_fields:
-                        fields[field] = globals()[field]
+                        value = globals()[field]
+                        fields[field] = value
+                        if field not in field_scroll:
+                            field_scroll[field] = {}
+                        map = field_scroll[field]
+                        if (value is not None) and (type(value) in (str, list)):
+                            for val in value if isinstance(value, list) else [value]:
+                                if val is not None:
+                                    if val not in map:
+                                        map[val] = []
+                                    map[val].append(scroll)
+                                    
                 except:
                     return 255 # but, the proofreader did not have any problem...
         
