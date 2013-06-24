@@ -355,7 +355,7 @@ class LibSpike(LibSpikeHelper):
         @param   nodep:bool         Whether to ignore dependencies
         @param   force:bool         Whether to ignore file claims
         @param   shred:bool         Whether to preform secure removal when possible
-        @return  :byte              Exit value, see description of `LibSpike`, the possible ones are: 0, 6, 22 (TODO)
+        @return  :byte              Exit value, see description of `LibSpike`, the possible ones are: 0, 6, 22, 255 (TODO)
         '''
         # Set shred and root
         if shred:
@@ -1287,7 +1287,7 @@ class LibSpike(LibSpikeHelper):
                     # Read scroll
                     ScrollMagick.init_fields()
                     ScrollMagick.init_methods()
-                    ScrollMagick.execute_scroll(scroll)
+                    ScrollMagick.execute_scroll(scrollfile)
                     
                     # Proofread scroll fields
                     ScrollMagick.check_type('pkgname', False, str)
