@@ -355,7 +355,7 @@ class LibSpike(LibSpikeHelper):
         @param   nodep:bool         Whether to ignore dependencies
         @param   force:bool         Whether to ignore file claims
         @param   shred:bool         Whether to preform secure removal when possible
-        @return  :byte              Exit value, see description of `LibSpike`, the possible ones are: 0, 6, 22, 255 (TODO)
+        @return  :byte              Exit value, see description of `LibSpike`, the possible ones are: 0, 6, 8, 22, 255 (TODO)
         '''
         # Set shred and root
         if shred:
@@ -421,6 +421,22 @@ class LibSpike(LibSpikeHelper):
                                     map[val].append(scroll)
                 except:
                     return 255 # but, the proofreader did not have any problem...
+        
+        # Identify scroll that may not be installed at the same time
+        conflicts = set()
+        installed = set()
+        for scroll in scroll_field:
+            fields = scroll_field[scroll]
+            scroll = ScrollVersion('%s=%i:%s-%i' % [fields[var] for var in ('pkgname', 'epoch', 'pkgver', 'pkgrel')])
+            if scroll in conflicts:
+                return 8
+            installed.add(scroll)
+            for conflict in fields['conflicts']:
+                conflict = ScrollVersion(conflict)
+                if conflict in installed:
+                    return 8
+                conflicts.add(conflict)
+        # TODO inspect already installed scrolls
         
         return 0
     
@@ -1338,6 +1354,7 @@ class LibSpike(LibSpikeHelper):
                     ScrollMagick.init_methods()
                     ScrollMagick.execute_scroll(scrollfile)
                     
+                    # TODO look for autoconflicts
                     # Proofread scroll fields
                     ScrollMagick.check_type('pkgname', False, str)
                     ScrollMagick.check_format('epoch', ispony)
