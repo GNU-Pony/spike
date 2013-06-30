@@ -533,6 +533,8 @@ class LibSpike(LibSpikeHelper):
         @param   shred:bool        Whether to preform secure removal when possible
         @return  :byte             Exit value, see description of `LibSpike`, the possible ones are: 0, 6, 7, 14(internal bug), 20, 23, 27, 28, 255
         '''
+        # TODO also remove dependencies, but verify
+        
         error = 0
         try:
             # Set shred and root
