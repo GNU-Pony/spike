@@ -372,12 +372,49 @@ class LibSpike(LibSpikeHelper):
         store_fields = store_fields.split('')
         
         # Information needed in the progress and may only be extended
+        installed_field = {}
+        field_installed = {}
         scroll_field = {}
         field_scroll = {}
         freshinstalls = []
         reinstalls = []
         update = []
         skipping = []
+        
+        # Load information about already installed scrolls
+        # TODO this should be reported as separate part in the progress
+        # TODO this should be better using spikedb
+        installed_scrollfiles = locate_all_scrolls(True, None)
+        for scrollfile in installed_scrollfiles:
+            try:
+                # Set environment variables (re-export before each scroll in case a scroll changes it)
+                ScrollMagick.export_environment()
+                
+                # Read scroll
+                ScrollMagick.init_fields()
+                ScrollMagick.execute_scroll(scrollfile)
+                
+                # Get ScrollVersion
+                scroll = [globals()[var] for var in ('pkgname', 'epoch', 'pkgver', 'pkgrel')]
+                scroll = ScrollVersion('%s=%i:%s-%i' % scroll)
+                
+                # Store fields and transposition
+                fields = {}
+                installed_field[scroll] = fields
+                for field in store_fields:
+                    value = globals()[field]
+                    fields[field] = value
+                    if field not in field_installed:
+                        field_installed[field] = {}
+                    map = field_installed[field]
+                    if (value is not None) and (type(value) in (str, list)):
+                        for val in value if isinstance(value, list) else [value]:
+                            if val is not None:
+                                if val not in map:
+                                    map[val] = []
+                                map[val].append(scroll)
+            except:
+                return 255 # So how did we install it...
         
         # Proofread scrolls
         def agg(scroll, state, *_):
@@ -427,7 +464,8 @@ class LibSpike(LibSpikeHelper):
         installed = set()
         for scroll in scroll_field:
             fields = scroll_field[scroll]
-            scroll = ScrollVersion('%s=%i:%s-%i' % [fields[var] for var in ('pkgname', 'epoch', 'pkgver', 'pkgrel')])
+            scroll = [fields[var] for var in ('pkgname', 'epoch', 'pkgver', 'pkgrel')]
+            scroll = ScrollVersion('%s=%i:%s-%i' % scroll)
             if scroll in conflicts:
                 return 8
             installed.add(scroll)
