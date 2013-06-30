@@ -361,12 +361,14 @@ class LibSpike(LibSpikeHelper):
         # Information needed in the progress and may only be extended
         installed_field = {}
         field_installed = {}
+        already_installed = {}
         scroll_field = {}
         field_scroll = {}
         freshinstalls = []
         reinstalls = []
         update = []
         skipping = []
+        uninstall = []
         
         # Load information about already installed scrolls
         # TODO this should be reported as separate part in the progress
@@ -384,6 +386,7 @@ class LibSpike(LibSpikeHelper):
                 # Get ScrollVersion
                 scroll = [globals()[var] for var in ('pkgname', 'epoch', 'pkgver', 'pkgrel')]
                 scroll = ScrollVersion('%s=%i:%s-%i' % scroll)
+                already_installed[scroll] = scroll
                 
                 # Store fields and transposition
                 fields = {}
@@ -487,6 +490,18 @@ class LibSpike(LibSpikeHelper):
             else:
                 new_scrolls[scroll] = path
                 aggregator(scroll.name, 3, requirer[scroll.name])
+        
+        # Remove replaced ponies
+        for scroll in scroll_field:
+            fields = scrollset[scroll]
+            replaces = [ScrollVersion(deps) for deps in fields['replaces']]
+            if replaces in already_installed:
+                uninstall.append(already_installed[replaces])
+                del installed_field[replaces]
+                for field in field_installed:
+                    for value in field_installed[field]:
+                        field_installed[field][value].remove(replaces)
+                aggregator(replaces.name.name, 4, scroll)
         
         return 0
     
