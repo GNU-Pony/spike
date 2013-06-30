@@ -1428,17 +1428,10 @@ class LibSpike(LibSpikeHelper):
                     
                     # TODO look for autoconflicts
                     # Proofread scroll fields
-                    ScrollMagick.check_type('pkgname', False, str)
-                    ScrollMagick.check_format('epoch', ispony)
-                    
-                    ScrollMagick.check_type('pkgver', False, str)
-                    ScrollMagick.check_format('pkgver', lambda x : isscroll('x=' + x))
-                    
-                    ScrollMagick.check_type('pkgrel', False, int)
-                    ScrollMagick.check_format('pkgrel', lambda x : x >= 1)
-                    
-                    ScrollMagick.check_type('epoch', False, int)
-                    ScrollMagick.check_format('epoch', lambda x : x >= 0)
+                    ScrollMagick.check_type_format('pkgname', False, str, ispony)
+                    ScrollMagick.check_type_format('pkgver', False, str, lambda x : isscroll('x=' + x))
+                    ScrollMagick.check_type_format('pkgrel', False, int, lambda x : x >= 1)
+                    ScrollMagick.check_type_format('epoch', False, int, lambda x : x >= 0)
                     
                     version_a = '%s=%i:%s-%i' % (pkgname, epoch, pkgver, pkgrel)
                     version_b = scrollfile.replace(os.sep, '/').split('/')[-1][:-len('.scroll')]
@@ -1449,46 +1442,33 @@ class LibSpike(LibSpikeHelper):
                         raise Exception('Version and name fields conflicts with scroll file name')
                     
                     for field in ('pkgdesc', 'upstream'):
-                        ScrollMagick.check_type(field, True, str)
-                        ScrollMagick.check_format(field, lambda x : len(x) > 0)
+                        ScrollMagick.check_type_format(field, True, str, lambda x : len(x) > 0)
                     
-                    ScrollMagick.check_is_list('arch', False, str)
-                    ScrollMagick.check_element_format('arch', lambda x : len(x) > 0)
+                    ScrollMagick.check_is_list_format('arch', False, str, lambda x : len(x) > 0)
                     if len(arch) == 0:
                         raise Exception('Field \'arch\' may not be empty')
                     
-                    ScrollMagick.check_is_list('freedom', False, int)
-                    ScrollMagick.check_element_format('freedom', lambda x : 0 <= x < (1 << 2))
-                    
-                    ScrollMagick.check_is_list('license', False, str)
-                    ScrollMagick.check_element_format('license', lambda x : len(x) > 0)
-                    
-                    ScrollMagick.check_is_list('private', False, int)
-                    ScrollMagick.check_element_format('private', lambda x : 0 <= x < 3)
+                    ScrollMagick.check_is_list_format('freedom', False, int, lambda x : 0 <= x < (1 << 2))
+                    ScrollMagick.check_is_list_format('license', False, str, lambda x : len(x) > 0)
+                    ScrollMagick.check_is_list_format('private', False, int, lambda x : 0 <= x < 3)
                     
                     ScrollMagick.check_type('interactive', False, bool)
                     
                     for field in ('conflicts', 'replaces', 'provides'):
-                        ScrollMagick.check_is_list(field, False, str)
-                        ScrollMagick.check_element_format(field, isscroll)
+                        ScrollMagick.check_is_list_format(field, False, str, isscroll)
                     
                     for field in ('extension', 'variant', 'patch'):
-                        ScrollMagick.check_type(field, True, str)
-                        ScrollMagick.check_format(field, ispony)
+                        ScrollMagick.check_type_format(field, True, str, ispony)
                     
-                    ScrollMagick.check_type('reason', True, str)
-                    ScrollMagick.check_format('reason', lambda x : len(x) > 0)
+                    ScrollMagick.check_type_format('reason', True, str, lambda x : len(x) > 0)
                     
                     for field in ('patchbefore', 'patchafter'):
-                        ScrollMagick.check_is_list(field, False, str)
-                        ScrollMagick.check_element_format(field, isscroll)
+                        ScrollMagick.check_is_list_format(field, False, str, isscroll)
                     
-                    ScrollMagick.check_is_list('groups', False, str)
-                    ScrollMagick.check_element_format('groups', ispony)
+                    ScrollMagick.check_is_list_format('groups', False, str, ispony)
                     
                     for field in ('depends', 'makedepends', 'checkdepends', 'optdepends'):
-                        ScrollMagick.check_is_list(field, False, str)
-                        ScrollMagick.check_element_format(field, lambda x : len(x) == 0 or isscroll(x))
+                        ScrollMagick.check_is_list_format(field, False, str, lambda x : len(x) == 0 or isscroll(x))
                     
                     ScrollMagick.check_is_list('noextract', False, str)
                     
@@ -1513,8 +1493,7 @@ class LibSpike(LibSpikeHelper):
                         else:
                             elements.add(element)
                     
-                    ScrollMagick.check_is_list('sha3sums', True, str)
-                    ScrollMagick.check_element_format('sha3sums', lambda x : len(x) == 144 and ishex(x))
+                    ScrollMagick.check_is_list_format('sha3sums', True, str, lambda x : len(x) == 144 and ishex(x))
                     
                     if len(sha3sums) != len(source):
                         raise Exception('Fields \'sha3sums\' and \'source\' must be of same size')
@@ -1529,8 +1508,7 @@ class LibSpike(LibSpikeHelper):
                                 raise Exception('Field \'%s\' contains duplicate file \'%s\'', (field, element))
                             have.add(element)
                     
-                    ScrollMagick.check_is_list('options', False, str)
-                    ScrollMagick.check_elements('options', allowed_options)
+                    ScrollMagick.check_is_list_elements('options', False, str, allowed_options)
                     
                     # Proofread scroll methods
                     if ride is None:
@@ -1657,17 +1635,12 @@ class LibSpike(LibSpikeHelper):
         @param   files:list<str>  Files for which to calculate the checksum
         @return  :byte            Exit value, see description of `LibSpike`, the possible ones are: 0, 12, 26
         '''
-        error = 0
-        sha3 = SHA3()
+        (error, sha3) = (0, SHA3())
         for filename in files:
-            if not os.path.exists(filename):
+            if (not os.path.exists(filename)) or not (not os.path.isfile(filename)):
                 aggregator(filename, None)
                 if error == 0:
-                    error = 12
-            elif not os.path.isfile(filename):
-                aggregator(filename, None)
-                if error == 0:
-                    error = 26
+                    error = 12 if not os.path.exists(filename) else 26
             else:
                 aggregator(filename, sha3.digestFile(filename));
                 sha3.reinitialise()

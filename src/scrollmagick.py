@@ -88,9 +88,9 @@ class ScrollMagick():
         '''
         Checks that the value of a field is of a specific class
         
-        @param  field:str           The name of the field
-        @param  withclasses:*class  The classes of the value
-        @param  withnone:bool       Whether the value may be `None`
+        @param  field:str          The name of the field
+        @param  withnone:bool      Whether the value may be `None`
+        @param  withclasses:*type  The classes of the value
         '''
         value = globals()[field]
         if not withnone:
@@ -109,9 +109,9 @@ class ScrollMagick():
         '''
         Checks that the value of a field is a list and that its elements is of a specific class
         
-        @param  field:str           The name of the field
-        @param  withclasses:*class  The classes of the elements
-        @param  withnone:bool       Whether the elements may be `None`
+        @param  field:str          The name of the field
+        @param  withnone:bool      Whether the elements may be `None`
+        @param  withclasses:*type  The classes of the elements
         '''
         withclasses = set(withclasses)
         value = globals()[field]
@@ -173,4 +173,32 @@ class ScrollMagick():
             if elem is not None:
                 if not checker(elem):
                     raise Exception('Field \'%s\' contains badly formated value \'%s\'' % (field, elem))
+    
+    
+    @staticmethod
+    def check_type_format(field, withnone, withclass, checker):
+        '''
+        Checks that the value of a field is of a specific class and that a non-`None` value satisfies a format
+        
+        @param  field:str           The name of the field
+        @param  withnone:bool       Whether the value may be `None`
+        @param  withclass:type      The class of the value
+        @param  checker:(¿E?)→bool  Value checker
+        '''
+        check_type(field, withnone, withclass)
+        check_format(checker)
+    
+    
+    @staticmethod
+    def check_is_list_format(field, withnone, withclass, checker):
+        '''
+        Checks that the value of a field is a list and that its elements is of a specific class and that non-`None` elements in a list satisfies a format
+        
+        @param  field:str           The name of the field
+        @param  withnone:bool       Whether the elements may be `None`
+        @param  withclass:type      The class of the elements
+        @param  checker:(¿E?)→bool  List element checker
+        '''
+        check_is_list(field, withnone, withclass)
+        check_element_format(field, checker)
 
