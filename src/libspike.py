@@ -486,8 +486,6 @@ class LibSpike(LibSpikeHelper):
                 fields = scrollset[scroll] 
                 for scroll in feilds['provides']:
                     ScrollVersion(scroll).union_add(provided)
-                if not isinstance(scroll, ScrollVersion):
-                    scroll = [fields[var] for var in ('pkgname', 'epoch', 'pkgver', 'pkgrel')]
         
         return 0
     
