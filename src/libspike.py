@@ -479,6 +479,16 @@ class LibSpike(LibSpikeHelper):
                         return 8
                     conflicts.add(conflict)
         
+        # Identify provided scrolls
+        provided = set()
+        for scrollset in [scroll_field, installed_field]:
+            for scroll in scrollset:
+                fields = scrollset[scroll] 
+                for scroll in feilds['provides']:
+                    provided.add(ScrollVersion(scroll))
+                if not isinstance(scroll, ScrollVersion):
+                    scroll = [fields[var] for var in ('pkgname', 'epoch', 'pkgver', 'pkgrel')]
+        
         return 0
     
     
