@@ -342,7 +342,7 @@ class LibSpike(LibSpikeHelper):
         @param   nodep:bool         Whether to ignore dependencies
         @param   force:bool         Whether to ignore file claims
         @param   shred:bool         Whether to preform secure removal when possible
-        @return  :byte              Exit value, see description of `LibSpike`, the possible ones are: 0, 6, 8, 22, 255 (TODO)
+        @return  :byte              Exit value, see description of `LibSpike`, the possible ones are: 0, 6, 8, 9, 22, 255 (TODO)
         '''
         # Set shred and root
         if shred:
@@ -473,12 +473,16 @@ class LibSpike(LibSpikeHelper):
         requirer = {}
         for scroll in scroll_field:
             fields = scrollset[scroll]
-            makedepends = [ScrollVersion(deps) for deps in fields['makedepends']]
-            depends     = [ScrollVersion(deps) for deps in fields['depends']]
+            makedepends = [None if dep == '' else ScrollVersion(deps) for deps in fields['makedepends']]
+            depends     = [None if dep == '' else ScrollVersion(deps) for deps in fields['depends']]
             for deps in makedepends + depends:
-                if (deps not in installed) and (deps not in provided):
-                    deps.union_add(needed)
-                    dict_append(requirer, deps.name, scroll)
+                if dep is None:
+                    if (not os.path.exists(SPIKE_PATH)) or (not os.path.isdir(SPIKE_PATH)):
+                        return 9
+                else:
+                    if (deps not in installed) and (deps not in provided):
+                        deps.union_add(needed)
+                        dict_append(requirer, deps.name, scroll)
         
         # Locate the missing dependencies
         not_found = set()
