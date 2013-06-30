@@ -459,22 +459,25 @@ class LibSpike(LibSpikeHelper):
                 except:
                     return 255 # but, the proofreader did not have any problem...
         
-        # Identify scroll that may not be installed at the same time
+        # Identify scrolls that may not be installed at the same time
         conflicts = set()
         installed = set()
-        for scroll in scroll_field:
-            fields = scroll_field[scroll]
-            scroll = [fields[var] for var in ('pkgname', 'epoch', 'pkgver', 'pkgrel')]
-            scroll = ScrollVersion('%s=%i:%s-%i' % scroll)
-            if scroll in conflicts:
-                return 8
-            installed.add(scroll)
-            for conflict in fields['conflicts']:
-                conflict = ScrollVersion(conflict)
-                if conflict in installed:
+        for scrollset in [scroll_field, installed_field]:
+            for scroll in scrollset:
+                fields = scrollset[scroll]
+                if not isinstance(scroll, ScrollVersion):
+                    scroll = [fields[var] for var in ('pkgname', 'epoch', 'pkgver', 'pkgrel')]
+                    scroll = ScrollVersion('%s=%i:%s-%i' % scroll)
+                if scroll in installed:
+                    continue
+                if scroll in conflicts:
                     return 8
-                conflicts.add(conflict)
-        # TODO inspect already installed scrolls
+                installed.add(scroll)
+                for conflict in fields['conflicts']:
+                    conflict = ScrollVersion(conflict)
+                    if conflict in installed:
+                        return 8
+                    conflicts.add(conflict)
         
         return 0
     
