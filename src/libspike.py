@@ -472,12 +472,12 @@ class LibSpike(LibSpikeHelper):
                     continue
                 if scroll in conflicts:
                     return 8
-                installed.add(scroll)
+                scroll.union_add(installed)
                 for conflict in fields['conflicts']:
                     conflict = ScrollVersion(conflict)
                     if conflict in installed:
                         return 8
-                    conflicts.add(conflict)
+                    conflict.union_add(conflicts)
         
         # Identify provided scrolls
         provided = set()
@@ -485,7 +485,7 @@ class LibSpike(LibSpikeHelper):
             for scroll in scrollset:
                 fields = scrollset[scroll] 
                 for scroll in feilds['provides']:
-                    provided.add(ScrollVersion(scroll))
+                    ScrollVersion(scroll).union_add(provided)
                 if not isinstance(scroll, ScrollVersion):
                     scroll = [fields[var] for var in ('pkgname', 'epoch', 'pkgver', 'pkgrel')]
         
