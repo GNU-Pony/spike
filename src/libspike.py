@@ -501,7 +501,7 @@ class LibSpike(LibSpikeHelper):
                 for field in field_installed:
                     for value in field_installed[field]:
                         field_installed[field][value].remove(replaces)
-                aggregator(replaces.name.name, 4, scroll)
+                aggregator(replaces.name, 4, scroll)
         
         return 0
     
