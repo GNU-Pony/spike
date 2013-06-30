@@ -482,6 +482,16 @@ class LibSpike(LibSpikeHelper):
                         return 8
                     conflict.union_add(conflicts)
         
+        # Look for missing dependencies
+        needed = set()
+        for scroll in scroll_field:
+            fields = scrollset[scroll]
+            makedepends = [ScrollVersion(deps) for deps in fields['makedepends']]
+            depends     = [ScrollVersion(deps) for deps in fields['depends']]
+            for deps in makedepends + depends:
+                if (deps not in installed) and (deps not in provided):
+                    deps.union_add(needed)
+        
         return 0
     
     
