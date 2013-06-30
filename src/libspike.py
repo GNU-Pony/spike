@@ -32,6 +32,7 @@ from algospike import *
 from dragonsuite import *
 from scrlver import *
 from scrollmagick import *
+from auxfunctions import *
 
 
 
@@ -248,16 +249,10 @@ class LibSpike(LibSpikeHelper):
                 # List all superpaths to files without found scroll
                 parts = (file[1:] if has_root else file).split(os.sep)
                 if has_root:
-                    if os.dep not in dirs:
-                        dirs[os.dep] = [file]
-                    else:
-                        dirs[os.dep].append(file)
+                    dict_append(dirs, os.dep, file)
                 for i in range(len(parts) - 1):
                     dir = (os.sep + os.sep.join(parts[:i + 1])) if has_root else os.sep.join(parts[:i + 1])
-                    if dir not in dirs:
-                        dirs[dir] = [file]
-                    else:
-                        dirs[dir].append(file)
+                    dict_append(dirs, dir, file)
         error = joined_lookup(agg, files, [DB_FILE_NAME(-1), DB_FILE_ID, DB_PONY_ID, DB_PONY_NAME])
         if error != 0:
             return error
@@ -404,9 +399,7 @@ class LibSpike(LibSpikeHelper):
                     if (value is not None) and (type(value) in (str, list)):
                         for val in value if isinstance(value, list) else [value]:
                             if val is not None:
-                                if val not in map:
-                                    map[val] = []
-                                map[val].append(scroll)
+                                dict_append(map, value, scroll)
             except:
                 return 255 # So how did we install it...
         
@@ -447,9 +440,7 @@ class LibSpike(LibSpikeHelper):
                         if (value is not None) and (type(value) in (str, list)):
                             for val in value if isinstance(value, list) else [value]:
                                 if val is not None:
-                                    if val not in map:
-                                        map[val] = []
-                                    map[val].append(scroll)
+                                    dict_append(map, val, scroll)
                 except:
                     return 255 # but, the proofreader did not have any problem...
         
@@ -486,10 +477,7 @@ class LibSpike(LibSpikeHelper):
             for deps in makedepends + depends:
                 if (deps not in installed) and (deps not in provided):
                     deps.union_add(needed)
-                    if deps.name not in requirer:
-                        requirer[deps.name] = [scroll]
-                    else:
-                        requirer[deps.name].append(scroll)
+                    dict_append(requirer, deps.name, scroll)
         
         # Locate the missing dependencies
         not_found = set()
@@ -634,14 +622,8 @@ class LibSpike(LibSpikeHelper):
                     # Get shared and exclusive files
                     sink = DB.open_db(private, DB_FILE_ID, DB_PONY_ID).fetch([], id_fileid[id])
                     table = tablise({}, sink, DB_PONY_ID, None)
-                    shared = {}
-                    exclusive = []
-                    for fileid in table.keys:
-                        if len(fileid) == 1:
-                            exclusive.append(fileid)
-                        else:
-                            shared.append(fileid)
-                    pass
+                    (shared, exclusive) = ([], [])
+                    list_split(table.keys(), lambda x : exclusive if len(x) == 1 else shared)
                     
                     # Disclaim shared files
                     if len(shared) > 0:
@@ -832,10 +814,7 @@ class LibSpike(LibSpikeHelper):
                 aggregator(scroll, None)
                 error[0] = 7
             else:
-                if fileid in fileid_scrolls:
-                    fileid_scrolls[fileid].append(scroll)
-                else:
-                    fileid_scrolls[fileid] = [scroll]
+                dict_append(fileid_scrolls, fileid, scroll)
         error = max(error[0], joined_lookup(agg, ponies, [DB_PONY_NAME, DB_PONY_ID, DB_FILE_ID]))
         
         # Fetch file name lengths for files
@@ -853,10 +832,7 @@ class LibSpike(LibSpikeHelper):
                     nones.add(file)
                 continue
             file = DBCtrl.raw_int(DBCtrl.value_convert(file, CONVERT_INT))
-            if file in file_fileid:
-                file_fileid[file].append(fileid)
-            else:
-                file_fileid[file] = [fileid]
+            fileid_scrolls(file_fileid, file, fileid)
         
         # Fetch file names for files based on file name lengths
         nones = set()
@@ -1226,12 +1202,7 @@ class LibSpike(LibSpikeHelper):
         
         # Split file names into group: files claimed to one pony (exclusive), files claimed to multiple ponies (shared)
         (exclusive, shared) = ([], [])
-        for file in file_scrolls.keys():
-            if pony in file_scrolls[file]:
-                if len(file_scrolls[file]) == 1:
-                    exclusive.add(file)
-                else:
-                    shared.add(file)
+        list_split(file_scrolls.keys(), lambda x : exclusive if len(file_scrolls[x]) == 1 else shared, lambda x : pony not in file_scrolls[x])
         
         # Get the ID of the specified pony
         sink = DB.open_db(private, DB_PONY_NAME, DB_PONY_ID).fetch([], [pony])
@@ -1260,11 +1231,7 @@ class LibSpike(LibSpikeHelper):
                 if n is None:
                     error_sink.append((fileid, n))
                 else:
-                    n = DBCtrl.raw_int(convert_value(n, CONVERT_INT))
-                    if n not in ns:
-                        ns[n] = [fileid]
-                    else:
-                        ns[n].append(fileid)
+                    dict_append(ms, DBCtrl.raw_int(convert_value(n, CONVERT_INT)), fileid)
             
             # Remove files from databases
             for n in ns.keys():
@@ -1381,14 +1348,9 @@ class LibSpike(LibSpikeHelper):
         
         def ispony(x):
             chars = set(('-', '+'))
-            c = ord('0')
-            while c <= ord('9'):
-                chars.add(chr(c))
-                c += 1
-            c = ord('a')
-            while c <= ord('z'):
-                chars.add(chr(c))
-                c += 1
+            for (start, end) in (('0', '9'), ('a', 'z')):
+                for c in range(ord(start), ord(end) + 1)):
+                    chars.add(chr(c))
             for i in range(x):
                 if x[i] not in chars:
                     return False
