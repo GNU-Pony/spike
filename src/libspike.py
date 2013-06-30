@@ -462,6 +462,7 @@ class LibSpike(LibSpikeHelper):
         # Identify scrolls that may not be installed at the same time
         conflicts = set()
         installed = set()
+        provided = set()
         for scrollset in [scroll_field, installed_field]:
             for scroll in scrollset:
                 fields = scrollset[scroll]
@@ -473,19 +474,13 @@ class LibSpike(LibSpikeHelper):
                 if scroll in conflicts:
                     return 8
                 scroll.union_add(installed)
+                for provides in feilds['provides']:
+                    ScrollVersion(provides).union_add(provided)
                 for conflict in fields['conflicts']:
                     conflict = ScrollVersion(conflict)
-                    if conflict in installed:
+                    if (conflict in installed) or (conflict in provided):
                         return 8
                     conflict.union_add(conflicts)
-        
-        # Identify provided scrolls
-        provided = set()
-        for scrollset in [scroll_field, installed_field]:
-            for scroll in scrollset:
-                fields = scrollset[scroll] 
-                for scroll in feilds['provides']:
-                    ScrollVersion(scroll).union_add(provided)
         
         return 0
     
