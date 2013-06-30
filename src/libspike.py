@@ -201,9 +201,7 @@ class LibSpike(LibSpikeHelper):
                 sfile = '%s/%s' % (cdir, scroll)
                 if os.path.isfile(sfile) and scroll.endswith('.scroll') and not scroll.startswith('.'):
                     scroll = scroll[:-len('.scroll')]
-                    if cat not in scrolls:
-                        scrolls[cat] = []
-                    scrolls[cat].append((scroll, '%s/%s' % (cat, scroll)))
+                    dict_append(scrolls, cat, (scroll, '%s/%s' % (cat, scroll)))
         
         # Match and report
         for cat in categories.keys():
@@ -1526,12 +1524,7 @@ class LibSpike(LibSpikeHelper):
             deps_id[deps].add(DBCtrl.value_convert(id, CONVERT_INT))
         
         # Forget explicitly installed ponies
-        remove = []
-        for deps in deps_id.keys():
-            if deps in deps_id[deps]:
-                remove.append(deps)
-        for deps in remove:
-            del deps_id[dels]
+        iterator_remove(deps_id, lambda deps : deps_id[deps])
         
         # Get minimal set of ponies that must be removed at the same time that can be cleaned (Not the normal meaning of 'clique')
         def get_clique(deps, clique, visited):
