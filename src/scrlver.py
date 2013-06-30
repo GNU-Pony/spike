@@ -58,7 +58,7 @@ class ScrollVersion():
             if part[1] not in ('<', '<=', '>', '>=', '=', '<>'):
                 return
             self.name = parts[0]
-            ver = __Version(parts[2], '=' not in parts[1])
+            ver = ScrollVersion.__Version(parts[2], '=' not in parts[1])
             islower = '>' in parts[1]
             isupper = '<' in parts[1]
             if islower == isupper:
@@ -70,11 +70,11 @@ class ScrollVersion():
             else:
                 self.upper = ver
         elif len(parts) == 5:
-            if (part[1] not in ('>', '>=')) or (part[3] not in ('<', '<=')):
+            if (parts[1] not in ('>', '>=')) or (parts[3] not in ('<', '<=')):
                 return
             self.name = parts[0]
-            self.lower = __Version(parts[2], '=' not in parts[1])
-            self.upper = __Version(parts[4], '=' not in parts[3])
+            self.lower = ScrollVersion.__Version(parts[2], '=' not in parts[1])
+            self.upper = ScrollVersion.__Version(parts[4], '=' not in parts[3])
     
     
     class __Version():
@@ -299,4 +299,20 @@ class ScrollVersion():
             full += upper.version
         
         return ScrollVersion(full)
+    
+    
+    def union_add(self, scrollset):
+        '''
+        Updates a set of ScrollVersion:s by replacing the existing scroll with the union of that and this scroll
+        
+        @param  scrollset:set<ScrollVersion>  Set of scrolls
+        '''
+        if self in scrollset:
+            other = set([self]).intersection(scrollset)
+            if other.full == self.full: # incase the behaviour of intersection changes
+                other = scrollset.intersection(set([self]))
+            scrollset.remove(other)
+            scrollset.add(self.union(other))
+        else:
+            scrollset.add(self)
 
