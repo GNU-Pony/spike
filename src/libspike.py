@@ -239,29 +239,26 @@ class LibSpike(LibSpikeHelper):
         has_root = (len(files) > 0) and files[0].startswith(os.sep)
         dirs = {}
         found = set()
-        class Agg1():
-            def __init__(self):
-                pass
-            def __call__(self, file, scroll):
-                if scroll is not None:
-                    # Send and store found file
-                    aggregator(file, scroll)
-                    found.add(file)
-                else:
-                    # List all superpaths to files without found scroll
-                    parts = (file[1:] if has_root else file).split(os.sep)
-                    if has_root:
-                        if os.dep not in dirs:
-                            dirs[os.dep] = [file]
-                        else:
-                            dirs[os.dep].append(file)
-                    for i in range(len(parts) - 1):
-                        dir = (os.sep + os.sep.join(parts[:i + 1])) if has_root else os.sep.join(parts[:i + 1])
-                        if dir not in dirs:
-                            dirs[dir] = [file]
-                        else:
-                            dirs[dir].append(file)
-        error = joined_lookup(Agg(), files, [DB_FILE_NAME(-1), DB_FILE_ID, DB_PONY_ID, DB_PONY_NAME])
+        def agg(file, scroll):
+            if scroll is not None:
+                # Send and store found file
+                aggregator(file, scroll)
+                found.add(file)
+            else:
+                # List all superpaths to files without found scroll
+                parts = (file[1:] if has_root else file).split(os.sep)
+                if has_root:
+                    if os.dep not in dirs:
+                        dirs[os.dep] = [file]
+                    else:
+                        dirs[os.dep].append(file)
+                for i in range(len(parts) - 1):
+                    dir = (os.sep + os.sep.join(parts[:i + 1])) if has_root else os.sep.join(parts[:i + 1])
+                    if dir not in dirs:
+                        dirs[dir] = [file]
+                    else:
+                        dirs[dir].append(file)
+        error = joined_lookup(agg, files, [DB_FILE_NAME(-1), DB_FILE_ID, DB_PONY_ID, DB_PONY_NAME])
         if error != 0:
             return error
         
@@ -312,16 +309,13 @@ class LibSpike(LibSpikeHelper):
                         aggregator(file, None)
             
             # Determine owner of found directories and send ownership
-            class Agg2():
-                def __init__(self):
-                    pass
-                def __call__(self, dirid, scroll):
-                    if scroll is None:
-                        error = 27
-                    else:
-                        for file in dirs[dirid]:
-                            aggregator(file, scroll)
-            error = joined_lookup(Agg2(), list(did_find), [DB_FILE_ID, DB_PONY_ID, DB_PONY_NAME])
+            def agg(dirid, scroll):
+                if scroll is None:
+                    error = 27
+                else:
+                    for file in dirs[dirid]:
+                        aggregator(file, scroll)
+            error = joined_lookup(agg, list(did_find), [DB_FILE_ID, DB_PONY_ID, DB_PONY_NAME])
         
         return error
     
@@ -605,15 +599,12 @@ class LibSpike(LibSpikeHelper):
                     while os.path.lexists('%s.spikesave.%i' % (filename, no)):
                         no += 1
                     mv(filename, '%s.spikesave.%i' % (filename, no))
-            class Agg():
-                def __init__(self):
-                    pass
-                def __call__(pony, field, value, installed):
-                    if field is None:
-                        error = 6
-                    if value is not None:
-                        backup.add(value)
-            error = max(error, read_info(Agg(), ponies, field = 'backup', installed = True, notinstalled = False))
+            def agg(pony, field, value, installed):
+                if field is None:
+                    error = 6
+                if value is not None:
+                    backup.add(value)
+            error = max(error, read_info(agg, ponies, field = 'backup', installed = True, notinstalled = False))
             if error != 0:
                 return error
             
@@ -796,7 +787,7 @@ class LibSpike(LibSpikeHelper):
             try:
                 ScrollMagick.init_methods()
                 scroll = locate_scroll(pony, True, private)
-                if scroll == None:
+                if scroll is None:
                     return 6
                 ScrollMagick.execute_scroll(scroll)
                 
