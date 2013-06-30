@@ -484,6 +484,7 @@ class LibSpike(LibSpikeHelper):
         
         # Look for missing dependencies
         needed = set()
+        requirer = {}
         for scroll in scroll_field:
             fields = scrollset[scroll]
             makedepends = [ScrollVersion(deps) for deps in fields['makedepends']]
@@ -491,6 +492,21 @@ class LibSpike(LibSpikeHelper):
             for deps in makedepends + depends:
                 if (deps not in installed) and (deps not in provided):
                     deps.union_add(needed)
+                    if deps.name not in requirer:
+                        requirer[deps.name] = [scroll]
+                    else:
+                        requirer[deps.name].append(scroll)
+        
+        # Locate the missing dependencies
+        not_found = set()
+        new_scrolls = {}
+        for scroll in needed:
+            path = locate_scroll(scroll.name, False)
+            if path is None:
+                not_found.add(scroll)
+            else:
+                new_scrolls[scroll] = path
+                aggregator(scroll.name, 3, requirer[scroll.name])
         
         return 0
     
