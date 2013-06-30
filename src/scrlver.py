@@ -88,6 +88,7 @@ class ScrollVersion():
             
             @param  version:str  The version represented in text
             '''
+            self.version = version
             self.epoch = 0
             self.release = -1
             self.parts = []
@@ -97,7 +98,7 @@ class ScrollVersion():
             if '-' in version:
                 self.release = int(version[version.find('-') + 1:])
                 version[:version.find('-')]
-            self.parts = version.split('-')
+            self.parts = version.split('.')
             self.open = open
         
         
@@ -259,7 +260,43 @@ class ScrollVersion():
         '''
         Return the object as a string
         
-        @return  The object as a string
+        @return  :str  The object as a string
         '''
         return self.full
+    
+    
+    def union(self, other):
+        '''
+        Creates a union of two intersecting scroll versions
+        
+        @param   other:ScrollVersion  The other scrolls
+        @return  :ScrollVersion       The union of the two scrolls
+        '''
+        if self.complement:
+            return ScrollVersion(self.name) if other in ScrollVersion(self.full.replace('<>', '=')) else self
+        if other.complement:
+            return other.union(self)
+        if self.lower == self.upper:
+            return other
+        if other.lower == other.upper:
+            return self
+        
+        name = self.name
+        lower = None
+        upper = None
+        
+        if (self.lower is not None) and (other.lower is not None):
+            lower = self.lower if self.lower <= other.lower else other.lower
+        if (self.upper is not None) and (other.upper is not None):
+            upper = self.upper if self.upper >= other.upper else other.upper
+        
+        full = name
+        if lower is not None:
+            full += '>' if lower.open else '>='
+            full += lower.version
+        if upper is not None:
+            full += '<' if upper.open else '<='
+            full += upper.version
+        
+        return ScrollVersion(full)
 
