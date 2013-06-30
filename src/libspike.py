@@ -384,7 +384,7 @@ class LibSpike(LibSpikeHelper):
         # Load information about already installed scrolls
         # TODO this should be reported as separate part in the progress
         # TODO this should be better using spikedb
-        installed_scrollfiles = locate_all_scrolls(True, None)
+        installed_scrollfiles = locate_all_scrolls(True, None if private else False)
         for scrollfile in installed_scrollfiles:
             try:
                 # Set environment variables (re-export before each scroll in case a scroll changes it)
