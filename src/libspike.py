@@ -1279,7 +1279,7 @@ class LibSpike(LibSpikeHelper):
                     files.add(file)
             
             # Remove the file from the pony, but not from the other ponies
-            db.remove(list(files))
+            db.remove([], list(files))
             db.insert(pairs)
         
         return 0 if len(error_sink) == 0 else 27
