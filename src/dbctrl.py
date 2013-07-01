@@ -138,10 +138,10 @@ class DBCtrl():
                     Feed a input with its output when an output value has been found,
                     but with `None` as output if there is no output
         
-        @param   input:list<str>          Input
-        @param   type:itr<(str,int,int)>  The type in order of fetch and join
-        @param   private:bool?            Whether to look in the private files rather then the public, `None` for both
-        @return  :bool                    Whether the fetch was successful, if not, the database is corrupt
+        @param   input:list<str>           Input
+        @param   types:itr<(str,int,int)>  The type in order of fetch and join
+        @param   private:bool?             Whether to look in the private files rather then the public, `None` for both
+        @return  :bool                     Whether the fetch was successful, if not, the database is corrupt
         '''
         error = [False]
         tables = []
