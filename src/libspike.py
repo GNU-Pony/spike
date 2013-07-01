@@ -1404,9 +1404,7 @@ class LibSpike(LibSpikeHelper):
                     if version_a not in version_b:
                         raise Exception('Version and name fields conflicts with scroll file name')
                     
-                    for field in ('pkgdesc', 'upstream'):
-                        ScrollMagick.check_type_format(field, True, str, lambda x : len(x) > 0)
-                    
+                    ScrollMagick.check_type_format(['pkgdesc', 'upstream'], True, str, lambda x : len(x) > 0)
                     ScrollMagick.check_is_list_format('arch', False, str, lambda x : len(x) > 0)
                     if len(arch) == 0:
                         raise Exception('Field \'arch\' may not be empty')
@@ -1414,25 +1412,13 @@ class LibSpike(LibSpikeHelper):
                     ScrollMagick.check_is_list_format('freedom', False, int, lambda x : 0 <= x < (1 << 2))
                     ScrollMagick.check_is_list_format('license', False, str, lambda x : len(x) > 0)
                     ScrollMagick.check_is_list_format('private', False, int, lambda x : 0 <= x < 3)
-                    
                     ScrollMagick.check_type('interactive', False, bool)
-                    
-                    for field in ('conflicts', 'replaces', 'provides'):
-                        ScrollMagick.check_is_list_format(field, False, str, isscroll)
-                    
-                    for field in ('extension', 'variant', 'patch'):
-                        ScrollMagick.check_type_format(field, True, str, ispony)
-                    
+                    ScrollMagick.check_is_list_format(['conflicts', 'replaces', 'provides'], False, str, isscroll)
+                    ScrollMagick.check_type_format(['extension', 'variant', 'patch'], True, str, ispony)
                     ScrollMagick.check_type_format('reason', True, str, lambda x : len(x) > 0)
-                    
-                    for field in ('patchbefore', 'patchafter'):
-                        ScrollMagick.check_is_list_format(field, False, str, isscroll)
-                    
+                    ScrollMagick.check_is_list_format(['patchbefore', 'patchafter'], False, str, isscroll)
                     ScrollMagick.check_is_list_format('groups', False, str, ispony)
-                    
-                    for field in ('depends', 'makedepends', 'checkdepends', 'optdepends'):
-                        ScrollMagick.check_is_list_format(field, False, str, lambda x : len(x) == 0 or isscroll(x))
-                    
+                    ScrollMagick.check_is_list_format(['depends', 'makedepends', 'checkdepends', 'optdepends'], False, str, lambda x : len(x) == 0 or isscroll(x))
                     ScrollMagick.check_is_list('noextract', False, str)
                     
                     ScrollMagick.check_is_list('source', False, str, list)
@@ -1457,7 +1443,6 @@ class LibSpike(LibSpikeHelper):
                             elements.add(element)
                     
                     ScrollMagick.check_is_list_format('sha3sums', True, str, lambda x : len(x) == 144 and ishex(x))
-                    
                     if len(sha3sums) != len(source):
                         raise Exception('Fields \'sha3sums\' and \'source\' must be of same size')
                     

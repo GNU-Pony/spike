@@ -88,20 +88,21 @@ class ScrollMagick():
         '''
         Checks that the value of a field is of a specific class
         
-        @param  field:str          The name of the field
-        @param  withnone:bool      Whether the value may be `None`
-        @param  withclasses:*type  The classes of the value
+        @param  field:str|itr<str>  The name of the field
+        @param  withnone:bool       Whether the value may be `None`
+        @param  withclasses:*type   The classes of the value
         '''
-        value = globals()[field]
-        if not withnone:
-            if value is None:
-                raise Exception('Field \'%s\' may not be `None`' % field)
-        isclass = type(value)
-        if isclass not in set(withclasses):
-            allowed = ', '.join([c.__name__ for c in withclasses])
-            if ', ' in allowed:
-                allowed = allowed[:allowed.rfind(', ')] + ' and ' + allowed[allowed.rfind(', ') + 2:]
-            raise Exception('Field \'%s\' is restricted to %s' % (field, allowed))
+        for f in [field] if isinstance(field, str) else field:
+            value = globals()[f]
+            if not withnone:
+                if value is None:
+                    raise Exception('Field \'%s\' may not be `None`' % f)
+            isclass = type(value)
+            if isclass not in set(withclasses):
+                allowed = ', '.join([c.__name__ for c in withclasses])
+                if ', ' in allowed:
+                    allowed = allowed[:allowed.rfind(', ')] + ' and ' + allowed[allowed.rfind(', ') + 2:]
+                raise Exception('Field \'%s\' is restricted to %s' % (f, allowed))
     
     
     @staticmethod
@@ -109,26 +110,27 @@ class ScrollMagick():
         '''
         Checks that the value of a field is a list and that its elements is of a specific class
         
-        @param  field:str          The name of the field
-        @param  withnone:bool      Whether the elements may be `None`
-        @param  withclasses:*type  The classes of the elements
+        @param  field:str|itr<str>  The name of the field
+        @param  withnone:bool       Whether the elements may be `None`
+        @param  withclasses:*type   The classes of the elements
         '''
         withclasses = set(withclasses)
-        value = globals()[field]
-        if value is None:
-            raise Exception('Field \'%s\' must be a list' % field)
-        if not isinstance(value, list):
-            raise Exception('Field \'%s\' must be a list' % field)
-        for elem in value:
-            if not withnone:
-                if elem is None:
-                    raise Exception('Field \'%s\' may not contain `None`' % field)
-            isclass = type(elem)
-            if isclass not in withclasses:
-                allowed = ', '.join([c.__name__ for c in withclasses])
-                if ', ' in allowed:
-                    allowed = allowed[:allowed.rfind(', ')] + ' and ' + allowed[allowed.rfind(', ') + 2:]
-                raise Exception('Field \'%s\' is restricted to %s elements' % (field, allowed))
+        for f in [field] if isinstance(field, str) else field:
+            value = globals()[f]
+            if value is None:
+                raise Exception('Field \'%s\' must be a list' % f)
+            if not isinstance(value, list):
+                raise Exception('Field \'%s\' must be a list' % f)
+            for elem in value:
+                if not withnone:
+                    if elem is None:
+                        raise Exception('Field \'%s\' may not contain `None`' % f)
+                isclass = type(elem)
+                if isclass not in withclasses:
+                    allowed = ', '.join([c.__name__ for c in withclasses])
+                    if ', ' in allowed:
+                        allowed = allowed[:allowed.rfind(', ')] + ' and ' + allowed[allowed.rfind(', ') + 2:]
+                    raise Exception('Field \'%s\' is restricted to %s elements' % (f, allowed))
     
     
     @staticmethod
@@ -136,14 +138,15 @@ class ScrollMagick():
         '''
         Checks that the value of a field is a list and that its elements is of a specific class
         
-        @param  field:str        The name of the field
-        @param  values:itr<¿E?>  The allowed elements
+        @param  field:str|itr<str>  The name of the field
+        @param  values:itr<¿E?>     The allowed elements
         '''
         values = set(values)
-        value = globals()[field]
-        for elem in value:
-            if elem not in values:
-                raise Exception('Field \'%s\' may not contain the value \'%s\'' % (field, str(elem)))
+        for f in [field] if isinstance(field, str) else field:
+            value = globals()[f]
+            for elem in value:
+                if elem not in values:
+                    raise Exception('Field \'%s\' may not contain the value \'%s\'' % (f, str(elem)))
     
     
     @staticmethod
@@ -151,13 +154,14 @@ class ScrollMagick():
         '''
         Checks that a non-`None` value satisfies a format
         
-        @param  field:str           The name of the field
+        @param  field:str|itr<str>  The name of the field
         @param  checker:(¿E?)→bool  Value checker
         '''
-        value = globals()[field]
-        if value is not None:
-            if not checker(value):
-                raise Exception('Field \'%s\' is of bady formated value \'%s\'' % (field, value))
+        for f in [field] if isinstance(field, str) else field:
+            value = globals()[f]
+            if value is not None:
+                if not checker(value):
+                    raise Exception('Field \'%s\' is of bady formated value \'%s\'' % (f, value))
     
     
     @staticmethod
@@ -165,14 +169,15 @@ class ScrollMagick():
         '''
         Checks that non-`None` elements in a list satisfies a format
         
-        @param  field:str           The name of the field
+        @param  field:str|itr<str>  The name of the field
         @param  checker:(¿E?)→bool  List element checker
         '''
-        value = globals()[field]
-        for elem in value:
-            if elem is not None:
-                if not checker(elem):
-                    raise Exception('Field \'%s\' contains badly formated value \'%s\'' % (field, elem))
+        for f in [field] if isinstance(field, str) else field:
+            value = globals()[f]
+            for elem in value:
+                if elem is not None:
+                    if not checker(elem):
+                        raise Exception('Field \'%s\' contains badly formated value \'%s\'' % (f, elem))
     
     
     @staticmethod
@@ -180,13 +185,14 @@ class ScrollMagick():
         '''
         Checks that the value of a field is of a specific class and that a non-`None` value satisfies a format
         
-        @param  field:str           The name of the field
+        @param  field:str|itr<str>  The name of the field
         @param  withnone:bool       Whether the value may be `None`
         @param  withclass:type      The class of the value
         @param  checker:(¿E?)→bool  Value checker
         '''
-        check_type(field, withnone, withclass)
-        check_format(checker)
+        for f in [field] if isinstance(field, str) else field:
+            check_type(f, withnone, withclass)
+            check_format(f, checker)
     
     
     @staticmethod
@@ -194,11 +200,12 @@ class ScrollMagick():
         '''
         Checks that the value of a field is a list and that its elements is of a specific class and that non-`None` elements in a list satisfies a format
         
-        @param  field:str           The name of the field
+        @param  field:str|itr<str>  The name of the field
         @param  withnone:bool       Whether the elements may be `None`
         @param  withclass:type      The class of the elements
         @param  checker:(¿E?)→bool  List element checker
         '''
-        check_is_list(field, withnone, withclass)
-        check_element_format(field, checker)
+        for f in [field] if isinstance(field, str) else field:
+            check_is_list(f, withnone, withclass)
+            check_element_format(ff, checker)
 
