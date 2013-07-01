@@ -258,8 +258,7 @@ class LibSpike(LibSpikeHelper):
         if len(dirs.keys()) > 0:
             # Fetch file id for filenames
             sink = []
-            DB.open_db(False, DB_FILE_NAME, DB_FILE_ID).fetch(sink, dirs.keys())
-            DB.open_db(True,  DB_FILE_NAME, DB_FILE_ID).fetch(sink, dirs.keys())
+            fetch(DB, DB_FILE_NAME, DB_FILE_ID, sink, dirs.keys())
             
             # Rekey superpaths to use id rather then filename and discard unfound superpath
             nones = set()
