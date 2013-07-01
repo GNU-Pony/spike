@@ -1490,6 +1490,8 @@ class LibSpike(LibSpikeHelper):
         @param   private:bool  Whether to uninstall user private ponies rather than user shared ponies
         @return  :byte         Exit value, see description of `LibSpike`, the possible ones are: 0, 6, 7, 14(internal bug), 20, 23, 27, 28, 255
         '''
+        # TODO do not clean optionally required packages
+        
         # Create id → scroll map
         DB = DBCtrl(SPIKE_PATH)
         sink = DB.open_db(private, DB_PONY_NAME, DB_PONY_ID).list([])
