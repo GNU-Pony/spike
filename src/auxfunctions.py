@@ -82,14 +82,27 @@ def fetch(dbctrl, from_type, to_type, sink, keys):
     '''
     Fetches values from both the public and private version of a database
     
-    @param   dbctrl:DBCtrl               The database controller
-    @param   from_type:(str,int,int)     The from type side of the database
-    @param   to_type:(str,int,int)       The to type side of the database
-    @param   sink:append((str, bytes?))  Fetch sink
-    @param   keys:itr<str>               Keys for which to fetch values
-    @return  sink:                       The sink is returned
+    @param   dbctrl:DBCtrl                    The database controller
+    @param   from_type:(str,int,int)          The from type side of the database
+    @param   to_type:(str,int,int)            The to type side of the database
+    @param   sink:append((str, bytes?))→void  Fetch sink
+    @param   keys:list<str>                   Keys for which to fetch values
+    @return  sink:                            The sink is returned
     '''
     dbctrl.open_db(False, from_type, to_type).fetch(sink, keys)
     dbctrl.open_db(True,  from_type, to_type).fetch(sink, keys)
     return sink
+
+
+def update(db, remove_sink, remove_keys, insert_pairs):
+    '''
+    Update a database by removing old keys and inserting new pairs
+    
+    @param  db:SpikeDB                       The database
+    @param  remove_sink:append(str)→void     Sink for keys that cannot be found for removal
+    @param  remove_keys:list<str>            Keys to remove
+    @param  insert_pairs:list<(str, bytes)>  Key–value pairs to insert
+    '''
+    db.remove(remove_sink, remove_keys)
+    db.insert(insert_pairs)
 

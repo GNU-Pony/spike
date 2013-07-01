@@ -648,8 +648,7 @@ class LibSpike(LibSpikeHelper):
                             for ponyid in table[fileid]:
                                 if ponyid != id:
                                     pairs.append((fileid, ponyid))
-                        DB.open_db(private, DB_FILE_ID, DB_PONY_ID).remove([], shared)
-                        DB.open_db(private, DB_FILE_ID, DB_PONY_ID).insert(pairs)
+                        update(DB.open_db(private, DB_FILE_ID, DB_PONY_ID), [], shared, pairs)
                     
                     # Remove exclusive files
                     if len(exclusive) > 0:
@@ -732,8 +731,7 @@ class LibSpike(LibSpikeHelper):
                     deps.add(dependency)
                     if DBCtrl.value_convert(dependee, CONVERT_INT) != id:
                         pairs.append((dependency, dependee))
-                db.remove([], list(deps))
-                db.insert(pairs)
+                update(db, [], list(deps), pairs)
                 aggregator(scroll, len(id_fileid[id]) + 2, endstate)
                 
                 # Remove pony from database
@@ -1258,8 +1256,7 @@ class LibSpike(LibSpikeHelper):
                 if id_fileid[1] not in raw_ids:
                     pairs.append(id_fileid)
             # but keep other files for the scrolls
-            db.remove(sink, [_id])
-            db.insert(pairs)
+            update(db, sink, [_id], pairs)
         
         # Disclaim shared files
         if len(shared) > 0:
@@ -1278,8 +1275,7 @@ class LibSpike(LibSpikeHelper):
                     files.add(file)
             
             # Remove the file from the pony, but not from the other ponies
-            db.remove([], list(files))
-            db.insert(pairs)
+            update(db, [], list(files), pairs)
         
         return 0 if len(error_sink) == 0 else 27
     
