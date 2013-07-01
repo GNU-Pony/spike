@@ -707,9 +707,8 @@ class LibSpike(LibSpikeHelper):
                                 aggregator(scroll, progress, endstate)
                         
                         # Remove from database
-                        DB.open_db(private, DB_FILE_ID, DB_PONY_ID).remove([], exclusive)
-                        DB.open_db(private, DB_FILE_ID, DB_FILE_ENTIRE).remove([], exclusive)
-                        DB.open_db(private, DB_FILE_ID, DB_FILE_NAME(-1)).remove([], exclusive)
+                        for to in (DB_PONY_ID, DB_FILE_ENTIRE, DB_FILE_NAME(-1)):
+                            DB.open_db(private, DB_FILE_ID, to).remove([], exclusive)
                         for file in table.keys():
                             DB.open_db(private, DB_FILE_ID, DB_FILE_NAME(file)).remove([], table[file])
                         DB.open_db(private, DB_FILE_NAME(-1), DB_FILE_ID).remove([], [name for (name, _) in filenames])
