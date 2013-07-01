@@ -649,7 +649,7 @@ class LibSpike(LibSpikeHelper):
                                 if ponyid != id:
                                     pairs.append((fileid, ponyid))
                         DB.open_db(private, DB_FILE_ID, DB_PONY_ID).remove([], shared)
-                        DB.open_db(private, DB_FILE_ID, DB_PONY_ID).insert([], pairs)
+                        DB.open_db(private, DB_FILE_ID, DB_PONY_ID).insert(pairs)
                     
                     # Remove exclusive files
                     if len(exclusive) > 0:
