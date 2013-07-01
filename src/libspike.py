@@ -257,8 +257,7 @@ class LibSpike(LibSpikeHelper):
         
         if len(dirs.keys()) > 0:
             # Fetch file id for filenames
-            sink = []
-            fetch(DB, DB_FILE_NAME, DB_FILE_ID, sink, dirs.keys())
+            sink = fetch(DB, DB_FILE_NAME, DB_FILE_ID, [], dirs.keys())
             
             # Rekey superpaths to use id rather then filename and discard unfound superpath
             nones = set()
@@ -833,8 +832,7 @@ class LibSpike(LibSpikeHelper):
         error = max(error[0], joined_lookup(agg, ponies, [DB_PONY_NAME, DB_PONY_ID, DB_FILE_ID]))
         
         # Fetch file name lengths for files
-        sink = []
-        fetch(DB, DB_FILE_ID, DB_FILE_NAME(-1), sink, fileid_scrolls.keys())
+        sink = fetch(DB, DB_FILE_ID, DB_FILE_NAME(-1), [], fileid_scrolls.keys())
         
         # Map file name length → file
         (file_fileid, nones) = ({}, set())
