@@ -292,8 +292,7 @@ class LibSpike(LibSpikeHelper):
                             del not_found[dir]
                         for file in dirs[dir]:
                             found.add(file)
-            DB.open_db(False, DB_FILE_ID, DB_FILE_ENTIRE).fetch(Sink(), dirs.keys())
-            DB.open_db(True,  DB_FILE_ID, DB_FILE_ENTIRE).fetch(Sink(), dirs.keys())
+            fetch(DB, DB_FILE_ID, DB_FILE_ENTIRE, Sink(), dirs.keys())
             
             # Report all non-found files
             for dir in not_found:
@@ -836,8 +835,7 @@ class LibSpike(LibSpikeHelper):
         
         # Fetch file name lengths for files
         sink = []
-        DB.open_db(False, DB_FILE_ID, DB_FILE_NAME(-1)).fetch(sink, fileid_scrolls.keys())
-        DB.open_db(True,  DB_FILE_ID, DB_FILE_NAME(-1)).fetch(sink, fileid_scrolls.keys())
+        fetch(DB, DB_FILE_ID, DB_FILE_NAME(-1), sink, fileid_scrolls.keys())
         
         # Map file name length → file
         (file_fileid, nones) = ({}, set())
@@ -871,8 +869,7 @@ class LibSpike(LibSpikeHelper):
                         if fileid not in fileid_scroll_files:
                             fileid_scroll_files[fileid] = []
                         fileid_scroll_files[fileid].append((scroll, _file))
-            DB.open_db(False, DB_FILE_ID, DB_FILE_NAME(file)).fetch(Sink(), file_fileid[file])
-            DB.open_db(True,  DB_FILE_ID, DB_FILE_NAME(file)).fetch(Sink(), file_fileid[file])
+            fetch(DB, DB_FILE_ID, DB_FILE_NAME(file), Sink(), file_fileif[file])
         
         # Identify --entire claims and send (pony, file name, entire)
         nones = set()
@@ -890,8 +887,7 @@ class LibSpike(LibSpikeHelper):
                 else:
                     for (scroll, filename) in fileid_scroll_files[fileid]:
                         aggregator(scroll, filename, entire is not None)
-        DB.open_db(False, DB_FILE_ID, DB_FILE_ENTIRE).fetch(Sink(), fileids)
-        DB.open_db(True,  DB_FILE_ID, DB_FILE_ENTIRE).fetch(Sink(), fileids)
+        fetch(DB, DB_FILE_ID, DB_FILE_ENTIRE, Sink(), fileids)
         
         return error
     

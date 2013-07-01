@@ -77,3 +77,17 @@ def iterator_remove(iter, remove_lambda):
     for value in remove:
         del iter[dels]
 
+
+def fetch(dbctrl, from_type, to_type, sink, keys):
+    '''
+    Fetches values from both the public and private version of a database
+    
+    @param  dbctrl:DBCtrl               The database controller
+    @param  from_type:(str,int,int)     The from type side of the database
+    @param  to_type:(str,int,int)       The to type side of the database
+    @param  sink:append((str, bytes?))  Fetch sink
+    @param  keys:itr<str>               Keys for which to fetch values
+    '''
+    dbctrl.open_db(False, from_type, to_type).fetch(sink, keys)
+    dbctrl.open_db(True,  from_type, to_type).fetch(sink, keys)
+
