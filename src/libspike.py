@@ -338,7 +338,7 @@ class LibSpike(LibSpikeHelper):
         @param   explicitness:int   -1 for install as dependency, 1 for install as explicit, and 0 for explicit if not previously as dependency
         @param   nodep:bool         Whether to ignore dependencies
         @param   force:bool         Whether to ignore file claims
-        @param   shred:bool         Whether to preform secure removal when possible
+        @param   shred:bool         Whether to perform secure removal when possible
         @return  :byte              Exit value, see description of `LibSpike`, the possible ones are: 0, 6, 8, 9, 22, 255 (TODO)
         '''
         # Set shred and root
@@ -532,7 +532,7 @@ class LibSpike(LibSpikeHelper):
         @param   root:str           Mounted filesystem to which to perform installation
         @param   ignores:list<str>  Ponies not to update
         @param   private:bool       Whether to update user private packages
-        @param   shred:bool         Whether to preform secure removal when possible
+        @param   shred:bool         Whether to perform secure removal when possible
         @return  :byte              Exit value, see description of `LibSpike`, the possible ones are: 0 (TODO)
         '''
         # Set shred and root
@@ -558,7 +558,7 @@ class LibSpike(LibSpikeHelper):
         @param   ponies:list<str>  Ponies to uninstall
         @param   root:str          Mounted filesystem from which to perform uninstallation
         @param   private:bool      Whether to uninstall user private ponies rather than user shared ponies
-        @param   shred:bool        Whether to preform secure removal when possible
+        @param   shred:bool        Whether to perform secure removal when possible
         @return  :byte             Exit value, see description of `LibSpike`, the possible ones are: 0, 6, 7, 14(internal bug), 20, 23, 27, 28, 255
         '''
         # TODO also remove dependencies, but verify
@@ -1307,7 +1307,7 @@ class LibSpike(LibSpikeHelper):
         @param   keep:bool      Keep non-archived installed ponies rather than uninstall them
         @param   skip:bool      Skip rollback of non-installed archived ponies
         @param   gradeness:int  -1 for downgrades only, 1 for upgrades only, 0 for rollback regardless of version
-        @param   shred:bool     Whether to preform secure removal when possible
+        @param   shred:bool     Whether to perform secure removal when possible
         @return  :byte          Exit value, see description of `LibSpike`, the possible ones are: 0 (TODO)
         '''
         if shred:
@@ -1486,7 +1486,7 @@ class LibSpike(LibSpikeHelper):
                      Feed a scroll, removal progress state and removal progress end state, continuously during the progress,
                      this begins by feeding the state 0 when a scroll is enqueued, when all is enqueued the removal begins.
         
-        @param   shred:bool    Whether to preform secure removal when possible
+        @param   shred:bool    Whether to perform secure removal when possible
         @param   private:bool  Whether to uninstall user private ponies rather than user shared ponies
         @return  :byte         Exit value, see description of `LibSpike`, the possible ones are: 0, 6, 7, 14(internal bug), 20, 23, 27, 28, 255
         '''

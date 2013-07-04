@@ -190,7 +190,7 @@ class Spike():
         opts.add_argumentless([      '--old'],                        help = 'Reinstall only ponies that are currently not installed')
         opts.add_argumentless([      '--downgrade'],                  help = 'Do only perform pony downgrades')
         opts.add_argumentless([      '--upgrade'],                    help = 'Do only perform pony upgrades')
-        opts.add_argumentless([      '--shred'],                      help = 'Preform secure removal with `shred` when removing old files')
+        opts.add_argumentless([      '--shred'],                      help = 'Perform secure removal with `shred` when removing old files')
         
         if not opts.parse(args):
             printerr(self.execprog + ': use of unrecognised option')
@@ -662,7 +662,7 @@ class Spike():
         @param   explicitness:int   -1 for install as dependency, 1 for install as explicit, and 0 for explicit if not previously as dependency
         @param   nodep:bool         Whether to ignore dependencies
         @param   force:bool         Whether to ignore file claims
-        @param   shred:bool         Whether to preform secure removal when possible
+        @param   shred:bool         Whether to perform secure removal when possible
         @return  :byte              Exit value, see description of `mane`
         '''
         class Agg:
@@ -793,7 +793,7 @@ class Spike():
         @param   root:str           Mounted filesystem to which to perform installation
         @param   ignores:list<str>  Ponies not to update
         @param   private:bool       Whether to update user private packages
-        @param   shred:bool         Whether to preform secure removal when possible
+        @param   shred:bool         Whether to perform secure removal when possible
         @return  :byte              Exit value, see description of `mane`
         '''
         class Agg:
@@ -924,7 +924,7 @@ class Spike():
         @param   ponies:list<str>  Ponies to uninstall
         @param   root:str          Mounted filesystem from which to perform uninstallation
         @param   private:bool      Whether to uninstall user private ponies rather than user shared ponies
-        @param   shred:bool        Whether to preform secure removal when possible
+        @param   shred:bool        Whether to perform secure removal when possible
         @return  :byte             Exit value, see description of `mane`
         '''
         class Agg:
@@ -1120,7 +1120,7 @@ class Spike():
         @param   keep:bool      Keep non-archived installed ponies rather than uninstall them
         @param   skip:bool      Skip rollback of non-installed archived ponies
         @param   gradeness:int  -1 for downgrades only, 1 for upgrades only, 0 for rollback regardless of version
-        @param   shred:bool     Whether to preform secure removal when possible
+        @param   shred:bool     Whether to perform secure removal when possible
         @return  :byte          Exit value, see description of `mane`
         '''
         class Agg:
@@ -1185,7 +1185,7 @@ class Spike():
         '''
         Remove unneeded ponies that are installed as dependencies
         
-        @param   shred:bool    Whether to preform secure removal when possible
+        @param   shred:bool    Whether to perform secure removal when possible
         @param   private:bool  Whether to uninstall user private ponies rather than user shared ponies
         @return  :byte         Exit value, see description of `mane`
         '''
@@ -1225,7 +1225,7 @@ class Spike():
         '''
         Start interactive mode with terminal graphics
         
-        @param   shred:bool  Whether to preform secure removal when possible
+        @param   shred:bool  Whether to perform secure removal when possible
         @return  :byte       Exit value, see description of `mane`
         '''
         if not sys.stdout.isatty:
