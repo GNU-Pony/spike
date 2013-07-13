@@ -1,0 +1,62 @@
+This document describes how functions are documented in this project.
+
+
+Consider the function `find_scroll` in `src/libspike.py`. It has a header, followed by a documentation.
+
+        def find_scroll(aggregator, patterns, installed = True, notinstalled = True):
+            '''
+            Search for a scroll
+            
+            @param   aggregator:(str)→void
+                         Feed a scroll when one matching one of the patterns has been found.
+            
+            @param   patterns:list<str>  Regular expression search patterns
+            @param   installed:bool      Look for installed packages
+            @param   notinstalled:bool   Look for not installed packages
+            @return  :byte               Exit value, see description of `LibSpike`, the possible ones are: 0
+            '''
+
+The documentation is below the header as of Python standard, which lets you view it with the Python function
+help, which you can invoke in an interactive Python session (started by the command `python`).
+
+The documentation has three parts: description, parameters and return value. The description is always at
+the beginning and has no find full stop unless it consists of more than one sentence. After then description
+there is are the parameters (if any) directly followed by the return value (if any), between the description
+and the parameters there is a blank line. As seen in this example, the parameter aggregator is separated from
+the other parameters, this is because it occours in other functions as well where they can consist of several
+lines. A parameter documentation consists of four parts, the `@param` which tells us that it is a parameter,
+the parameter name, separated from `@param` with as few spaces as possible — the documentation is aligned as
+a table — but at least two spaces, type specification for the parameter, after at least two spaces, a
+description of the parameters. The parameter name and type specification is seperated by a colon. The return
+is document just as a parameter, except it has `@return` rather than `@param` and the name is often omitted.
+
+Code, parameters and variable, class, function and method names are written slant qoutes (`like this`).
+A return documentation has its name omitted in normal cases, however if it returns a parameter than parameter
+is sepecified as the name and the type specification is omitted instead. The name can also be included if
+it is necessary its documentation if it is a multi parameter return.
+
+A type specification specifies `byte` rather than `int` if the integer is limited to the range [0, 255].
+A question mark is appended if the `None` can be used. `[*]` is used if are conditionally additional parameters
+for a function or tuple, that are descripted in the description of the parameter or return. `itr` is used
+to indicate that the object is iteratable, in such cases and other cases with the object holds other values
+those valeus are written comma separated in side triangle brackets (<like, this>). A dictionary (`dict`)
+has its key as the first type and the value as the second type. An upwards arrow (↑) means that the same
+type is contained as the container is, making it arbitrarily depth. In such cases especially, other allowed
+in any case, one or more alternatives times can be specified in a pipe seperated list (like|this).
+If a type can be of any type `¿E?` (or any other letter) is used, if the same letter is used in a function's
+documentation multiple times, they are of the same type. A requirement can be put on those by letting it
+have its own type specification; if a unknown iterable type over strings is used multiple times, it can be
+written `¿I:itr<str>?`. Varadic parameter have an asterisk at the beginning of the type, just as they have
+an asterisk before the parameter name in the function header. A keyword parameter have two asterisks at the
+beginning of the type, just as they have an asterisk before the parameter name in the function header.
+
+A type can be specifed by requires on methods, multiple specificates are separated by semicolons (like;this).
+A method is specified by a name, parameters inside brackets, a right arrow (→), and then the return type.
+If the parameter is a function or functor, it is written in the same way, except that there is not method
+name. If a method, function or functor can be `None`, the question make is placed directly before the
+right arrow.
+
+If a parameter is specified with `@param-` instead of `@param` it means that there parameter is named passed
+to the method, but rather the method knows them and passes them into a method it wraps that is named like
+it but with two prepending underscores.
+
