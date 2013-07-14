@@ -65,6 +65,7 @@ class LibSpike(LibSpikeHelper):
                  26 - File is of wrong type, normally a directory or regular file when the other is expected
                  27 - Corrupt database
                  28 - Pony is required by another pony
+                254 - User aborted
                 255 - Unknown error
     
     @author  Mattias Andrée (maandree@member.fsf.org)
@@ -339,7 +340,7 @@ class LibSpike(LibSpikeHelper):
         @param   nodep:bool         Whether to ignore dependencies
         @param   force:bool         Whether to ignore file claims
         @param   shred:bool         Whether to preform secure removal when possible
-        @return  :byte              Exit value, see description of `LibSpike`, the possible ones are: 0, 6, 8, 9, 22, 255 (TODO)
+        @return  :byte              Exit value, see description of `LibSpike`, the possible ones are: 0, 6, 8, 9, 22, 254, 255 (TODO)
         '''
         # Set shred and root
         if shred:
@@ -503,6 +504,19 @@ class LibSpike(LibSpikeHelper):
                     for value in field_installed[field]:
                         field_installed[field][value].remove(replaces)
                 aggregator(replaces.name, 4, scroll)
+        
+        if len(new_scrolls.keys()) > 0:
+            pass ## TODO loop back
+        
+        ## TODO ask for confirmation
+        
+        if len(not_found) > 0:
+            for scroll in not_found:
+                pass ## TODO find all scrolls that provides `scroll` and ask for which to install, abort with value 254 if `None` is selected
+            
+            ## TODO loop back
+        
+        ## TODO start installation
         
         return 0
     

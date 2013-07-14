@@ -106,6 +106,7 @@ class Spike():
                      26 - File is of wrong type, normally a directory or regular file when the other is expected
                      27 - Corrupt database
                      28 - Pony is required by another pony
+                    254 - User aborted
                     255 - Unknown error
         
         @param  args:list<str>  Command line arguments, including invoked program alias ($0)
