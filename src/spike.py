@@ -479,6 +479,8 @@ class Spike():
         
         if exitValue == 27:
             printerr('%s: \033[01;31m%s\033[00m' % (self.execprog, 'corrupt database'))
+        
+        LibSpike.terminate()
         exit(exitValue)
     
     

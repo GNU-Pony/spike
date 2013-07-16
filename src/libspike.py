@@ -80,6 +80,14 @@ class LibSpike(LibSpikeHelper):
     
     
     @staticmethod
+    def terminate():
+        '''
+        Perform terminations
+        '''
+        LibSpike.unlock()
+    
+    
+    @staticmethod
     def __load_addons():
         '''
         Load add-ons
@@ -110,6 +118,7 @@ class LibSpike(LibSpikeHelper):
         
         @return  :byte  Exit value, see description of `LibSpike`, the possible ones are: 0, 12, 24
         '''
+        LibSpike.lock(True)
         if not os.path.exists(SPIKE_PATH):
             return 12
         
@@ -156,6 +165,7 @@ class LibSpike(LibSpikeHelper):
         @param   notinstalled:bool   Look for not installed packages
         @return  :byte               Exit value, see description of `LibSpike`, the possible ones are: 0
         '''
+        LibSpike.lock(False)
         # Simplify patterns
         pats = []
         for pattern in patterns:
@@ -258,6 +268,7 @@ class LibSpike(LibSpikeHelper):
         @param   files:list<str>  Files for which to do lookup
         @return  :byte            Exit value, see description of `LibSpike`, the possible ones are: 0, 27
         '''
+        LibSpike.lock(False)
         files = [os.path.abspath(file) for file in files]
         DB = DBCtrl(SPIKE_PATH)
         
@@ -368,6 +379,7 @@ class LibSpike(LibSpikeHelper):
         @param   shred:bool         Whether to preform secure removal when possible
         @return  :byte              Exit value, see description of `LibSpike`, the possible ones are: 0, 6, 8, 9, 22, 254, 255 (TODO)
         '''
+        LibSpike.lock(True)
         # Set shred and root
         if shred:
             export('shred', 'yes')
@@ -575,6 +587,7 @@ class LibSpike(LibSpikeHelper):
         @param   shred:bool         Whether to preform secure removal when possible
         @return  :byte              Exit value, see description of `LibSpike`, the possible ones are: 0 (TODO)
         '''
+        LibSpike.lock(True)
         # Set shred and root
         if shred:
             export('shred', 'yes')
@@ -603,6 +616,7 @@ class LibSpike(LibSpikeHelper):
         '''
         # TODO also remove dependencies, but verify
         
+        LibSpike.lock(True)
         error = 0
         try:
             # Set shred and root
@@ -805,6 +819,7 @@ class LibSpike(LibSpikeHelper):
         @param   private:bool  Whether the pony is user private rather than user shared
         @return  :byte         Exit value, see description of `LibSpike`, the possible ones are: 0, 6, 7, 20, 21, 27, 255
         '''
+        LibSpike.lock(False)
         # Verify that the scroll has been installed
         sink = DB.open_db(private, DB_PONY_NAME, DB_PONY_ID).fetch([], [pony])
         if len(sink) != 1:
@@ -829,6 +844,7 @@ class LibSpike(LibSpikeHelper):
                     return 21
                 else:
                     try:
+                        LibSpike.unlock()
                         ride(private)
                     except:
                         return 21
@@ -854,6 +870,7 @@ class LibSpike(LibSpikeHelper):
         @param   ponies:list<str>  Installed ponies for which to list claimed files
         @return  :byte             Exit value, see description of `LibSpike`, the possible ones are: 0, 7, 27
         '''
+        LibSpike.lock(False)
         DB = DBCtrl(SPIKE_PATH)
         error = [0]
         
@@ -947,6 +964,7 @@ class LibSpike(LibSpikeHelper):
         '''
         # TODO add required by (manditory, optional, make, check)
         
+        LibSpike.lock(False)
         # Fields
         preglobals = set(globals().keys())
         ScrollMagick.init_fields()
@@ -1054,6 +1072,7 @@ class LibSpike(LibSpikeHelper):
         @param   force:bool         Whether to extend current file claim
         @return  :byte              Exit value, see description of `LibSpike`, the possible ones are: 0, 10, 11, 12, 27, 255
         '''
+        LibSpike.lock(True)
         DB = DBCtrl(SPIKE_PATH)
         files = [os.path.abspath(file) for file in files]
         for file in files:
@@ -1233,6 +1252,7 @@ class LibSpike(LibSpikeHelper):
         @param   private:bool       Whether the pony is user private rather the user shared
         @return  :byte              Exit value, see description of `LibSpike`, the possible ones are: 0, 27
         '''
+        LibSpike.lock(True)
         files = [os.path.abspath(file) for file in files]
         DB = DBCtrl(SPIKE_PATH)
         
@@ -1332,6 +1352,7 @@ class LibSpike(LibSpikeHelper):
         @param   scrolls:bool  Whether to only store scroll states and not installed files
         @return  :byte         Exit value, see description of `LibSpike`, the possible ones are: 0 (TODO)
         '''
+        LibSpike.lock(False)
         return 0
     
     
@@ -1350,6 +1371,7 @@ class LibSpike(LibSpikeHelper):
         @param   shred:bool     Whether to preform secure removal when possible
         @return  :byte          Exit value, see description of `LibSpike`, the possible ones are: 0 (TODO)
         '''
+        LibSpike.lock(True)
         if shred:
             export('shred', 'yes')
         return 0
@@ -1367,6 +1389,7 @@ class LibSpike(LibSpikeHelper):
         @param   scrolls:list<str>  Scrolls to proofread
         @return  :byte              Exit value, see description of `LibSpike`, the possible ones are: 0, 6, 22
         '''
+        LibSpike.lock(False)
         (error, n) = (0, len(scrolls))
         scrollfiles = [(scrolls[i], locate_scroll(scrolls[i]), i) for i in range(n)]
         
@@ -1530,6 +1553,7 @@ class LibSpike(LibSpikeHelper):
         @param   private:bool  Whether to uninstall user private ponies rather than user shared ponies
         @return  :byte         Exit value, see description of `LibSpike`, the possible ones are: 0, 6, 7, 14(internal bug), 20, 23, 27, 28, 255
         '''
+        LibSpike.lock(True)
         # TODO do not clean optionally required packages
         
         # Create id → scroll map

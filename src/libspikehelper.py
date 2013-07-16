@@ -50,6 +50,47 @@ class LibSpikeHelper():
     
     
     @staticmethod
+    def lock(exclusive):
+        '''
+        Lock concurrent database access lock file
+        
+        @param  exclusive:bool  Whether the lock should be exclusive, that is, you are about to do modifications
+        '''
+        import fcntl ## We are importing here so non-Unix systems do not run into problems and can use a plug-in to implement file locking
+        if LibSpikeHelper.lock_file is None:
+            LibSpikeHelper.lock_file = open('/run/lock/spike', 'a') ## TODO you should be able to change this
+            LibSpikeHelper.lock_file.flush()
+        locktype = fcntl.LOCK_EX if exclusive else fcntl.LOCK_SH
+        try:
+            fcntl(LibSpikeHelper.lock_file.fileno(), locktype | fcntl.LOCK_NB)
+        except:
+            if exclusive:
+                print('/run/lock/spike is currently locked.')
+            else:
+                print('/run/lock/spike is currently locked for modifications.')
+            ## You can leave a message to users that are trying to access with incompatible lock by filling /run/lock/spike with the message
+            with open('/run/lock/spike', 'rb') as file:
+                msg = file.read().decode('utf-8', 'replace')
+                if msg != '':
+                    print('\A message has been left for you:\n    ')
+                    print('    \n'.join(msg.split('\n')))
+            print('\nWaiting until all incompatible locks have been relased...')
+        fcntl(LibSpikeHelper.lock_file.fileno(), locktype)
+    
+    
+    @staticmethod
+    def unlock():
+        '''
+        Unlock concurrent database access lock file
+        '''
+        import fcntl ## We are importing here so non-Unix systems do not run into problems and can use a plug-in to implement file locking
+        if LibSpikeHelper.lock_file is not None:
+            fcntl(LibSpikeHelper.lock_file.fileno(), LOCK_UN)
+            LibSpikeHelper.lock_file.close()
+            LibSpikeHelper.lock_file = None
+    
+    
+    @staticmethod
     def parse_filename(filename):
         '''
         Parse a filename encoded with environment variables
@@ -236,6 +277,8 @@ class LibSpikeHelper():
             printerr('%s: \033[01;31m%s\033[00m' % (SPIKE_PROGNAME, 'Multiple scrolls found, there should only be one!'));
         return rc[0] if len(rc) == 1 else None
 
+
+LibSpikeHelper.lock_file = None
 
 
 if 'SPIKE_PATH' not in os.environ:
