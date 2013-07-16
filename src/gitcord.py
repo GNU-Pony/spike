@@ -57,16 +57,16 @@ class Gitcord():
         return [int(n) for n in version.split('.')]
     
     
-    def checkVersion(*version):
+    def checkVersion(*needed):
         '''
         Check whether the version of git in the user's path is of a specific version or any newer version
         
-        @param   version:*int  The needed version
-        @return  :bool         Whether the installed version is at least as new as the specified version
+        @param   needed:*int  The needed version
+        @return  :bool        Whether the installed version is at least as new as the specified version
         '''
         installed = version() + [-1];
-        for i in range(len(version)):
-            (need, have) = (version[i], installed[i])
+        for i in range(len(needed)):
+            (need, have) = (needed[i], installed[i])
             if need != have:
                 return need < have
         return True
