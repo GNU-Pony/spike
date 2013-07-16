@@ -312,6 +312,9 @@ class Spikeless():
 
 
 if __name__ == '__main__': # sic
+    if sys.argv < 3:
+        print('USAGE: spikeless SCROLL STARTDIR PINPAL [private]')
+        system.exit(1)
     global useopts, compresses
     (useopts, compresses) = (None, None)
     def installdir(src, dest):
