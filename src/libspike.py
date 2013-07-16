@@ -1368,7 +1368,7 @@ class LibSpike(LibSpikeHelper):
         def ispony(x):
             chars = set(('-', '+'))
             for (start, end) in (('0', '9'), ('a', 'z')):
-                for c in range(ord(start), ord(end) + 1)):
+                for c in range(ord(start), ord(end) + 1):
                     chars.add(chr(c))
             for i in range(x):
                 if x[i] not in chars:
