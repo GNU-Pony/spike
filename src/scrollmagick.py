@@ -208,4 +208,16 @@ class ScrollMagick():
         for f in [field] if isinstance(field, str) else field:
             check_is_list(f, withnone, withclass)
             check_element_format(ff, checker)
+    
+    
+    @staticmethod
+    def addon_proofread(scroll, scrollfile):
+        '''
+        Onion this function with addition proofreading if you are an extension.
+        The scroll is already loaded. Raise an exception if you find an error.
+        
+        @param  scroll:str      The specified scroll
+        @param  scrollfile:str  The file found for the scroll
+        '''
+        pass
 

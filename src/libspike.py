@@ -1534,6 +1534,9 @@ class LibSpike(LibSpikeHelper):
                         if list(args) != params_list:
                             raise Exception('Method \'%s\' should have the parameters %s with those exact names', (method, params_str))
                     
+                    # Proofread using extensions
+                    ScrollMagick.addon_proofread(scroll, scrollfile)
+                    
                 except Exception as err:
                     error = max(error, 22)
                     aggregator(scroll, 1, str(err))
