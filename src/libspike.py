@@ -1591,7 +1591,7 @@ class LibSpike(LibSpikeHelper):
         '''
         (error, sha3) = (0, SHA3())
         for filename in files:
-            if (not os.path.exists(filename)) or not (not os.path.isfile(filename)):
+            if (not os.path.exists(filename)) or (not os.path.isfile(filename)):
                 aggregator(filename, None)
                 if error == 0:
                     error = 12 if not os.path.exists(filename) else 26
