@@ -71,6 +71,32 @@ class LibSpike(LibSpikeHelper):
     @author  Mattias Andrée (maandree@member.fsf.org)
     '''
     
+    @staticmethod
+    def initialise():
+        '''
+        Perform initalisations
+        '''
+        LibSpike.__load_addons()
+    
+    
+    @staticmethod
+    def __load_addons():
+        '''
+        Load add-ons
+        '''
+        if os.path.isdir(SPIKE_PATH + 'add-on'):
+            for addon in os.listdir(SPIKE_PATH + 'add-on'):
+                addon = SPIKE_PATH + 'add-on/' + addon
+                if (addon[-1] != '~') and os.path.isfile(addon) and os.access(addon, os.R_OK | os.X_OK):
+                    try:
+                        code = None
+                        with open(addon, 'rb') as file:
+                            code = file.read().decode('utf8', 'replace') + '\n'
+                            code = compile(code, addon, 'exec')
+                        exec(code, globals())
+                    except:
+                        pass
+    
     
     @staticmethod
     def bootstrap(aggregator):

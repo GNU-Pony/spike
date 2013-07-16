@@ -266,11 +266,13 @@ class Spike():
             
             elif opts.opts['-3'] is not None:
                 self.test_allowed(opts.opts, allowed, longmap, True)
+                LibSpike.initialise()
                 exitValue = self.sha3sum(opts.files)
             
             elif opts.opts['-B'] is not None:
                 self.test_allowed(opts.opts, allowed, longmap, True)
                 self.test_files(opts.files, 0, True)
+                LibSpike.initialise()
                 exitValue = self.bootstrap()
             
             elif opts.opts['-F'] is not None:
@@ -284,13 +286,16 @@ class Spike():
                     if opts.opts['-w'][0] not in ('y', 'yes', 'n', 'no'):
                         printerr(self.execprog + ': only \'yes\',  \'y\', \'no\' and \'n\' are allowed for -w(--written)')
                         exit(4)
+                    LibSpike.initialise()
                     exitValue = self.find_scroll(opts.files,
                                                  installed    = opts.opts['-w'][0][0] == 'y',
                                                  notinstalled = opts.opts['-w'][0][0] == 'n')
                 elif opts.opts['-o'] is not None:
                     self.test_files(opts.files, 2, True)
+                    LibSpike.initialise()
                     exitValue = self.find_owner(opts.files)
                 else:
+                    LibSpike.initialise()
                     exitValue = self.find_scroll(opts.files, installed = True, notinstalled = True)
                 
             elif opts.opts['-W'] is not None:
@@ -310,6 +315,7 @@ class Spike():
                 allowed.add('--shred')
                 self.test_allowed(opts.opts, allowed, longmap, True)
                 self.test_files(opts.files, 2, True)
+                LibSpike.initialise()
                 exitValue = self.write(opt.files,
                                        root         = opts.opts['--pinpal'][0] if opts.opts['--pinpal'] is not None else '/',
                                        private      = opts.opts['-u'] is not None,
@@ -326,6 +332,7 @@ class Spike():
                 allowed.add('--shred')
                 self.test_allowed(opts.opts, allowed, longmap, True)
                 self.test_files(opts.files, 0, True)
+                LibSpike.initialise()
                 exitValue = self.update(root    = opts.opts['--pinpal'][0] if opts.opts['--pinpal'] is not None else '/',
                                         ignores = opts.opts['-i'] if opts.opts['-i'] is not None else [],
                                         private = opts.opts['-u'] is not None,
@@ -340,6 +347,7 @@ class Spike():
                 allowed.add('--shred')
                 self.test_allowed(opts.opts, allowed, longmap, True)
                 self.test_files(opts.files, 2, True)
+                LibSpike.initialise()
                 exitValue = self.erase(opt.files,
                                        root    = opts.opts['--pinpal'][0] if opts.opts['--pinpal'] is not None else '/',
                                        private = opts.opts['-u'] is not None,
@@ -349,6 +357,7 @@ class Spike():
                 allowed.add('-u')
                 self.test_allowed(opts.opts, allowed, longmap, True)
                 self.test_files(opts.files, 1, True)
+                LibSpike.initialise()
                 exitValue = self.ride(opt.files[0],
                                       private = opts.opts['-u'] is not None)
                 
@@ -369,10 +378,12 @@ class Spike():
                         if opts.opts['-w'][0] not in ('y', 'yes', 'n', 'no'):
                             printerr(self.execprog + ': only \'yes\',  \'y\', \'no\' and \'n\' are allowed for -w(--written)')
                             exit(4)
+                        LibSpike.initialise()
                         exitValue = self.read_info(opt.files, field = opts.opts['-f'],
                                                    installed = opts.opts['-w'][0][0] == 'y',
                                                    notinstalled = opts.opts['-w'][0][0] == 'n')
                     else:
+                        LibSpike.initialise()
                         exitValue = self.read_info(opt.files, field = opts.opts['-f'])
                     
             elif opts.opts['-C'] is not None:
@@ -385,6 +396,7 @@ class Spike():
                 allowed.add('--force')
                 self.test_allowed(opts.opts, allowed, longmap, True)
                 self.test_files(opts.files, 3, True)
+                LibSpike.initialise()
                 exitValue = self.claim(opt.files[:-1], opt.files[-1],
                                        recursiveness = 1 if opts.opts['--recursive'] is not None else
                                                        2 if opts.opts['--entire']    is not None else 0,
@@ -396,6 +408,7 @@ class Spike():
                 allowed.add('-u')
                 self.test_allowed(opts.opts, allowed, longmap, True)
                 self.test_files(opts.files, 3, True)
+                LibSpike.initialise()
                 exitValue = self.disclaim(opt.files[:-1], opt.files[-1],
                                           recursive = opts.opts['--recursive'] is not None,
                                           private   = opts.opts['-u'] is not None)
@@ -404,6 +417,7 @@ class Spike():
                 allowed.add('-s')
                 self.test_allowed(opts.opts, allowed, longmap, True)
                 self.test_files(opts.files, 0, True)
+                LibSpike.initialise()
                 exitValue = self.archive(opts.opts['-A'][0], scrolls = opts.opts['-s'] is not None)
                 
             elif opts.opts['--restore-archive'] is not None:
@@ -423,6 +437,7 @@ class Spike():
                 allowed.add('--shred')
                 self.test_allowed(opts.opts, allowed, longmap, True)
                 self.test_files(opts.files, 0, True)
+                LibSpike.initialise()
                 exitValue = self.rollback(opts.opts['--restore-archive'][0],
                                           keep      = opts.opts['--full'] is None,
                                           skip      = opts.opts['--shared'] is not None,
@@ -433,6 +448,7 @@ class Spike():
             elif opts.opts['-P'] is not None:
                 self.test_allowed(opts.opts, allowed, longmap, True)
                 self.test_files(opts.files, 2, True)
+                LibSpike.initialise()
                 exitValue = self.proofread(opts.files)
             
             elif opts.opts['-N'] is not None:
@@ -440,18 +456,21 @@ class Spike():
                 allowed.add('--shred')
                 self.test_allowed(opts.opts, allowed, longmap, True)
                 self.test_files(opts.files, 0, True)
+                LibSpike.initialise()
                 exitValue = self.clean(private = opts.opts['--private'] is not None, shred = opts.opts['--shred'] is not None)
             
             elif opts.opts['-I'] is not None:
                 allowed.add('--shred')
                 self.test_allowed(opts.opts, allowed, longmap, True)
                 self.test_files(opts.files, 0, True)
+                LibSpike.initialise()
                 exitValue = self.interactive(shred = opts.opts['--shred'] is not None)
             
             else:
                 allowed.add('--shred')
                 self.test_allowed(opts.opts, allowed, longmap, True)
                 self.test_files(opts.files, 0, True)
+                LibSpike.initialise()
                 exitValue = self.interactive(shred = opts.opts['--shred'] is not None)
         
         except Exception as err:

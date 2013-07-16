@@ -66,11 +66,13 @@ class LibSpikeHelper():
                     buf += c
                     esc = False
                 elif var is not None:
-                    if c == '/':
+                    if (var == '') and (c == '{'):
+                        continue
+                    if c in '/}':
                         var = os.environ[var] if var in os.environ else ''
                         if len(var) == 0:
                             return None
-                        buf += var + c
+                        buf += var + (c if c != '}' else '')
                         var = None
                     else:
                         var += c
