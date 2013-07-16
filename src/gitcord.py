@@ -39,6 +39,24 @@ class Gitcord():
         self.dir = directory
     
     
+    def version() :
+        '''
+        Obtain the version of git in the user's path
+        
+        @return :list<int> The version numbers of git, with the major version at index 0
+        '''
+        try:
+            proc = Popen(['git', '--version'], stdin=PIPE, stdout=PIPE, stderr=None)
+            proc.wait()
+            output = proc.stdout.read() # 'git version 0.0.0.0\n'
+        except:
+            return []
+        if proc.returncode != 0 :
+            return []
+        version = output.split()[2]
+        return [int(n) for n in version.split('.')]
+    
+    
     def __exec(command):
         '''
         Execute an exterminal command and wait for it to finish, and print output to stderr
@@ -60,11 +78,16 @@ class Gitcord():
     
     def updateBranch():
         '''
-        Update the current branch in the repository
+        Update the current branch in the repository.  If git is new enough (>=1.8.2.4), support signature verification.
         
         @return  :bool  Whether the spell casting was successful
         '''
-        return 0 == __exec(['git', 'pull']) ## TODO add --verify-signatures at git 1.8.2-rc4
+        versions = version()
+        args = ['git', 'pull']
+        if len(versions) >= 4:
+            if versions[0] >= 1 and versions[1] >= 8 and versions[2] >= 2 and versions[3] >= 4 :
+                args.append('--verify-signatures')
+        return 0 == __exec(args)
     
     
     def changeBranch(branch):
