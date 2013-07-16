@@ -57,6 +57,21 @@ class Gitcord():
         return [int(n) for n in version.split('.')]
     
     
+    def checkVersion(*version):
+        '''
+        Check whether the version of git in the user's path is of a specific version or any newer version
+        
+        @param   version:*int  The needed version
+        @return  :bool         Whether the installed version is at least as new as the specified version
+        '''
+        installed = version() + [-1];
+        for i in range(len(version)):
+            (need, have) = (version[i], installed[i])
+            if need != have:
+                return need < have
+        return True
+    
+    
     def __exec(command):
         '''
         Execute an exterminal command and wait for it to finish, and print output to stderr
@@ -82,11 +97,9 @@ class Gitcord():
         
         @return  :bool  Whether the spell casting was successful
         '''
-        versions = version()
         args = ['git', 'pull']
-        if len(versions) >= 4:
-            if versions[0] >= 1 and versions[1] >= 8 and versions[2] >= 2 and versions[3] >= 4:
-                args.append('--verify-signatures')
+        if checkVersion(1, 8, 2, 4):
+            args.append('--verify-signatures')
         return 0 == __exec(args)
     
     
