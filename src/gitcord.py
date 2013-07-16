@@ -195,7 +195,8 @@ class Gitcord():
         '''
         Stash all uncommited staged changes
         
-        @return  :bool  Whether the spell casting was successful, not it is successful even if there was nothing to stash and no object has been added to the stash stack
+        @return  :bool  Whether the spell casting was successful, not it is successful even if there was
+                        nothing to stash and no object has been added to the stash stack
         '''
         return 0 == __exec(['git', 'stash'])
     
