@@ -52,12 +52,27 @@ arch:list<str>
 	If architecture independent, the only architecture should
 	be `any`.
 
-freedom:or-flag:SOFTWARE,MEDIA
-	SOFTWARE should be on if the software and all required resource
-	files are free, or if the packages does not contain any software.
-	MEDIA should be on if the package contain only free media files
-	that are not a requirement for the software, or if no such media
-	exists in the package.
+freedom:or-flag:SOFTWARE_SHAREABLE,SOFTWARE_COMMERCIAL,SOFTWARE_DERIVATIVE,
+	        MEDIA_SHAREABLE,MEDIA_COMMERCIAL,MEDIA_DERIVATIVE,TRADEMARKED,PATENTED
+	SOFTWARE (a macro for SOFTWARE_SHAREABLE | SOFTWARE_COMMERCIAL |
+	SOFTWARE_DERIVATIVE) should be on if the software and all required
+	resource files are free, or if the packages does not contain any software.
+	MEDIA (a macro for MEDIA_SHAREABLE | MEDIA_COMMERCIAL | MEDIA_DERIVATIVE)
+	should be on if the package contain only free media files that are not a
+	requirement for the software, or if no such media exists in the package.
+	SOFTWARE_SHAREABLE and MEDIA_SHAREABLE should be used if the software or
+	media files, respectively is freely be shared unmodified and uncommerically.
+	SOFTWARE_COMMERCIAL and MEDIA_COMMERCIAL should be used if it can also
+	be shared commercially. SOFTWARE_DERIVATIVE and MEDIA_DERIVATIVE should be
+	used if derivatives can also be shared.
+	TRADEMARKED should be used if there is trademark protections in the package,
+	keep in mind that outside the U.S. it may not be necessary to use ™ or ® on
+	what is trademarked.
+	PATENTED should be used if the package contains patented information.
+	If the package does not contain software, SOFTWARE should be used so it does
+	not hide from ponies that put restrictions on software they install.
+	If the package does not contain media files, MEDIA should be used so it does
+	not hide from ponies that put restrictions on software they install.
 
 license:list<str>
 	Licences that applies to the package, the part of the package that

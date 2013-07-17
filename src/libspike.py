@@ -1468,7 +1468,7 @@ class LibSpike(LibSpikeHelper):
                     if len(arch) == 0:
                         raise Exception('Field \'arch\' may not be empty')
                     
-                    ScrollMagick.check_is_list_format('freedom', False, int, lambda x : 0 <= x < (1 << 2))
+                    ScrollMagick.check_is_list_format('freedom', False, int, lambda x : 0 <= x < (1 << 8))
                     ScrollMagick.check_is_list_format('license', False, str, lambda x : len(x) > 0)
                     ScrollMagick.check_is_list_format('private', False, int, lambda x : 0 <= x < 3)
                     ScrollMagick.check_type('interactive', False, bool)

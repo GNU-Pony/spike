@@ -19,6 +19,17 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
 
+SOFTWARE_SHAREABLE = 1
+SOFTWARE_COMMERCIAL = 2
+SOFTWARE_DERIVATIVE = 4
+MEDIA_SHAREABLE = 8
+MEDIA_COMMERCIAL = 16
+MEDIA_DERIVATIVE = 32
+TRADEMARKED = 64
+PATENTED = 128
+MEDIA = MEDIA_SHAREABLE | MEDIA_COMMERCIAL | MEDIA_DERIVATIVE
+SOFTWARE = SOFTWARE_SHAREABLE | SOFTWARE_COMMERCIAL | SOFTWARE_DERIVATIVE
+        
 
 class ScrollMagick():
     '''
@@ -233,14 +244,30 @@ class ScrollMagick():
         '''
         if isinstance(field, int):
             if field == 'freedom':
-                if value == 0:
-                    return 'None'
-                elif 0 < value < (1 << 2):
+                if 0 <= value < (1 << 8):
                     rc = []
-                    if (value & 1) != 0:
-                        rc.append('Software')
-                    if (value & 2) != 0:
-                        rc.append('Media')
+                    if (value & SOFTWARE) == SOFTWARE:
+                        rc.append('Free software')
+                    else:
+                        if (value & SOFTWARE_SHAREABLE) != 0:
+                            rc.append('Shareable software')
+                        if (value & SOFTWARE_COMMERCIAL) != 0:
+                            rc.append('Resellable software')
+                        if (value & SOFTWARE_DERIVATIVE) != 0:
+                            rc.append('Modifiable software')
+                    if (value & MEDIA) != MEDIA:
+                        rc.append('Free media')
+                    else:
+                        if (value & MEDIA_SHAREABLE) != 0:
+                            rc.append('Shareable media')
+                        if (value & MEDIA_COMMERCIAL) != 0:
+                            rc.append('Resellable media')
+                        if (value & MEDIA_DERIVATIVE) != 0:
+                            rc.append('Modifiable media')
+                    if (value & TRADEMARKED) != 0:
+                        rc.append('Trademark protected')
+                    if (value & PATENTED) != 0:
+                        rc.append('Patent protected')
                     return rc
             elif field == 'private':
                 if 0 <= value < 3:
