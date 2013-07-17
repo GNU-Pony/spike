@@ -1036,6 +1036,7 @@ class LibSpike(LibSpikeHelper):
                                     aggregator(scroll, field, None, installed)
                                     continue
                                 value = globals()[field]
+                                value = ScrollMagick.field_display_convert(field, value)
                                 value = convert(value)
                                 if isinstance(value, str):
                                     value = [value]

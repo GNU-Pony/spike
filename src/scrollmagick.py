@@ -220,4 +220,30 @@ class ScrollMagick():
         @param  scrollfile:str  The file found for the scroll
         '''
         pass
+    
+    
+    @staticmethod
+    def field_display_convert(field, value):
+        '''
+        If required, converts the field value to a pony friendly format, otherwise, it performs a identity mapping
+        
+        @param   field:str         The name of the field
+        @param   value:¿I?         The raw value of the field
+        @return  {value:}|{:|¿O?}  Pony friendly display value of the field
+        '''
+        if isinstance(field, int):
+            if field == 'freedom':
+                if value == 0:
+                    return 'None'
+                elif 0 < value < (1 << 2):
+                    rc = []
+                    if (value & 1) != 0:
+                        rc.append('Software')
+                    if (value & 2) != 0:
+                        rc.append('Media')
+                    return rc
+            elif field == 'private':
+                if 0 <= value < 3:
+                    return ('Unsupported', 'Supported', 'Manditory')[value]
+        return value
 
