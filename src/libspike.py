@@ -962,7 +962,7 @@ class LibSpike(LibSpikeHelper):
         @param   notinstalled:bool     Whether to include not installed scrolls
         @return  :byte                 Exit value, see description of `LibSpike`, the possible ones are: 0, 6, 14, 20, 255
         '''
-        # TODO add required by (manditory, optional, make, check)
+        # TODO add required by (manditory, optional, make, check) and whether there exists an example shot
         
         LibSpike.lock(False)
         # Fields
@@ -1631,13 +1631,37 @@ class LibSpike(LibSpikeHelper):
     
     
     @staticmethod
+    def example_shot(aggregator, scrolls):
+        '''
+        Fetch example shots file for scrolls
+        
+        @param   aggregator:(str, str?)→void
+                     Feed a scroll and its example shot file when found, or the scroll and `None` if there is not example shot.
+        
+        @param   scrolls:itr<str>  Scroll of which to display example shots
+        @return  :byte             Exit value, see description of `LibSpike`, the possible ones are: 0, 6
+        '''
+        for scroll in scrolls:
+            shot = locate_scroll(scroll)
+            if shot is None:
+                return 6
+            else:
+                shot += '.png'
+                if os.path.exists(shot):
+                    aggregator(scroll, shot)
+                else:
+                    aggregator(scroll, None)
+        return 0
+    
+    
+    @staticmethod
     def sha3sum(aggregator, files):
         '''
         Look for errors in a scrolls
         
         @param   aggregator:(str, str?)→void
                      Feed a file and its checksum when one has been calculated.
-                    `None` is returned as the checksum if it is not a regular file or does not exist.
+                     `None` is returned as the checksum if it is not a regular file or does not exist.
         
         @param   files:list<str>  Files for which to calculate the checksum
         @return  :byte            Exit value, see description of `LibSpike`, the possible ones are: 0, 12, 26

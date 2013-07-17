@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
 import sys
 import os
+from subprocess import Popen
 
 from libspike import *
 from argparser import *
@@ -166,6 +167,8 @@ class Spike():
         opts.add_argumentless(['-N', '--clean'],                      help = 'Uninstall unneeded ponies\n'
                                                              'slaves: [--private] [--shred]')
         opts.add_argumentless(['-P', '--proofread'],                  help = 'Verify that a scroll is correct')
+        opts.add_argumentless(['-S', '--example-shot'],               help = 'Display example shot for scrolls\n'
+                                                             'slaves: [--viewer=] [--all-at-once]')
         opts.add_argumentless(['-I', '--interactive'],                help = 'Start in interative graphical terminal mode\n'
                                                                              '(supports installation and uninstallation only)\n'
                                                                              'slaves: [--shred]')
@@ -192,6 +195,8 @@ class Spike():
         opts.add_argumentless([      '--downgrade'],                  help = 'Do only perform pony downgrades')
         opts.add_argumentless([      '--upgrade'],                    help = 'Do only perform pony upgrades')
         opts.add_argumentless([      '--shred'],                      help = 'Preform secure removal with `shred` when removing old files')
+        opts.add_argumentless(['-a', '--all-at-once'],                help = 'Display all example shots in one single process instance')
+        opts.add_argumented(  [      '--viewer'],    arg = 'VIEWER',  help = 'Select image viewer for example shots')
         
         if not opts.parse(args):
             printerr(self.execprog + ': use of unrecognised option')
@@ -213,6 +218,7 @@ class Spike():
         longmap['-A'] = '--archive'
         longmap['-N'] = '--clean'
         longmap['-P'] = '--proofread'
+        longmap['-S'] = '--example-shot'
         longmap['-I'] = '--interactive'
         longmap['-3'] = '--sha3sum'
         longmap['-o'] = '--owner'
@@ -222,9 +228,10 @@ class Spike():
         longmap['-l'] = '--list'
         longmap['-f'] = '--info'
         longmap['-s'] = '--scrolls'
+        longmap['-a'] = '--all-at-once'
         
         exclusives = set()
-        for opt in 'vhcBFWUEXRCDANPI3':
+        for opt in 'vhcBFWUEXRCDANPSI3':
             exclusives.add('-' + opt)
         exclusives.add('--restore-archive')
         self.test_exclusiveness(opts.opts, exclusives, longmap, True)
@@ -458,7 +465,19 @@ class Spike():
                 self.test_files(opts.files, 0, True)
                 LibSpike.initialise()
                 exitValue = self.clean(private = opts.opts['--private'] is not None, shred = opts.opts['--shred'] is not None)
-            
+                
+            elif opts.opts['-S'] is not None:
+                allowed.add('--viewer')
+                allowed.add('-a')
+                self.test_allowed(opts.opts, allowed, longmap, True)
+                self.test_files(opts.files, 2, True)
+                envDisplay = os.environ['DISPLAY']
+                defaultViewer = 'xloadimage' if (envDisplay is not None) and envDisplay.startsWith(':') else 'jfbview'
+                LibSpike.initialise()
+                exitValue = self.example_shot(opt.files,
+                                              viewer      = opts.opts['--viewer'][0] if opts.opts['--viewer'] is not None else defaultViewer,
+                                              all_at_once = opts.opts['-a'] is not None)
+                
             elif opts.opts['-I'] is not None:
                 allowed.add('--shred')
                 self.test_allowed(opts.opts, allowed, longmap, True)
@@ -1242,6 +1261,39 @@ class Spike():
         
         return LibSpike.clean(Agg(), shred)
     
+    
+    def example_shot(self, scrolls, viewer, all_at_once = False):
+        '''
+        Display example shots for scrolls
+        
+        @param   scrolls:list<str>  Scrolls of which to display example shots
+        @param   viewer:str         The PNG viewer to use
+        @param   all_at_once:bool   Whether to display all images in a single process instance
+        @return  :byte              Exit value, see description of `mane`
+        '''
+        class Agg:
+            '''
+            aggregator:(str, str?)→void
+                Feed a scroll and its example shot file when found, or the scroll and `None` if there is not example shot.
+            '''
+            def __init__(self):
+                self.queue = [viewer]
+            def __call__(self, scroll, shot):
+                if shot is None:
+                    print('%s has no example shot' % scroll)
+                elif all_at_once:
+                    self.queue.append(shot)
+                else:
+                    print(scroll)
+                    Popen([viewer, shot]).communicate()
+            def done(self):
+                if all_at_once:
+                    Popen(self.queue).communicate()
+        
+        exitValue = LibSpike.example_shot(Agg(), scrolls)
+        if exitValue != 0:
+            Agg.done()
+        return exitValue
     
     def interactive(self, shred = False):
         '''

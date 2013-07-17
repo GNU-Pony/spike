@@ -20,3 +20,7 @@ Database files, prepended by priv_ for private:
 	 deps_id	deps scroll id → scrolls id	value_size = DB_SIZE_ID = 4		(with reflection for installed as explicit)
 	 fileid_+	file id → (void)		value_size = 0		  		(claimed with --entire if listed)
 
+
+An example shot of a package may be added by placing a PNG (yes, only PNG, we do not want any crappy formats) in the same directory
+as the scroll and naming it identically to the scroll file except with `.png` at the end of the file name in addition to `.scroll`.
+
