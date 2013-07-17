@@ -56,7 +56,7 @@ A type can be specifed by requires on methods, multiple specificates are separat
 A method is specified by a name, parameters inside brackets, a right arrow (→), and then the return type.
 If the parameter is a function or functor, it is written in the same way, except that there is not method
 name. If a method, function or functor can be `None`, the question make is placed directly before the
-right arrow.
+right arrow. A type specifed contain curly brackets to as logical brackets indicating what applies to a pipe.
 
 If a parameter is specified with `@param-` instead of `@param` it means that there parameter is named passed
 to the method, but rather the method knows them and passes them into a method it wraps that is named like
