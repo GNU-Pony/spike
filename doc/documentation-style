@@ -36,6 +36,8 @@ is sepecified as the name and the type specification is omitted instead. The nam
 it is necessary its documentation if it is a multi parameter return.
 
 A type specification specifies `byte` rather than `int` if the integer is limited to the range [0, 255].
+A type specification may specify `or-flag` rather than `int` if the value is composed of named single bit integers.
+A type specification may specify `excl-flag` rather than `int` if is limited to named integers.
 A question mark is appended if the `None` can be used. `[*]` is used if are conditionally additional parameters
 for a function or tuple, that are descripted in the description of the parameter or return. `itr` is used
 to indicate that the object is iteratable, in such cases and other cases with the object holds other values
