@@ -29,7 +29,21 @@ TRADEMARKED = 64
 PATENTED = 128
 MEDIA = MEDIA_SHAREABLE | MEDIA_COMMERCIAL | MEDIA_DERIVATIVE
 SOFTWARE = SOFTWARE_SHAREABLE | SOFTWARE_COMMERCIAL | SOFTWARE_DERIVATIVE
-        
+
+UNSUPPORTED = 0
+SUPPORTED = 1
+MANDITORY = 2
+
+NO_TRADEMARKS = 1
+NO_PATENTS = 2
+CONTRACT_BASED = 4
+COMMERCIAL = 8
+DERIVATIVE = 16
+FSF_APPROVED = 32
+OSI_APPROVED = 64
+GPL_COMPATIBLE = 128
+COPYLEFT = 256
+
 
 class ScrollMagick():
     '''
@@ -71,7 +85,7 @@ class ScrollMagick():
         '''
         Initialise or reset scroll fields, they will be set to global variables
         '''
-        vars = 'pkgname pkgver pkgdesc upstream arch freedom license private extension variant patch reason source sha3sums'
+        vars = 'pkgname pkgver pkgdesc upstream arch freedom license metalicense private extension variant patch reason source sha3sums'
         for var in vars.split(' '):
             globals()[var] = None
         
@@ -242,6 +256,7 @@ class ScrollMagick():
         @param   value:¿I?         The raw value of the field
         @return  {value:}|{:|¿O?}  Pony friendly display value of the field
         '''
+        # TODO add `metalicense`
         if isinstance(field, int):
             if field == 'freedom':
                 if 0 <= value < (1 << 8):

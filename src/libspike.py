@@ -963,6 +963,7 @@ class LibSpike(LibSpikeHelper):
         @return  :byte                 Exit value, see description of `LibSpike`, the possible ones are: 0, 6, 14, 20, 255
         '''
         # TODO add required by (manditory, optional, make, check) and whether there exists an example shot
+        # TODO display `metalicense`
         
         LibSpike.lock(False)
         # Fields
@@ -1390,6 +1391,7 @@ class LibSpike(LibSpikeHelper):
         @param   scrolls:list<str>  Scrolls to proofread
         @return  :byte              Exit value, see description of `LibSpike`, the possible ones are: 0, 6, 22
         '''
+        # TODO proofread `metalicense` and check for conflicts in `freedom`
         LibSpike.lock(False)
         (error, n) = (0, len(scrolls))
         scrollfiles = [(scrolls[i], locate_scroll(scrolls[i]), i) for i in range(n)]

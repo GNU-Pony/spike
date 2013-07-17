@@ -79,6 +79,22 @@ license:list<str>
 	the license applies to may be specified. If so, the license and the
 	that text should be separated by a colon.
 
+metalicense:list<(value:or-flag:¿F?, mask:or-flag:¿F?)?>?=None
+        		F=NO_TRADEMARKS,NO_PATENTS,CONTRACT_BASED,COMMERCIAL,
+			  DERIVATIVE,FSF_APPROVED,OSI_APPROVED,GPL_COMPATIBLE,COPYLEFT
+	Information about used licenses. `mark` is used for which fields that are
+	known, and `value` is used to indicate the value of the known fields.
+	NO_TRADEMARKS is used if the license prohibits trademark protection.
+	NO_PATENTS is used if the license prohibits patent protection.
+	CONTRACT_BASED is used if the license is contract based.
+	SHAREABLE is used if redistribution is allowed.
+	COMMERCIAL is used if commercial redistributions are allowed.
+	DERIVATIVE is used if derivative redistributions are allowed.
+	FSF_APPROVED is used if the license is approved by the Free Software Foundation.
+	OSI_APPROVED is used if the license is approved by the Open Source Initiative.
+	GPL_COMPATIBLE is used if the license if GNU General Publice License compatible.
+	COPYLEFT is used if the license is a copyleft license.
+
 private:excl-flag:UNSUPPORTED,SUPPORTED,MANDITORY=UNSUPPORTED
 	Specify --private support status.
 
