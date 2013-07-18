@@ -43,7 +43,7 @@ pkgdesc:str
 
 upstream:str
 	The URL that is associated with the software being packaged.
-	Typically the project’s website.
+	Typically the project's website.
 
 arch:list<str>
 	List of known architecture compatibilities. The architecture's
