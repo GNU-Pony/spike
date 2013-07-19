@@ -400,11 +400,11 @@ class LibSpike(LibSpikeHelper):
         already_installed = {}
         scroll_field = {}
         field_scroll = {}
-        freshinstalls = []
-        reinstalls = []
-        update = []
-        skipping = []
         uninstall = []
+        not_found = set()
+        new_scrolls = {}
+        for scroll in scrolls:
+            new_scrolls[scroll] = None
         
         # Load information about already installed scrolls
         # TODO this should be reported as separate part in the progress
@@ -440,111 +440,113 @@ class LibSpike(LibSpikeHelper):
             except:
                 return 255 # So how did we install it...
         
-        # Proofread scrolls
-        def agg(scroll, state, *_):
-            if state == 0:
-                aggregator(scroll, 0)
-        error = proofread(agg, scrolls)
-        if error != 0:
-            return error
-        
-        # Report that we are looking for conflicts
-        aggregator(None, 2)
-        
-        # Get scroll fields
-        for scroll in scrolls:
-            scrollfile = locate_scroll(scroll)
-            if scrollfile is None:
-                return 255 # but, the proofreader already found them...
-            else:
-                try:
-                    # Set environment variables (re-export before each scroll in case a scroll changes it)
-                    ScrollMagick.export_environment()
-                    
-                    # Read scroll
-                    ScrollMagick.init_fields()
-                    ScrollMagick.execute_scroll(scrollfile)
-                    
-                    # Store fields and transposition
-                    fields = {}
-                    scroll_field[scroll] = fields
-                    for field in store_fields:
-                        value = globals()[field]
-                        fields[field] = value
-                        if field not in field_scroll:
-                            field_scroll[field] = {}
-                        map = field_scroll[field]
-                        if (value is not None) and (type(value) in (str, list)):
-                            for val in value if isinstance(value, list) else [value]:
-                                if val is not None:
-                                    dict_append(map, val, scroll)
-                except:
-                    return 255 # but, the proofreader did not have any problem...
-        
-        # Identify scrolls that may not be installed at the same time
-        conflicts = set()
-        installed = set()
-        provided = set()
-        for scrollset in [scroll_field, installed_field]:
-            for scroll in scrollset:
-                fields = scrollset[scroll]
-                if not isinstance(scroll, ScrollVersion):
-                    scroll = [fields[var] for var in ('pkgname', 'epoch', 'pkgver', 'pkgrel')]
-                    scroll = ScrollVersion('%s=%i:%s-%i' % scroll)
-                if scroll in installed:
-                    continue
-                if scroll in conflicts:
-                    return 8
-                scroll.union_add(installed)
-                for provides in feilds['provides']:
-                    ScrollVersion(provides).union_add(provided)
-                for conflict in fields['conflicts']:
-                    conflict = ScrollVersion(conflict)
-                    if (conflict in installed) or (conflict in provided):
-                        return 8
-                    conflict.union_add(conflicts)
-        
-        # Look for missing dependencies
-        needed = set()
-        requirer = {}
-        for scroll in scroll_field:
-            fields = scrollset[scroll]
-            makedepends = [None if dep == '' else ScrollVersion(deps) for deps in fields['makedepends']]
-            depends     = [None if dep == '' else ScrollVersion(deps) for deps in fields['depends']]
-            for deps in makedepends + depends:
-                if dep is None:
-                    if (not os.path.exists(SPIKE_PATH)) or (not os.path.isdir(SPIKE_PATH)):
-                        return 9
+        while True:
+            # Proofread scrolls
+            def agg(scroll, state, *_):
+                if state == 0:
+                    aggregator(scroll, 0)
+            error = proofread(agg, new_scrolls)
+            if error != 0:
+                return error
+            
+            # Report that we are looking for conflicts
+            aggregator(None, 2)
+            
+            # Get scroll fields
+            for scroll in new_scrolls.key():
+                scrollfile = locate_scroll(scroll) if scroll[new_scrolls] is None else scroll[new_scrolls]
+                if scrollfile is None:
+                    return 255 # but, the proofreader already found them...
                 else:
-                    if (deps not in installed) and (deps not in provided):
-                        deps.union_add(needed)
-                        dict_append(requirer, deps.name, scroll)
-        
-        # Locate the missing dependencies
-        not_found = set()
-        new_scrolls = {}
-        for scroll in needed:
-            path = locate_scroll(scroll.name, False)
-            if path is None:
-                not_found.add(scroll)
-            else:
-                new_scrolls[scroll] = path
-                aggregator(scroll.name, 3, requirer[scroll.name])
-        
-        # Remove replaced ponies
-        for scroll in scroll_field:
-            fields = scrollset[scroll]
-            replaces = [ScrollVersion(deps) for deps in fields['replaces']]
-            if replaces in already_installed:
-                uninstall.append(already_installed[replaces])
-                del installed_field[replaces]
-                for field in field_installed:
-                    for value in field_installed[field]:
-                        field_installed[field][value].remove(replaces)
-                aggregator(replaces.name, 4, scroll)
-        
-        if len(new_scrolls.keys()) > 0:
-            pass ## TODO loop back
+                    try:
+                        # Set environment variables (re-export before each scroll in case a scroll changes it)
+                        ScrollMagick.export_environment()
+                        
+                        # Read scroll
+                        ScrollMagick.init_fields()
+                        ScrollMagick.execute_scroll(scrollfile)
+                        
+                        # Store fields and transposition
+                        fields = {}
+                        scroll_field[scroll] = fields
+                        for field in store_fields:
+                            value = globals()[field]
+                            fields[field] = value
+                            if field not in field_scroll:
+                                field_scroll[field] = {}
+                            map = field_scroll[field]
+                            if (value is not None) and (type(value) in (str, list)):
+                                for val in value if isinstance(value, list) else [value]:
+                                    if val is not None:
+                                        dict_append(map, val, scroll)
+                    except:
+                        return 255 # but, the proofreader did not have any problem...
+            
+            # Identify scrolls that may not be installed at the same time
+            conflicts = set()
+            installed = set()
+            provided = set()
+            for scrollset in [scroll_field, installed_field]:
+                for scroll in scrollset:
+                    fields = scrollset[scroll]
+                    if not isinstance(scroll, ScrollVersion):
+                        scroll = [fields[var] for var in ('pkgname', 'epoch', 'pkgver', 'pkgrel')]
+                        scroll = ScrollVersion('%s=%i:%s-%i' % scroll)
+                    if scroll in installed:
+                        continue
+                    if scroll in conflicts:
+                        return 8
+                    scroll.union_add(installed)
+                    for provides in feilds['provides']:
+                        ScrollVersion(provides).union_add(provided)
+                    for conflict in fields['conflicts']:
+                        conflict = ScrollVersion(conflict)
+                        if (conflict in installed) or (conflict in provided):
+                            return 8
+                        conflict.union_add(conflicts)
+            
+            # Look for missing dependencies
+            needed = set()
+            requirer = {}
+            for scroll in scroll_field:
+                fields = scrollset[scroll]
+                makedepends = [None if dep == '' else ScrollVersion(deps) for deps in fields['makedepends']]
+                depends     = [None if dep == '' else ScrollVersion(deps) for deps in fields['depends']]
+                for deps in makedepends + depends:
+                    if dep is None:
+                        if (not os.path.exists(SPIKE_PATH)) or (not os.path.isdir(SPIKE_PATH)):
+                            return 9
+                    else:
+                        if (deps not in installed) and (deps not in provided):
+                            deps.union_add(needed)
+                            dict_append(requirer, deps.name, scroll)
+            
+            # Locate the missing dependencies
+            new_scrolls = {}
+            for scroll in needed:
+                path = locate_scroll(scroll.name, False)
+                if path is None:
+                    not_found.add(scroll)
+                else:
+                    new_scrolls[scroll] = path
+                    aggregator(scroll.name, 3, requirer[scroll.name])
+            
+            # Remove replaced ponies
+            for scroll in scroll_field:
+                fields = scrollset[scroll]
+                replaces = [ScrollVersion(deps) for deps in fields['replaces']]
+                if replaces in already_installed:
+                    uninstall.append(already_installed[replaces])
+                    del already_installed[replaces]
+                    del installed_field[replaces]
+                    for field in field_installed:
+                        for value in field_installed[field]:
+                            field_installed[field][value].remove(replaces)
+                    aggregator(replaces.name, 4, scroll)
+            
+            # Loop if we got some additional scrolls
+            if len(new_scrolls.keys()) == 0:
+                break
         
         ## TODO ask for confirmation
         
