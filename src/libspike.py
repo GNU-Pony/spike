@@ -107,7 +107,7 @@ class LibSpike(LibSpikeHelper):
     
     
     @staticmethod
-    def bootstrap(aggregator):
+    def bootstrap(aggregator, verify):
         '''
         Update the spike and the scroll archives
         
@@ -116,7 +116,8 @@ class LibSpike(LibSpikeHelper):
                      Feed a directory path and 1 when a directory bootstrap process is beginning.
                      Feed a directory path and 2 when a directory bootstrap process has ended.
         
-        @return  :byte  Exit value, see description of `LibSpike`, the possible ones are: 0, 12, 24
+        @param   verify:bool  Whether to verify signatures
+        @return  :byte        Exit value, see description of `LibSpike`, the possible ones are: 0, 12, 24
         '''
         LibSpike.lock(True)
         if not os.path.exists(SPIKE_PATH):
@@ -145,7 +146,7 @@ class LibSpike(LibSpikeHelper):
         # Update Spike and repositories, those that are listed
         for repo in update:
             aggregator(repo, 1)
-            if not Gitcord(repo).updateBranch():
+            if not Gitcord(repo).updateBranch(verify):
                 return 24
             aggregator(repo, 2)
         

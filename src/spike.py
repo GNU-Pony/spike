@@ -143,7 +143,8 @@ class Spike():
         opts.add_argumentless(['-h', '--help'],                       help = 'Print this help')
         opts.add_argumentless(['-c', '--copyright'],                  help = 'Print copyright information')
         
-        opts.add_argumentless(['-B', '--bootstrap'],                  help = 'Update spike and scroll repositories')
+        opts.add_argumentless(['-B', '--bootstrap'],                  help = 'Update spike and scroll repositories\n'
+                                                             'slaves: [--no-verify]')
         opts.add_argumentless(['-F', '--find'],                       help = 'Find a scroll either by name or by ownership\n'
                                                              'slaves: [--owner | --written=]')
         opts.add_argumentless(['-W', '--write'],                      help = 'Install a pony (package) from scroll\n'
@@ -195,6 +196,7 @@ class Spike():
         opts.add_argumentless([      '--downgrade'],                  help = 'Do only perform pony downgrades')
         opts.add_argumentless([      '--upgrade'],                    help = 'Do only perform pony upgrades')
         opts.add_argumentless([      '--shred'],                      help = 'Preform secure removal with `shred` when removing old files')
+        opts.add_argumentless([      '--no-verify'],                  help = 'Skip verification of signatures')
         opts.add_argumentless(['-a', '--all-at-once'],                help = 'Display all example shots in one single process instance')
         opts.add_argumented(  [      '--viewer'],    arg = 'VIEWER',  help = 'Select image viewer for example shots')
         
@@ -277,10 +279,11 @@ class Spike():
                 exitValue = self.sha3sum(opts.files)
             
             elif opts.opts['-B'] is not None:
+                allowed.add('--no-verify')
                 self.test_allowed(opts.opts, allowed, longmap, True)
                 self.test_files(opts.files, 0, True)
                 LibSpike.initialise()
-                exitValue = self.bootstrap()
+                exitValue = self.bootstrap(opts.opts['--no-verify'] is not None)
             
             elif opts.opts['-F'] is not None:
                 exclusives.add('-o')
@@ -586,7 +589,7 @@ class Spike():
     
     def print_version(self):
         '''
-        Prints spike fellowed by a blank spacs and the version of spike to stdout
+        Prints spike followed by a blank spacs and the version of spike to stdout
         '''
         print('spike ' + self.version)
     
@@ -614,11 +617,12 @@ class Spike():
     
     
     
-    def bootstrap(self):
+    def bootstrap(self, verify):
         '''
         Update the spike and the scroll archives
         
-        @return  :byte  Exit value, see description of `mane` 
+        @parma   verify:bool  Whether to verify signatures
+        @return  :byte        Exit value, see description of `mane` 
         '''
         class Agg:
             '''
@@ -644,7 +648,7 @@ class Spike():
                 print('[%s\033[00m] %s\n' % (s, directory))
                 self.pos = p + 1
         
-        return LibSpike.bootstrap(Agg())
+        return LibSpike.bootstrap(Agg(), verify)
     
     
     def find_scroll(self, patterns, installed = True, notinstalled = True):

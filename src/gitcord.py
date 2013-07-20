@@ -91,14 +91,16 @@ class Gitcord():
                 return 255
     
     
-    def updateBranch():
+    def updateBranch(verify):
         '''
         Update the current branch in the repository. If git is new enough (>=1.8.2.4), support signature verification.
         
-        @return  :bool  Whether the spell casting was successful
+        @param   verify:bool  Whether to verify signatures, this is important that it could be skipped
+                              because somepony may have missed it and it would not get signed before next tag
+        @return  :bool        Whether the spell casting was successful
         '''
         args = ['git', 'pull']
-        if checkVersion(1, 8, 2, 4):
+        if verify and checkVersion(1, 8, 2, 4):
             args.append('--verify-signatures')
         return 0 == __exec(args)
     
