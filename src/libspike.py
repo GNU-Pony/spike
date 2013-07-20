@@ -549,6 +549,7 @@ class LibSpike(LibSpikeHelper):
             if len(new_scrolls.keys()) == 0:
                 break
         
+        # We as for confirmation first because if optimisation is not done, finding provider can take some serious time
         ## TODO ask for confirmation
         
         if len(not_found) > 0:
