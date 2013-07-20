@@ -709,20 +709,21 @@ class Spike():
         class Agg:
             '''
             aggregator:(str?, int, [*])→(void|bool|str)
-                Feed a scroll (`None` only at state 2 and 5) and a state (can be looped) during the process of a scroll.
-                The states are: 0 - proofreading
-                                1 - scroll added because of being updated
-                                2 - resolving conflicts
-                                3 - scroll added because of dependency. Additional parameters: requirers:list<str>
-                                4 - scroll removed because due to being replaced. Additional parameters: replacer:str
-                                5 - verify installation. Additional parameters: freshinstalls:list<str>, reinstalls:list<str>, update:list<str>, skipping:list<str>
+                Feed a scroll (`None` only at state 0, 2 and 5) and a state (can be looped) during the process of a scroll.
+                The states are: 0 - inspecting installed scrolls
+                                1 - proofreading
+                                2 - scroll added because of being updated
+                                3 - resolving conflicts
+                                4 - scroll added because of dependency. Additional parameters: requirers:list<str>
+                                5 - scroll removed because due to being replaced. Additional parameters: replacer:str
+                                6 - verify installation. Additional parameters: freshinstalls:list<str>, reinstalls:list<str>, update:list<str>, skipping:list<str>
                                                          Return: accepted:bool
-                                6 - select provider pony. Additional parameters: options:list<str>
+                                7 - select provider pony. Additional parameters: options:list<str>
                                                           Return: select provider:str? `None` if aborted
-                                7 - fetching source. Additional parameters: source:str, progress state:int, progress end:int
-                                8 - verifying source. Additional parameters: progress state:int, progress end:int
-                                9 - compiling
-                               10 - file conflict check: Additional parameters: progress state:int, progress end:int
+                                8 - fetching source. Additional parameters: source:str, progress state:int, progress end:int
+                                9 - verifying source. Additional parameters: progress state:int, progress end:int
+                               10 - compiling
+                               11 - file conflict check: Additional parameters: progress state:int, progress end:int
                                11 - installing files: Additional parameters: progress state:int, progress end:int
             '''
             def __init__(self):
@@ -734,22 +735,24 @@ class Spike():
                 self.scrls[0] = self.scrls[1]
             def __call__(self, scroll, state, *args):
                 if state == 0:
-                    print('Proofreading: %s' % scroll)
+                    print('Inspecting installed scrolls')
                 elif state == 1:
-                    self.updateadd.append(scroll)
+                    print('Proofreading: %s' % scroll)
                 elif state == 2:
-                    print('Resolving conflicts')
+                    self.updateadd.append(scroll)
                 elif state == 3:
+                    print('Resolving conflicts')
+                elif state == 4:
                     if scroll in self.depadd:
                         self.depadd[scroll] += args[0]
                     else:
                         self.depadd[scroll] = args[0]
-                elif state == 4:
+                elif state == 5:
                     if scroll in self.replaceremove:
                         self.replaceremove[scroll] += args[0]
                     else:
                         self.replaceremove[scroll] = args[0]
-                elif state == 5:
+                elif state == 6:
                     self.skipping = args[3]
                     if len(self.skipping) > 0:
                         for re in self.skipping:
@@ -774,7 +777,7 @@ class Spike():
                             print('Replacing %s with %s' % (replacee, ', '.join(self.replaceremove[replacee])))
                     print('\033[01mContinue? (y/n)\033[00m')
                     return input().lower().startswith('y')
-                elif state == 6:
+                elif state == 7:
                     print('\033[01mSelect provider for virtual pony: %s\033[00m' % scroll)
                     i = 0
                     for prov in args[0]:
@@ -790,37 +793,37 @@ class Spike():
                         pass
                     return None
                 else:
-                    if scroll not in self.scrls[state - 7][1]:
-                        self.scrls[state - 7][0] += 1
-                        self.scrls[state - 7][1][scroll] = self.scrls[state - 7][0]
-                    (scrli, scrln) = (self.scrls[state - 7][1][scroll], self.scrls[state - 7][0])
+                    if scroll not in self.scrls[state - 8][1]:
+                        self.scrls[state - 8][0] += 1
+                        self.scrls[state - 8][1][scroll] = self.scrls[state - 8][0]
+                    (scrli, scrln) = (self.scrls[state - 8][1][scroll], self.scrls[state - 8][0])
                     if scrli != scrln:
-                        if state != 9:
+                        if state != 10:
                             print('\033[%iAm', scrln - scrli)
-                    if state == 7:
+                    if state == 8:
                         (source, progress, end) = args
                         bar = '[\033[01;3%im%s\033[00m]'
                         bar %= (2, 'DONE') if progress == end else (3, '%2.1f' % (progress / end))
                         print('[%s] (%i/%i) Downloading %s: %s' % (bar, scrli, scrln, scroll, source))
-                    elif state == 8:
+                    elif state == 9:
                         (progress, end) = args
                         bar = '[\033[01;3%im%s\033[00m]'
                         bar %= (2, 'DONE') if progress == end else (3, '%2.1f' % (progress / end))
                         print('[%s] (%i/%i) Verifing %s' % (bar, scrli, scrln, scroll))
-                    elif state == 9:
-                        print('(%i/%i) Compiling %s' % (scrli + 1, scrln, scroll))
                     elif state == 10:
+                        print('(%i/%i) Compiling %s' % (scrli + 1, scrln, scroll))
+                    elif state == 11:
                         (progress, end) = args
                         bar = '[\033[01;3%im%s\033[00m]'
                         bar %= (2, 'DONE') if progress == end else (3, '%2.1f' % (progress / end))
                         print('[%s] (%i/%i) Checking file conflicts for %s' % (bar, scrli, scrln, scroll))
-                    elif state == 11:
+                    elif state == 12:
                         (progress, end) = args
                         bar = '[\033[01;3%im%s\033[00m]'
                         bar %= (2, 'DONE') if progress == end else (3, '%2.1f' % (progress / end))
                         print('[%s] (%i/%i) Installing %s' % (bar, scrli, scrln, scroll))
                     if scrli != scrln:
-                        if state != 9:
+                        if state != 10:
                             print('\033[%iBm', scrln - (scrli + 1))
                 return None
                 
@@ -840,20 +843,21 @@ class Spike():
         class Agg:
             '''
             aggregator:(str?, int, [*])→(void|bool|str)
-                Feed a scroll (`None` only at state 2 and 5) and a state (can be looped) during the process of a scroll.
-                The states are: 0 - proofreading
-                                1 - scroll added because of being updated
-                                2 - resolving conflicts
-                                3 - scroll added because of dependency. Additional parameters: requirers:list<str>
-                                4 - scroll removed because due to being replaced. Additional parameters: replacer:str
-                                5 - verify installation. Additional parameters: freshinstalls:list<str>, reinstalls:list<str>, update:list<str>, skipping:list<str>
+                Feed a scroll (`None` only at state 0, 2 and 5) and a state (can be looped) during the process of a scroll.
+                The states are: 0 - inspecting installed scrolls
+                                1 - proofreading
+                                2 - scroll added because of being updated
+                                3 - resolving conflicts
+                                4 - scroll added because of dependency. Additional parameters: requirers:list<str>
+                                5 - scroll removed because due to being replaced. Additional parameters: replacer:str
+                                6 - verify installation. Additional parameters: freshinstalls:list<str>, reinstalls:list<str>, update:list<str>, skipping:list<str>
                                                          Return: accepted:bool
-                                6 - select provider pony. Additional parameters: options:list<str>
+                                7 - select provider pony. Additional parameters: options:list<str>
                                                           Return: select provider:str? `None` if aborted
-                                7 - fetching source. Additional parameters: source:str, progress state:int, progress end:int
-                                8 - verifying source. Additional parameters: progress state:int, progress end:int
-                                9 - compiling
-                               10 - file conflict check: Additional parameters: progress state:int, progress end:int
+                                8 - fetching source. Additional parameters: source:str, progress state:int, progress end:int
+                                9 - verifying source. Additional parameters: progress state:int, progress end:int
+                               10 - compiling
+                               11 - file conflict check: Additional parameters: progress state:int, progress end:int
                                11 - installing files: Additional parameters: progress state:int, progress end:int
             '''
             def __init__(self):
@@ -865,22 +869,24 @@ class Spike():
                 self.scrls[0] = self.scrls[1]
             def __call__(self, scroll, state, *args):
                 if state == 0:
-                    print('Proofreading: %s' % scroll)
+                    print('Inspecting installed scrolls')
                 elif state == 1:
-                    self.updateadd.append(scroll)
+                    print('Proofreading: %s' % scroll)
                 elif state == 2:
-                    print('Resolving conflicts')
+                    self.updateadd.append(scroll)
                 elif state == 3:
+                    print('Resolving conflicts')
+                elif state == 4:
                     if scroll in self.depadd:
                         self.depadd[scroll] += args[0]
                     else:
                         self.depadd[scroll] = args[0]
-                elif state == 4:
+                elif state == 5:
                     if scroll in self.replaceremove:
                         self.replaceremove[scroll] += args[0]
                     else:
                         self.replaceremove[scroll] = args[0]
-                elif state == 5:
+                elif state == 6:
                     self.skipping = args[3]
                     if len(self.skipping) > 0:
                         for re in self.skipping:
@@ -905,7 +911,7 @@ class Spike():
                             print('Replacing %s with %s' % (replacee, ', '.join(self.replaceremove[replacee])))
                     print('\033[01mContinue? (y/n)\033[00m')
                     return input().lower().startswith('y')
-                elif state == 6:
+                elif state == 7:
                     print('\033[01mSelect provider for virtual pony: %s\033[00m' % scroll)
                     i = 0
                     for prov in args[0]:
@@ -921,37 +927,37 @@ class Spike():
                         pass
                     return None
                 else:
-                    if scroll not in self.scrls[state - 7][1]:
-                        self.scrls[state - 7][0] += 1
-                        self.scrls[state - 7][1][scroll] = self.scrls[state - 7][0]
-                    (scrli, scrln) = (self.scrls[state - 7][1][scroll], self.scrls[state - 7][0])
+                    if scroll not in self.scrls[state - 8][1]:
+                        self.scrls[state - 8][0] += 1
+                        self.scrls[state - 8][1][scroll] = self.scrls[state - 8][0]
+                    (scrli, scrln) = (self.scrls[state - 8][1][scroll], self.scrls[state - 8][0])
                     if scrli != scrln:
-                        if state != 9:
+                        if state != 10:
                             print('\033[%iAm', scrln - scrli)
-                    if state == 7:
+                    if state == 8:
                         (source, progress, end) = args
                         bar = '[\033[01;3%im%s\033[00m]'
                         bar %= (2, 'DONE') if progress == end else (3, '%2.1f' % (progress / end))
                         print('[%s] (%i/%i) Downloading %s: %s' % (bar, scrli, scrln, scroll, source))
-                    elif state == 8:
+                    elif state == 9:
                         (progress, end) = args
                         bar = '[\033[01;3%im%s\033[00m]'
                         bar %= (2, 'DONE') if progress == end else (3, '%2.1f' % (progress / end))
                         print('[%s] (%i/%i) Verifing %s' % (bar, scrli, scrln, scroll))
-                    elif state == 9:
-                        print('(%i/%i) Compiling %s' % (scrli + 1, scrln, scroll))
                     elif state == 10:
+                        print('(%i/%i) Compiling %s' % (scrli + 1, scrln, scroll))
+                    elif state == 11:
                         (progress, end) = args
                         bar = '[\033[01;3%im%s\033[00m]'
                         bar %= (2, 'DONE') if progress == end else (3, '%2.1f' % (progress / end))
                         print('[%s] (%i/%i) Checking file conflicts for %s' % (bar, scrli, scrln, scroll))
-                    elif state == 11:
+                    elif state == 12:
                         (progress, end) = args
                         bar = '[\033[01;3%im%s\033[00m]'
                         bar %= (2, 'DONE') if progress == end else (3, '%2.1f' % (progress / end))
                         print('[%s] (%i/%i) Installing %s' % (bar, scrli, scrln, scroll))
                     if scrli != scrln:
-                        if state != 9:
+                        if state != 10:
                             print('\033[%iBm', scrln - (scrli + 1))
                 return None
         
