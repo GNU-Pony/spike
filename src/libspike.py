@@ -355,7 +355,7 @@ class LibSpike(LibSpikeHelper):
         Install ponies from scrolls
         
         @param   aggregator:(str?, int, [*])→(void|bool|str)
-                     Feed a scroll (`None` only at state 0, 3 and 6) and a state (can be looped) during the process of a scroll.
+                     Feed a scroll (`None` only at state 0, 3, 6 and 7) and a state (can be looped) during the process of a scroll.
                      The states are: 0 - inspecting installed scrolls
                                      1 - proofreading
                                      2 - scroll added because of being updated
@@ -364,13 +364,14 @@ class LibSpike(LibSpikeHelper):
                                      5 - scroll removed because due to being replaced. Additional parameters: replacer:str
                                      6 - verify installation. Additional parameters: freshinstalls:list<str>, reinstalls:list<str>, update:list<str>, downgrading:list<str>, skipping:list<str>
                                                               Return: accepted:bool
-                                     7 - select provider pony. Additional parameters: options:list<str>
+                                     7 - inspecting non-install scrolls for providers
+                                     8 - select provider pony. Additional parameters: options:list<str>
                                                                Return: select provider:str? `None` if aborted
-                                     8 - fetching source. Additional parameters: source:str, progress state:int, progress end:int
-                                     9 - verifying source. Additional parameters: progress state:int, progress end:int
-                                    10 - compiling
-                                    11 - file conflict check: Additional parameters: progress state:int, progress end:int
-                                    12 - installing files: Additional parameters: progress state:int, progress end:int
+                                     9 - fetching source. Additional parameters: source:str, progress state:int, progress end:int
+                                    10 - verifying source. Additional parameters: progress state:int, progress end:int
+                                    11 - compiling
+                                    12 - file conflict check: Additional parameters: progress state:int, progress end:int
+                                    13 - installing files: Additional parameters: progress state:int, progress end:int
         
         @param   scrolls:list<str>  Scroll to install
         @param   root:str           Mounted filesystem to which to perform installation
@@ -407,6 +408,8 @@ class LibSpike(LibSpikeHelper):
         new_scrolls = {}
         installed_scroll = {}
         installing = {}
+        providers = None
+        provider_file = None
         for scroll in scrolls:
             new_scrolls[scroll] = None
         
@@ -579,8 +582,34 @@ class LibSpike(LibSpikeHelper):
             
             # Select providers and loop if any was needed
             if len(not_found) > 0:
+                # Read all scrolls so we can find providers
+                if providers is None:
+                    aggregator(None, 7)
+                    providers = {}
+                    provider_file = {}
+                    all_scrolls = locate_all_scrolls(False)
+                    
+                    for scrollfile in all_scrolls:
+                        # Set environment variables (re-export before each scroll in case a scroll changes it)
+                        ScrollMagick.export_environment()
+                        
+                        # Read scroll
+                        ScrollMagick.init_fields()
+                        ScrollMagick.execute_scroll(scrollfile)
+                        
+                        scroll = [globals()[var] for var in ('pkgname', 'epoch', 'pkgver', 'pkgrel')]
+                        scroll = ScrollVersion('%s=%i:%s-%i' % scroll)
+                        for provides in globals()['provides']:
+                            ScrollVersion(provides).slice_map(providers, scroll)
+                            provider_file[scroll] = scrollfile
+                
+                # Select provider
                 for scroll in not_found:
-                    pass ## TODO find all scrolls that provides `scroll` and ask for which to install, abort with value 254 if `None` is selected
+                    options = ScrollVersion(scroll).get_all(providers)
+                    option = aggregator(scroll, 8, options)
+                    if option is None:
+                        return 254
+                    new_scrolls[option] = provider_file[option]
                 not_found = set()
             else:
                 break
@@ -596,7 +625,7 @@ class LibSpike(LibSpikeHelper):
         Update installed ponies
         
         @param   aggregator:(str?, int, [*])→(void|bool|str)
-                     Feed a scroll (`None` only at state 0, 3 and 6) and a state (can be looped) during the process of a scroll.
+                     Feed a scroll (`None` only at state 0, 3, 6 and 7) and a state (can be looped) during the process of a scroll.
                      The states are: 0 - inspecting installed scrolls
                                      1 - proofreading
                                      2 - scroll added because of being updated
@@ -605,13 +634,14 @@ class LibSpike(LibSpikeHelper):
                                      5 - scroll removed because due to being replaced. Additional parameters: replacer:str
                                      6 - verify installation. Additional parameters: freshinstalls:list<str>, reinstalls:list<str>, update:list<str>, downgrading:list<str>, skipping:list<str>
                                                               Return: accepted:bool
-                                     7 - select provider pony. Additional parameters: options:list<str>
+                                     7 - inspecting non-install scrolls for providers
+                                     8 - select provider pony. Additional parameters: options:list<str>
                                                                Return: select provider:str? `None` if aborted
-                                     8 - fetching source. Additional parameters: source:str, progress state:int, progress end:int
-                                     9 - verifying source. Additional parameters: progress state:int, progress end:int
-                                    10 - compiling
-                                    11 - file conflict check: Additional parameters: progress state:int, progress end:int
-                                    12 - installing files: Additional parameters: progress state:int, progress end:int
+                                     9 - fetching source. Additional parameters: source:str, progress state:int, progress end:int
+                                    10 - verifying source. Additional parameters: progress state:int, progress end:int
+                                    11 - compiling
+                                    12 - file conflict check: Additional parameters: progress state:int, progress end:int
+                                    13 - installing files: Additional parameters: progress state:int, progress end:int
         
         @param   root:str           Mounted filesystem to which to perform installation
         @param   ignores:list<str>  Ponies not to update
