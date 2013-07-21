@@ -583,6 +583,7 @@ class LibSpike(LibSpikeHelper):
             # Select providers and loop if any was needed
             if len(not_found) > 0:
                 # Read all scrolls so we can find providers
+                # TODO this should be better using spikedb
                 if providers is None:
                     aggregator(None, 7)
                     providers = {}
