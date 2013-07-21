@@ -639,7 +639,7 @@ class LibSpike(LibSpikeHelper):
             else:
                 noninteractively_installed.append(scroll)
         
-        # Select when to build scrolls that need itneraction
+        # Select when to build scrolls that need interaction
         when = 0
         if len(interactively_installed) > 0:
             when = aggregator(None, 9, interactively_installed)
@@ -647,6 +647,17 @@ class LibSpike(LibSpikeHelper):
                 return 254
             if not (0 <= when <= 3):
                 return 255
+        
+        # Get order to download and build scrolls
+        first_download, second_download = installing.keys(), []
+        first_build, second_build = first_download, second_build
+        if when == 1:
+            first_download, second_download = interactively_installed, noninteractively_installed
+        elif when == 2:
+            first_download, second_download = interactively_installed, noninteractively_installed
+            first_build, second_build = first_download, second_download
+        elif when == 3:
+            first_download, second_download = noninteractively_installed, interactively_installed
         
         ## TODO start installation
         
