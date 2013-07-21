@@ -659,7 +659,24 @@ class LibSpike(LibSpikeHelper):
         elif when == 3:
             first_download, second_download = noninteractively_installed, interactively_installed
         
-        ## TODO start installation
+        # Download and verify sources and compile
+        for (download_list, build_list) in [(first_download, first_build), (second_download, second_build)]:
+            # Download sources
+            for scroll in download_list:
+                pass ## TODO downloadd
+            
+            # Verify sources
+            ## TODO verify
+            
+            # Compile
+            for scroll in build_list:
+                pass ## TODO build
+        
+        # Check for file conflicts
+        if not force:
+            pass ## TODO check for file conflicts
+        
+        ## TODO install
         
         return 0
     
