@@ -551,37 +551,39 @@ class LibSpike(LibSpikeHelper):
                     aggregator(replaces.name, 5, scroll)
             
             # Loop if we got some additional scrolls
-            if len(new_scrolls.keys()) == 0:
-                break
+            if len(new_scrolls.keys()) > 0:
+                continue
         
-        # We as for confirmation first because if optimisation is not done, finding provider can take some serious time
-        freshinstalls = []
-        reinstalls = []
-        update = []
-        downgrading = []
-        skipping = []
-        for scroll in installing:
-            version = installing[scroll]
-            scroll_version = '%s=%s' % (scroll, version)
-            if scroll not in installed_scrolls:
-                freshinstalls.append(scroll_version)
-            else:
-                version = ScrollVersion.Version(version, True)
-                if version == installed_scrolls[scroll]:
-                    reinstalls.append(scroll_version)
-                elif version < installed_scrolls[scroll]:
-                    downgrading.append(scroll_version)
+            # We as for confirmation first because if optimisation is not done, finding provider can take some serious time
+            freshinstalls = []
+            reinstalls = []
+            update = []
+            downgrading = []
+            skipping = []
+            for scroll in installing:
+                version = installing[scroll]
+                scroll_version = '%s=%s' % (scroll, version)
+                if scroll not in installed_scrolls:
+                    freshinstalls.append(scroll_version)
                 else:
-                    update.append(scroll_version)
-        accepted = aggregator(None, 6, freshinstalls, reinstalls, update, downgrading, skipping)
-        if not accepted:
-            return 254;
-        
-        if len(not_found) > 0:
-            for scroll in not_found:
-                pass ## TODO find all scrolls that provides `scroll` and ask for which to install, abort with value 254 if `None` is selected
+                    version = ScrollVersion.Version(version, True)
+                    if version == installed_scrolls[scroll]:
+                        reinstalls.append(scroll_version)
+                    elif version < installed_scrolls[scroll]:
+                        downgrading.append(scroll_version)
+                    else:
+                        update.append(scroll_version)
+            accepted = aggregator(None, 6, freshinstalls, reinstalls, update, downgrading, skipping)
+            if not accepted:
+                return 254;
             
-            ## TODO loop back
+            # Select providers and loop if any was needed
+            if len(not_found) > 0:
+                for scroll in not_found:
+                    pass ## TODO find all scrolls that provides `scroll` and ask for which to install, abort with value 254 if `None` is selected
+                not_found = set()
+            else:
+                break
         
         ## TODO start installation
         
