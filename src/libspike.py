@@ -554,16 +554,17 @@ class LibSpike(LibSpikeHelper):
             # Remove replaced ponies
             for scroll in scroll_field:
                 fields = scrollset[scroll]
-                replaces = [ScrollVersion(deps) for deps in fields['replaces']]
-                if replaces in already_installed:
-                    uninstall.append(already_installed[replaces])
-                    del already_installed[replaces]
-                    del installed_field[replaces]
-                    for field in field_installed:
-                        for value in field_installed[field]:
-                            field_installed[field][value].remove(replaces)
-                    aggregator(replaces.name, 5, scroll)
-                # TODO replace select
+                for replaces in [ScrollVersion(deps) for deps in fields['replaces']]:
+                    if replaces in already_installed:
+                        uninstall.append(already_installed[replaces])
+                        del already_installed[replaces]
+                        del installed_field[replaces]
+                        for field in field_installed:
+                            for value in field_installed[field]:
+                                field_installed[field][value].remove(replaces)
+                        aggregator(replaces.name, 5, scroll)
+                    if replaces in installing:
+                        del installing[replaces]
             
             # Loop if we got some additional scrolls
             if len(new_scrolls.keys()) > 0:
