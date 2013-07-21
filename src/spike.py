@@ -712,8 +712,8 @@ class Spike():
         '''
         class Agg:
             '''
-            aggregator:(str?, int, [*])→(void|bool|str)
-                Feed a scroll (`None` only at state 0, 3, 6 and 7) and a state (can be looped) during the process of a scroll.
+            aggregator:(str?, int, [*])→(void|bool|str|int?)
+                Feed a scroll (`None` only at state 0, 3, 6, 7 and 9) and a state (can be looped) during the process of a scroll.
                 The states are: 0 - inspecting installed scrolls
                                 1 - proofreading
                                 2 - scroll added because of being updated
@@ -725,11 +725,17 @@ class Spike():
                                 7 - inspecting non-install scrolls for providers
                                 8 - select provider pony. Additional parameters: options:list<str>
                                                           Return: select provider:str? `None` if aborted
-                                9 - fetching source. Additional parameters: source:str, progress state:int, progress end:int
-                               10 - verifying source. Additional parameters: progress state:int, progress end:int
-                               11 - compiling
-                               12 - file conflict check: Additional parameters: progress state:int, progress end:int
-                               13 - installing files: Additional parameters: progress state:int, progress end:int
+                                9 - select when to build ponies which require interaction. Additional parameters: interactive:list<str>
+                                                                                           Return: when:excl-flag? `None` if aborted
+                               10 - fetching source. Additional parameters: source:str, progress state:int, progress end:int
+                               11 - verifying source. Additional parameters: progress state:int, progress end:int
+                               12 - compiling
+                               13 - file conflict check: Additional parameters: progress state:int, progress end:int
+                               14 - installing files: Additional parameters: progress state:int, progress end:int
+                when:excl-flag values: 0 - Build whenever
+                                       1 - Build early
+                                       2 - Build early and fetch separately
+                                       3 - Build late
             '''
             def __init__(self):
                 self.updateadd = set()
@@ -778,8 +784,11 @@ class Spike():
                         print('Replacing %s with %s' % (replacee, ', '.join(self.replaceremove[replacee])))
                     for scrl in downgrading:
                         print('Downgrading %s' % scrl)
-                    print('\033[01mContinue? (y/n)\033[00m')
-                    return input().lower().startswith('y')
+                    while True:
+                        print('\033[01mContinue? (y/n)\033[00m')
+                        answer = input().lower()
+                        if answer.startswith('y') or answer.startswith('n'):
+                            return answer.startswith('y')
                 elif state == 7:
                     print('Inspecting scroll repository for providers')
                 elif state == 8:
@@ -797,38 +806,61 @@ class Spike():
                     except:
                         pass
                     return None
+                elif state == 9:
+                    print('There are sone scrolls that require pony interaction to be build:')
+                    for scroll in args[0]:
+                        print('    %s' % scroll)
+                    print('\033[01mWhen do you want to build scroll that require interaction:\033[00m')
+                    print('    w - Whenever, I will not leave my precious keyboard')
+                    print('    e - Before all other scrolls')
+                    print('    E - Before all other scrolls, and download others\' sources afterwards')
+                    print('    l - After all other scrolls')
+                    print('    a - Abort!')
+                    while True:
+                        when = input()
+                        if when == 'w' or when == 'W':
+                            return 0
+                        if when == 'e':
+                            return 1
+                        if when == 'E':
+                            return 2
+                        if when == 'l' or when == 'L':
+                            return 3
+                        if when == 'a':
+                            return None
+                        print('\033[01mInvalid option!\033[00m')
                 else:
-                    if scroll not in self.scrls[state - 8][1]:
-                        self.scrls[state - 9][0] += 1
-                        self.scrls[state - 9][1][scroll] = self.scrls[state - 9][0]
-                    (scrli, scrln) = (self.scrls[state - 9][1][scroll], self.scrls[state - 9][0])
+                    if scroll not in self.scrls[state - 10][1]:
+                        self.scrls[state - 10][0] += 1
+                        self.scrls[state - 10][1][scroll] = self.scrls[state - 10][0]
+                    (scrli, scrln) = (self.scrls[state - 10][1][scroll], self.scrls[state - 10][0])
                     if scrli != scrln:
-                        if state != 11:
+                        if state != 12:
                             print('\033[%iAm', scrln - scrli)
-                    if state == 9:
+                    if state == 10:
                         (source, progress, end) = args
                         bar = '[\033[01;3%im%s\033[00m]'
                         bar %= (2, 'DONE') if progress == end else (3, '%2.1f' % (progress / end))
                         print('[%s] (%i/%i) Downloading %s: %s' % (bar, scrli, scrln, scroll, source))
-                    elif state == 10:
+                    elif state == 11:
                         (progress, end) = args
                         bar = '[\033[01;3%im%s\033[00m]'
                         bar %= (2, 'DONE') if progress == end else (3, '%2.1f' % (progress / end))
                         print('[%s] (%i/%i) Verifing %s' % (bar, scrli, scrln, scroll))
-                    elif state == 11:
-                        print('(%i/%i) Compiling %s' % (scrli + 1, scrln, scroll))
                     elif state == 12:
+                        print('(%i/%i) Compiling %s' % (scrli + 1, scrln, scroll))
+                    elif state == 13:
                         (progress, end) = args
                         bar = '[\033[01;3%im%s\033[00m]'
                         bar %= (2, 'DONE') if progress == end else (3, '%2.1f' % (progress / end))
                         print('[%s] (%i/%i) Checking file conflicts for %s' % (bar, scrli, scrln, scroll))
-                    elif state == 13:
+                    elif state == 14:
                         (progress, end) = args
                         bar = '[\033[01;3%im%s\033[00m]'
                         bar %= (2, 'DONE') if progress == end else (3, '%2.1f' % (progress / end))
                         print('[%s] (%i/%i) Installing %s' % (bar, scrli, scrln, scroll))
                     if scrli != scrln:
-                        if state != 11:
+                        if state != 12:
                             print('\033[%iBm', scrln - (scrli + 1))
                 return None
                 
@@ -847,8 +879,8 @@ class Spike():
         '''
         class Agg:
             '''
-            aggregator:(str?, int, [*])→(void|bool|str)
-                Feed a scroll (`None` only at state 0, 3, 6 and 7) and a state (can be looped) during the process of a scroll.
+            aggregator:(str?, int, [*])→(void|bool|str|int?)
+                Feed a scroll (`None` only at state 0, 3, 6, 7 and 9) and a state (can be looped) during the process of a scroll.
                 The states are: 0 - inspecting installed scrolls
                                 1 - proofreading
                                 2 - scroll added because of being updated
@@ -860,11 +892,17 @@ class Spike():
                                 7 - inspecting non-install scrolls for providers
                                 8 - select provider pony. Additional parameters: options:list<str>
                                                           Return: select provider:str? `None` if aborted
-                                9 - fetching source. Additional parameters: source:str, progress state:int, progress end:int
-                               10 - verifying source. Additional parameters: progress state:int, progress end:int
-                               11 - compiling
-                               12 - file conflict check: Additional parameters: progress state:int, progress end:int
-                               13 - installing files: Additional parameters: progress state:int, progress end:int
+                                9 - select when to build ponies which require interaction. Additional parameters: interactive:list<str>
+                                                                                           Return: when:excl-flag? `None` if aborted
+                               10 - fetching source. Additional parameters: source:str, progress state:int, progress end:int
+                               11 - verifying source. Additional parameters: progress state:int, progress end:int
+                               12 - compiling
+                               13 - file conflict check: Additional parameters: progress state:int, progress end:int
+                               14 - installing files: Additional parameters: progress state:int, progress end:int
+                when:excl-flag values: 0 - Build whenever
+                                       1 - Build early
+                                       2 - Build early and fetch separately
+                                       3 - Build late
             '''
             def __init__(self):
                 self.updateadd = set()
@@ -913,8 +951,11 @@ class Spike():
                         print('Replacing %s with %s' % (replacee, ', '.join(self.replaceremove[replacee])))
                     for scrl in downgrading:
                         print('Downgrading %s' % scrl)
-                    print('\033[01mContinue? (y/n)\033[00m')
-                    return input().lower().startswith('y')
+                    while True:
+                        print('\033[01mContinue? (y/n)\033[00m')
+                        answer = input().lower()
+                        if answer.startswith('y') or answer.startswith('n'):
+                            return answer.startswith('y')
                 elif state == 7:
                     print('Inspecting scroll repository for providers')
                 elif state == 8:
@@ -932,38 +973,61 @@ class Spike():
                     except:
                         pass
                     return None
+                elif state == 9:
+                    print('There are sone scrolls that require pony interaction to be build:')
+                    for scroll in args[0]:
+                        print('    %s' % scroll)
+                    print('\033[01mWhen do you want to build scroll that require interaction:\033[00m')
+                    print('    w - Whenever, I will not leave my precious keyboard')
+                    print('    e - Before all other scrolls')
+                    print('    E - Before all other scrolls, and download others\' sources afterwards')
+                    print('    l - After all other scrolls')
+                    print('    a - Abort!')
+                    while True:
+                        when = input()
+                        if when == 'w' or when == 'W':
+                            return 0
+                        if when == 'e':
+                            return 1
+                        if when == 'E':
+                            return 2
+                        if when == 'l' or when == 'L':
+                            return 3
+                        if when == 'a':
+                            return None
+                        print('\033[01mInvalid option!\033[00m')
                 else:
-                    if scroll not in self.scrls[state - 9][1]:
-                        self.scrls[state - 9][0] += 1
-                        self.scrls[state - 9][1][scroll] = self.scrls[state - 9][0]
-                    (scrli, scrln) = (self.scrls[state - 9][1][scroll], self.scrls[state - 9][0])
+                    if scroll not in self.scrls[state - 10][1]:
+                        self.scrls[state - 10][0] += 1
+                        self.scrls[state - 10][1][scroll] = self.scrls[state - 10][0]
+                    (scrli, scrln) = (self.scrls[state - 10][1][scroll], self.scrls[state - 10][0])
                     if scrli != scrln:
-                        if state != 11:
+                        if state != 12:
                             print('\033[%iAm', scrln - scrli)
-                    if state == 9:
+                    if state == 10:
                         (source, progress, end) = args
                         bar = '[\033[01;3%im%s\033[00m]'
                         bar %= (2, 'DONE') if progress == end else (3, '%2.1f' % (progress / end))
                         print('[%s] (%i/%i) Downloading %s: %s' % (bar, scrli, scrln, scroll, source))
-                    elif state == 10:
+                    elif state == 11:
                         (progress, end) = args
                         bar = '[\033[01;3%im%s\033[00m]'
                         bar %= (2, 'DONE') if progress == end else (3, '%2.1f' % (progress / end))
                         print('[%s] (%i/%i) Verifing %s' % (bar, scrli, scrln, scroll))
-                    elif state == 11:
-                        print('(%i/%i) Compiling %s' % (scrli + 1, scrln, scroll))
                     elif state == 12:
+                        print('(%i/%i) Compiling %s' % (scrli + 1, scrln, scroll))
+                    elif state == 13:
                         (progress, end) = args
                         bar = '[\033[01;3%im%s\033[00m]'
                         bar %= (2, 'DONE') if progress == end else (3, '%2.1f' % (progress / end))
                         print('[%s] (%i/%i) Checking file conflicts for %s' % (bar, scrli, scrln, scroll))
-                    elif state == 13:
+                    elif state == 14:
                         (progress, end) = args
                         bar = '[\033[01;3%im%s\033[00m]'
                         bar %= (2, 'DONE') if progress == end else (3, '%2.1f' % (progress / end))
                         print('[%s] (%i/%i) Installing %s' % (bar, scrli, scrln, scroll))
                     if scrli != scrln:
-                        if state != 11:
+                        if state != 12:
                             print('\033[%iBm', scrln - (scrli + 1))
                 return None
         
