@@ -58,7 +58,7 @@ class ScrollVersion():
             if part[1] not in ('<', '<=', '>', '>=', '=', '<>'):
                 return
             self.name = parts[0]
-            ver = ScrollVersion.__Version(parts[2], '=' not in parts[1])
+            ver = ScrollVersion.Version(parts[2], '=' not in parts[1])
             islower = '>' in parts[1]
             isupper = '<' in parts[1]
             if islower == isupper:
@@ -73,11 +73,11 @@ class ScrollVersion():
             if (parts[1] not in ('>', '>=')) or (parts[3] not in ('<', '<=')):
                 return
             self.name = parts[0]
-            self.lower = ScrollVersion.__Version(parts[2], '=' not in parts[1])
-            self.upper = ScrollVersion.__Version(parts[4], '=' not in parts[3])
+            self.lower = ScrollVersion.Version(parts[2], '=' not in parts[1])
+            self.upper = ScrollVersion.Version(parts[4], '=' not in parts[3])
     
     
-    class __Version():
+    class Version():
         '''
         A scroll version, not a range and not a scroll name, but with other or not it is open
         '''
@@ -106,8 +106,8 @@ class ScrollVersion():
             '''
             Preforms a comparison of two version numbers, does not compare release number
             
-            @param   other:__Version  The other version number
-            @return  :int             negative if `self` is less, zero if `self` equals `other`, and positive if `other` is less
+            @param   other:Version  The other version number
+            @return  :int           negative if `self` is less, zero if `self` equals `other`, and positive if `other` is less
             '''
             if self.epoch != other.epoch:
                 return self.epoch - other.epoch

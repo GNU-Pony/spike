@@ -713,14 +713,14 @@ class Spike():
         class Agg:
             '''
             aggregator:(str?, int, [*])→(void|bool|str)
-                Feed a scroll (`None` only at state 0, 2 and 5) and a state (can be looped) during the process of a scroll.
+                Feed a scroll (`None` only at state 0, 3 and 6) and a state (can be looped) during the process of a scroll.
                 The states are: 0 - inspecting installed scrolls
                                 1 - proofreading
                                 2 - scroll added because of being updated
                                 3 - resolving conflicts
                                 4 - scroll added because of dependency. Additional parameters: requirers:list<str>
                                 5 - scroll removed because due to being replaced. Additional parameters: replacer:str
-                                6 - verify installation. Additional parameters: freshinstalls:list<str>, reinstalls:list<str>, update:list<str>, skipping:list<str>
+                                6 - verify installation. Additional parameters: freshinstalls:list<str>, reinstalls:list<str>, update:list<str>, downgrading:list<str>, skipping:list<str>
                                                          Return: accepted:bool
                                 7 - select provider pony. Additional parameters: options:list<str>
                                                           Return: select provider:str? `None` if aborted
@@ -731,11 +731,12 @@ class Spike():
                                11 - installing files: Additional parameters: progress state:int, progress end:int
             '''
             def __init__(self):
-                self.updateadd = []
+                self.updateadd = set()
                 self.depadd = {}
                 self.replaceremove = {}
-                self.skipping = []
-                self.scrls = [[0, {}]] * 6
+                self.scrls = []
+                for i in range(6):
+                    self.scrls.append([0, {}])
                 self.scrls[0] = self.scrls[1]
             def __call__(self, scroll, state, *args):
                 if state == 0:
@@ -743,7 +744,7 @@ class Spike():
                 elif state == 1:
                     print('Proofreading: %s' % scroll)
                 elif state == 2:
-                    self.updateadd.append(scroll)
+                    self.updateadd.add(scroll[:(scroll + '=').find('=')])
                 elif state == 3:
                     print('Resolving conflicts')
                 elif state == 4:
@@ -757,28 +758,25 @@ class Spike():
                     else:
                         self.replaceremove[scroll] = args[0]
                 elif state == 6:
-                    self.skipping = args[3]
-                    if len(self.skipping) > 0:
-                        for re in self.skipping:
-                            print('Skipping %s' % re)
-                    elif len(args[0]) > 0:
-                        for fresh in args[2]:
-                            print('Installing%s' % fresh)
-                    elif len(args[1]) > 0:
-                        for re in args[2]:
-                            print('Reinstalling %s' % re)
-                    elif len(args[2]) > 0:
-                        for update in args[2]:
-                            print('Explicitly updating %s' % update)
-                    elif len(self.updateadd) > 0:
-                        for update in self.updateadd:
-                            print('Updating %s' % update)
-                    elif len(self.depadd) > 0:
-                        for dep in self.depadd:
-                            print('Adding %s, required by: %s' % (dep, ', '.join(self.depadd[dep])))
-                    elif len(self.replaceremove) > 0:
-                        for replacee in self.replaceremove:
-                            print('Replacing %s with %s' % (replacee, ', '.join(self.replaceremove[replacee])))
+                    freshinstalls, reinstalls, update, downgrading, skipping = args
+                    for scrl in skipping:
+                        print('Skipping %s' % scrl)
+                    for scrl in freshinstalls:
+                        print('Installing %s' % scrl)
+                    for scrl in reinstalls:
+                        print('Reinstalling %s' % scrl)
+                    for scrl in update:
+                        if scrl[:scrl.find('=')] not in self.updateadd:
+                            print('Explicitly updating %s' % scrl)
+                    for scrl in update:
+                        if scrl[:scrl.find('=')] in self.updateadd:
+                            print('Updating %s' % scrl)
+                    for dep in self.depadd:
+                        print('Adding %s, required by: %s' % (dep, ', '.join(self.depadd[dep])))
+                    for replacee in self.replaceremove:
+                        print('Replacing %s with %s' % (replacee, ', '.join(self.replaceremove[replacee])))
+                    for scrl in downgrading:
+                        print('Downgrading %s' % scrl)
                     print('\033[01mContinue? (y/n)\033[00m')
                     return input().lower().startswith('y')
                 elif state == 7:
@@ -847,14 +845,14 @@ class Spike():
         class Agg:
             '''
             aggregator:(str?, int, [*])→(void|bool|str)
-                Feed a scroll (`None` only at state 0, 2 and 5) and a state (can be looped) during the process of a scroll.
+                Feed a scroll (`None` only at state 0, 3 and 6) and a state (can be looped) during the process of a scroll.
                 The states are: 0 - inspecting installed scrolls
                                 1 - proofreading
                                 2 - scroll added because of being updated
                                 3 - resolving conflicts
                                 4 - scroll added because of dependency. Additional parameters: requirers:list<str>
                                 5 - scroll removed because due to being replaced. Additional parameters: replacer:str
-                                6 - verify installation. Additional parameters: freshinstalls:list<str>, reinstalls:list<str>, update:list<str>, skipping:list<str>
+                                6 - verify installation. Additional parameters: freshinstalls:list<str>, reinstalls:list<str>, update:list<str>, downgrading:list<str>, skipping:list<str>
                                                          Return: accepted:bool
                                 7 - select provider pony. Additional parameters: options:list<str>
                                                           Return: select provider:str? `None` if aborted
@@ -865,11 +863,12 @@ class Spike():
                                11 - installing files: Additional parameters: progress state:int, progress end:int
             '''
             def __init__(self):
-                self.updateadd = []
+                self.updateadd = set()
                 self.depadd = {}
                 self.replaceremove = {}
-                self.skipping = []
-                self.scrls = [[0, {}]] * 6
+                self.scrls = []
+                for i in range(6):
+                    self.scrls.append([0, {}])
                 self.scrls[0] = self.scrls[1]
             def __call__(self, scroll, state, *args):
                 if state == 0:
@@ -877,7 +876,7 @@ class Spike():
                 elif state == 1:
                     print('Proofreading: %s' % scroll)
                 elif state == 2:
-                    self.updateadd.append(scroll)
+                    self.updateadd.add(scroll[:(scroll + '=').find('=')])
                 elif state == 3:
                     print('Resolving conflicts')
                 elif state == 4:
@@ -891,28 +890,25 @@ class Spike():
                     else:
                         self.replaceremove[scroll] = args[0]
                 elif state == 6:
-                    self.skipping = args[3]
-                    if len(self.skipping) > 0:
-                        for re in self.skipping:
-                            print('Skipping %s' % re)
-                    elif len(args[0]) > 0:
-                        for fresh in args[2]:
-                            print('Installing%s' % fresh)
-                    elif len(args[1]) > 0:
-                        for re in args[2]:
-                            print('Reinstalling %s' % re)
-                    elif len(args[2]) > 0:
-                        for update in args[2]:
-                            print('Explicitly updating %s' % update)
-                    elif len(self.updateadd) > 0:
-                        for update in self.updateadd:
-                            print('Updating %s' % update)
-                    elif len(self.depadd) > 0:
-                        for dep in self.depadd:
-                            print('Adding %s, required by: %s' % (dep, ', '.join(self.depadd[dep])))
-                    elif len(self.replaceremove) > 0:
-                        for replacee in self.replaceremove:
-                            print('Replacing %s with %s' % (replacee, ', '.join(self.replaceremove[replacee])))
+                    freshinstalls, reinstalls, update, downgrading, skipping = args
+                    for scrl in skipping:
+                        print('Skipping %s' % scrl)
+                    for scrl in freshinstalls:
+                        print('Installing %s' % scrl)
+                    for scrl in reinstalls:
+                        print('Reinstalling %s' % scrl)
+                    for scrl in update:
+                        if scrl[:scrl.find('=')] not in self.updateadd:
+                            print('Explicitly updating %s' % scrl)
+                    for scrl in update:
+                        if scrl[:scrl.find('=')] in self.updateadd:
+                            print('Updating %s' % scrl)
+                    for dep in self.depadd:
+                        print('Adding %s, required by: %s' % (dep, ', '.join(self.depadd[dep])))
+                    for replacee in self.replaceremove:
+                        print('Replacing %s with %s' % (replacee, ', '.join(self.replaceremove[replacee])))
+                    for scrl in downgrading:
+                        print('Downgrading %s' % scrl)
                     print('\033[01mContinue? (y/n)\033[00m')
                     return input().lower().startswith('y')
                 elif state == 7:

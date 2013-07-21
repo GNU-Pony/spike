@@ -355,14 +355,14 @@ class LibSpike(LibSpikeHelper):
         Install ponies from scrolls
         
         @param   aggregator:(str?, int, [*])→(void|bool|str)
-                     Feed a scroll (`None` only at state 0, 2 and 5) and a state (can be looped) during the process of a scroll.
+                     Feed a scroll (`None` only at state 0, 3 and 6) and a state (can be looped) during the process of a scroll.
                      The states are: 0 - inspecting installed scrolls
                                      1 - proofreading
                                      2 - scroll added because of being updated
                                      3 - resolving conflicts
                                      4 - scroll added because of dependency. Additional parameters: requirers:list<str>
                                      5 - scroll removed because due to being replaced. Additional parameters: replacer:str
-                                     6 - verify installation. Additional parameters: freshinstalls:list<str>, reinstalls:list<str>, update:list<str>, skipping:list<str>
+                                     6 - verify installation. Additional parameters: freshinstalls:list<str>, reinstalls:list<str>, update:list<str>, downgrading:list<str>, skipping:list<str>
                                                               Return: accepted:bool
                                      7 - select provider pony. Additional parameters: options:list<str>
                                                                Return: select provider:str? `None` if aborted
@@ -405,6 +405,8 @@ class LibSpike(LibSpikeHelper):
         uninstall = []
         not_found = set()
         new_scrolls = {}
+        installed_scroll = {}
+        installing = {}
         for scroll in scrolls:
             new_scrolls[scroll] = None
         
@@ -425,6 +427,7 @@ class LibSpike(LibSpikeHelper):
                 scroll = [globals()[var] for var in ('pkgname', 'epoch', 'pkgver', 'pkgrel')]
                 scroll = ScrollVersion('%s=%i:%s-%i' % scroll)
                 already_installed[scroll] = scroll
+                installed_scrolls[globals()['pkgname']] = ScrollVersion.Version('%i:%s-%i' % [globals()[var] for var in ('epoch', 'pkgver', 'pkgrel')], True)
                 
                 # Store fields and transposition
                 fields = {}
@@ -471,6 +474,7 @@ class LibSpike(LibSpikeHelper):
                         # Store fields and transposition
                         fields = {}
                         scroll_field[scroll] = fields
+                        installing[scroll] = '%i:%s-%i' % [globals()[var] for var in ('epoch', 'pkgver', 'pkgrel')]
                         for field in store_fields:
                             value = globals()[field]
                             fields[field] = value
@@ -551,7 +555,27 @@ class LibSpike(LibSpikeHelper):
                 break
         
         # We as for confirmation first because if optimisation is not done, finding provider can take some serious time
-        ## TODO ask for confirmation
+        freshinstalls = []
+        reinstalls = []
+        update = []
+        downgrading = []
+        skipping = []
+        for scroll in installing:
+            version = installing[scroll]
+            scroll_version = '%s=%s' % (scroll, version)
+            if scroll not in installed_scrolls:
+                freshinstalls.append(scroll_version)
+            else:
+                version = ScrollVersion.Version(version, True)
+                if version == installed_scrolls[scroll]:
+                    reinstalls.append(scroll_version)
+                elif version < installed_scrolls[scroll]:
+                    downgrading.append(scroll_version)
+                else:
+                    update.append(scroll_version)
+        accepted = aggregator(None, 6, freshinstalls, reinstalls, update, downgrading, skipping)
+        if not accepted:
+            return 254;
         
         if len(not_found) > 0:
             for scroll in not_found:
@@ -570,14 +594,14 @@ class LibSpike(LibSpikeHelper):
         Update installed ponies
         
         @param   aggregator:(str?, int, [*])→(void|bool|str)
-                     Feed a scroll (`None` only at state 0, 2 and 5) and a state (can be looped) during the process of a scroll.
+                     Feed a scroll (`None` only at state 0, 3 and 6) and a state (can be looped) during the process of a scroll.
                      The states are: 0 - inspecting installed scrolls
                                      1 - proofreading
                                      2 - scroll added because of being updated
                                      3 - resolving conflicts
                                      4 - scroll added because of dependency. Additional parameters: requirers:list<str>
                                      5 - scroll removed because due to being replaced. Additional parameters: replacer:str
-                                     6 - verify installation. Additional parameters: freshinstalls:list<str>, reinstalls:list<str>, update:list<str>, skipping:list<str>
+                                     6 - verify installation. Additional parameters: freshinstalls:list<str>, reinstalls:list<str>, update:list<str>, downgrading:list<str>, skipping:list<str>
                                                               Return: accepted:bool
                                      7 - select provider pony. Additional parameters: options:list<str>
                                                                Return: select provider:str? `None` if aborted
