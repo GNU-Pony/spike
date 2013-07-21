@@ -170,21 +170,9 @@ options:list<str>=[]
 	exclamation mark are turned off, others are turned on.
 
 	strip	     Strip symbols from binaries and libraries
-	docs	     Keep files installed to /usr{,/share,/local/share}/doc
-	info	     Keep files installed to /usr{,/local}/share/info
-	man	     Keep files installed to /usr{,/local}/share/man
 	licenses     Keep files installed to /usr{,/local}/share/licenses
 	changelogs   Keep files installed to /usr{,/local}/share/changelogs
 	libtool	     Leave .la files in packages
-	docs=	     Uncompress .pdf, .ps and .dvi files /usr{,/share,/local/share}/doc
-	docs=gz	     Compress .pdf, .ps and .dvi files /usr{,/share,/local/share}/doc with gzip
-	docs=xz	     Compress .pdf, .ps and .dvi files /usr{,/share,/local/share}/doc with xz
-	info=	     Uncompress files in /usr{,/local}/share/info
-	info=gz	     Compress files in /usr{,/local}/share/info with gzip
-	info=xz	     Compress files in /usr{,/local}/share/info with xz
-	man=	     Uncompress files in /usr{,/local}/share/man
-	man=gz	     Compress files in /usr{,/local}/share/man with gzip
-	man=xz	     Compress files in /usr{,/local}/share/man with xz
 	upx	     Compress binary executable files using UPX
 
 

@@ -244,18 +244,14 @@ class Spikeless():
         os.chdir(cwd)
         resetEnviron(environ)
         
-        global useopts, compresses ## TODO defualt options should be load
+        global useopts ## TODO defualt options should be load
         if useopts is None:
-            useopts = set(['strip', 'docs', 'info', 'man', 'licenses' 'changelogs', 'libtool', 'upx'])
-        if compresses is None:
-            compresses = {'docs' : 'gz', 'info' : 'gz', 'man' : 'gz'}
-        if options != None:
+            useopts = set(['strip', 'licenses' 'changelogs', 'libtool', 'upx'])
+        if options is not None:
             for opt in options:
                 if opt.startswith('!'):
                     if opt[1:] in useopts:
                         del useopts[opt[1:]]
-                elif '=' in opts:
-                    compresses[opts.split('=')[0]] = opts.split('=')[1]
                 else:
                     if opt not in useopts:
                         useopts.add(opt)
@@ -332,8 +328,8 @@ if __name__ == '__main__': # sic
     if len(sys.argv) < 3:
         print('USAGE: spikeless SCROLL STARTDIR PINPAL [private]')
         sys.exit(1)
-    global useopts, compresses
-    (useopts, compresses) = (None, None)
+    global useopts
+    useopts = None
     def installdir(src, dest):
         if not os.path.exists(dest):
             os.makedirs(dest)
