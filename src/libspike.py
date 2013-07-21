@@ -644,6 +644,8 @@ class LibSpike(LibSpikeHelper):
             when = aggregator(None, 9, interactively_installed)
             if when is None:
                 return 254
+            if not (0 <= when <= 3):
+                return 255
         
         ## TODO start installation
         
