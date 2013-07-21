@@ -190,8 +190,8 @@ class Spikeless():
                         inetget([src, '-O', dest] + extras, dest, sha3sums[i])
                 if sha3sums[i] is not None:
                     sha3 = sha3sum(sumdests)
-                    if sha3 == sha3sums[i].upper():
-                        pass ## TODO sha3sums
+                    if sha3 != sha3sums[i].upper():
+                        raise Exception('sha3sum is not matching for %s' % d)
                 if extractsrc:
                     extract.append(os.path.abspath(dest))
                 i += 1
