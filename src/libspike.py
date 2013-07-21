@@ -606,6 +606,8 @@ class LibSpike(LibSpikeHelper):
                 # Select provider
                 for scroll in not_found:
                     options = ScrollVersion(scroll).get_all(providers)
+                    if len(options) == 0:
+                        return 9
                     option = aggregator(scroll, 8, options)
                     if option is None:
                         return 254
