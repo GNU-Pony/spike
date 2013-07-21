@@ -425,7 +425,6 @@ class ScrollVersion():
         @param  scrollset:map<ScrollVersion, list<¿E?>>  Map from scrolls
         @param  value:¿E?                                The value
         '''
-        
         if self in scrollmap:
             others = [self]
             for other in scrollmap:
@@ -438,8 +437,23 @@ class ScrollVersion():
                 slices[slice] += scrollmap[slice]
             while self in scrollmap:
                 del scrollmap[self]
-            for slice in slices
+            for slice in slices:
                 scrollmap[slice] = slices[slice]
         else:
             scrollmap.put(self, [value])
+    
+    
+    def get_all(self, scrollmap):
+        '''
+        Gets all values associated with any version of a scroll in a range of versions
+        
+        @param   scrollmap:map<ScrollVersion, list<¿E?>>  The map the look in
+        @return  :list<¿E?>                               The values
+        '''
+        rc = set()
+        for scroll in scrollmap:
+            if self in scroll:
+                for value in scrollmap[scroll]:
+                    rc.add(value)
+        return list(rc)
 
