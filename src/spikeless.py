@@ -244,7 +244,7 @@ class Spikeless():
         os.chdir(cwd)
         resetEnviron(environ)
         
-        global useopts ## TODO defualt options should be load
+        global useopts ## TODO default options should be load
         if useopts is None:
             useopts = set(['strip', 'licenses' 'changelogs', 'libtool', 'upx'])
         if options is not None:
