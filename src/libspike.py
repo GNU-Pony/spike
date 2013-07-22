@@ -630,6 +630,11 @@ class LibSpike(LibSpikeHelper):
             else:
                 break
         
+        # TODO sort topologically and at any time make dependencies have not yet been installed
+        #      all compiled scroll are to be installed. If an interactive scroll is non-installed
+        #      make dependancies whose scroll is not interactive, `when` make only be 0, or 3
+        #      if they are all at the end of the t:sorted list.
+        
         # Separate scrolls that need itneraction from those that do not
         interactively_installed = []
         noninteractively_installed = []
@@ -676,7 +681,7 @@ class LibSpike(LibSpikeHelper):
         if not force:
             pass ## TODO check for file conflicts
         
-        ## TODO install (sort topologically first)
+        ## TODO install
         
         return 0
     
