@@ -76,7 +76,9 @@ class LibSpike(LibSpikeHelper):
         '''
         Perform initalisations
         '''
+        export('SPIKE_SHRED_OPTS', '-n 3 -z -u')
         LibSpike.__load_addons()
+        export('SPIKE_OLD_PATH', get('PATH'))
     
     
     @staticmethod
@@ -391,7 +393,7 @@ class LibSpike(LibSpikeHelper):
         LibSpike.lock(True)
         # Set shred and root
         if shred:
-            export('shred', 'yes')
+            export('shred', get('SPIKE_SHRED_OPTS'))
         if root is not None:
             if root.endswith('/'):
                 root = root[:-1]
@@ -725,7 +727,7 @@ class LibSpike(LibSpikeHelper):
         LibSpike.lock(True)
         # Set shred and root
         if shred:
-            export('shred', 'yes')
+            export('shred', get('SPIKE_SHRED_OPTS'))
         if root is not None:
             if root.endswith('/'):
                 root = root[:-1]
@@ -756,7 +758,7 @@ class LibSpike(LibSpikeHelper):
         try:
             # Set shred and root
             if shred:
-                export('shred', 'yes')
+                export('shred', get('SPIKE_SHRED_OPTS'))
             if root is not None:
                 if root.endswith('/'):
                     root = root[:-1]
@@ -1510,7 +1512,7 @@ class LibSpike(LibSpikeHelper):
         '''
         LibSpike.lock(True)
         if shred:
-            export('shred', 'yes')
+            export('shred', get('SPIKE_SHRED_OPTS'))
         return 0
     
     
