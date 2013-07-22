@@ -663,7 +663,7 @@ class LibSpike(LibSpikeHelper):
         for (download_list, build_list) in [(first_download, first_build), (second_download, second_build)]:
             # Download sources
             for scroll in download_list:
-                pass ## TODO downloadd
+                pass ## TODO download
             
             # Verify sources
             ## TODO verify
@@ -676,7 +676,7 @@ class LibSpike(LibSpikeHelper):
         if not force:
             pass ## TODO check for file conflicts
         
-        ## TODO install
+        ## TODO install (sort topologically first)
         
         return 0
     
