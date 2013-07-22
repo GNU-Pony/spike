@@ -369,7 +369,7 @@ class LibSpike(LibSpikeHelper):
                                      7 - inspecting non-install scrolls for providers
                                      8 - select provider pony. Additional parameters: options:list<str>
                                                                Return: select provider:str? `None` if aborted
-                                     9 - select when to build ponies which require interaction. Additional parameters: interactive:list<str>
+                                     9 - select when to build ponies which require interaction. Additional parameters: interactive:list<str>, allowed:int
                                                                                                 Return: when:excl-flag? `None` if aborted
                                     10 - fetching source. Additional parameters: source:str, progress state:int, progress end:int
                                     11 - verifying source. Additional parameters: progress state:int, progress end:int
@@ -380,6 +380,7 @@ class LibSpike(LibSpikeHelper):
                                             1 - Build early
                                             2 - Build early and fetch separately
                                             3 - Build late
+                     allowed:int values: The union of all `1 << when` with allowed `when`
         
         @param   scrolls:list<str>  Scroll to install
         @param   root:str           Mounted filesystem to which to perform installation
@@ -648,11 +649,12 @@ class LibSpike(LibSpikeHelper):
         
         # Select when to build scrolls that need interaction
         when = 0
+        allowed_when = (1 << 4) - 1
         if len(interactively_installed) > 0:
-            when = aggregator(None, 9, interactively_installed)
+            when = aggregator(None, 9, interactively_installed, allowed_when)
             if when is None:
                 return 254
-            if not (0 <= when <= 3):
+            if (0 < when) or (((1 << when) & allowed_when) == 0):
                 return 255
         
         # Get order to download and build scrolls
@@ -706,7 +708,7 @@ class LibSpike(LibSpikeHelper):
                                      7 - inspecting non-install scrolls for providers
                                      8 - select provider pony. Additional parameters: options:list<str>
                                                                Return: select provider:str? `None` if aborted
-                                     9 - select when to build ponies which require interaction. Additional parameters: interactive:list<str>
+                                     9 - select when to build ponies which require interaction. Additional parameters: interactive:list<str>, allowed:int
                                                                                                 Return: when:excl-flag? `None` if aborted
                                     10 - fetching source. Additional parameters: source:str, progress state:int, progress end:int
                                     11 - verifying source. Additional parameters: progress state:int, progress end:int
@@ -717,6 +719,7 @@ class LibSpike(LibSpikeHelper):
                                             1 - Build early
                                             2 - Build early and fetch separately
                                             3 - Build late
+                     allowed:int values: The union of all `1 << when` with allowed `when`
         
         @param   root:str           Mounted filesystem to which to perform installation
         @param   ignores:list<str>  Ponies not to update

@@ -725,7 +725,7 @@ class Spike():
                                 7 - inspecting non-install scrolls for providers
                                 8 - select provider pony. Additional parameters: options:list<str>
                                                           Return: select provider:str? `None` if aborted
-                                9 - select when to build ponies which require interaction. Additional parameters: interactive:list<str>
+                                9 - select when to build ponies which require interaction. Additional parameters: interactive:list<str>, allowed:int
                                                                                            Return: when:excl-flag? `None` if aborted
                                10 - fetching source. Additional parameters: source:str, progress state:int, progress end:int
                                11 - verifying source. Additional parameters: progress state:int, progress end:int
@@ -736,6 +736,7 @@ class Spike():
                                        1 - Build early
                                        2 - Build early and fetch separately
                                        3 - Build late
+                allowed:int values: The union of all `1 << when` with allowed `when`
             '''
             def __init__(self):
                 self.updateadd = set()
@@ -810,22 +811,31 @@ class Spike():
                     print('There are sone scrolls that require pony interaction to be build:')
                     for scroll in args[0]:
                         print('    %s' % scroll)
+                    allowed = args[1]
                     print('\033[01mWhen do you want to build scroll that require interaction:\033[00m')
-                    print('    w - Whenever, I will not leave my precious magic box')
-                    print('    e - Before all other scrolls')
-                    print('    E - Before all other scrolls, and download others\' sources afterwards')
-                    print('    l - After all other scrolls')
+                    if (allowed & (1 << 0)) != 0:
+                        print('    w - Whenever, I will not leave my precious magic box')
+                    if (allowed & (1 << 1)) != 0:
+                        print('    e - Before all other scrolls')
+                    if (allowed & (1 << 2)) != 0:
+                        print('    E - Before all other scrolls, and download others\' sources afterwards')
+                    if (allowed & (1 << 3)) != 0:
+                        print('    l - After all other scrolls')
                     print('    a - Abort!')
                     while True:
                         when = input()
-                        if when == 'w' or when == 'W':
-                            return 0
-                        if when == 'e':
-                            return 1
-                        if when == 'E':
-                            return 2
-                        if when == 'l' or when == 'L':
-                            return 3
+                        if (allowed & (1 << 0)) != 0:
+                            if when == 'w' or when == 'W':
+                                return 0
+                        if (allowed & (1 << 1)) != 0:
+                            if when == 'e':
+                                return 1
+                        if (allowed & (1 << 2)) != 0:
+                            if when == 'E':
+                                return 2
+                        if (allowed & (1 << 3)) != 0:
+                            if when == 'l' or when == 'L':
+                                return 3
                         if when == 'a':
                             return None
                         print('\033[01mInvalid option!\033[00m')
@@ -892,7 +902,7 @@ class Spike():
                                 7 - inspecting non-install scrolls for providers
                                 8 - select provider pony. Additional parameters: options:list<str>
                                                           Return: select provider:str? `None` if aborted
-                                9 - select when to build ponies which require interaction. Additional parameters: interactive:list<str>
+                                9 - select when to build ponies which require interaction. Additional parameters: interactive:list<str>, allowed:int
                                                                                            Return: when:excl-flag? `None` if aborted
                                10 - fetching source. Additional parameters: source:str, progress state:int, progress end:int
                                11 - verifying source. Additional parameters: progress state:int, progress end:int
@@ -903,6 +913,7 @@ class Spike():
                                        1 - Build early
                                        2 - Build early and fetch separately
                                        3 - Build late
+                allowed:int values: The union of all `1 << when` with allowed `when`
             '''
             def __init__(self):
                 self.updateadd = set()
@@ -977,22 +988,31 @@ class Spike():
                     print('There are sone scrolls that require pony interaction to be build:')
                     for scroll in args[0]:
                         print('    %s' % scroll)
+                    allowed = args[1]
                     print('\033[01mWhen do you want to build scroll that require interaction:\033[00m')
-                    print('    w - Whenever, I will not leave my precious magic box')
-                    print('    e - Before all other scrolls')
-                    print('    E - Before all other scrolls, and download others\' sources afterwards')
-                    print('    l - After all other scrolls')
+                    if (allowed & (1 << 0)) != 0:
+                        print('    w - Whenever, I will not leave my precious magic box')
+                    if (allowed & (1 << 1)) != 0:
+                        print('    e - Before all other scrolls')
+                    if (allowed & (1 << 2)) != 0:
+                        print('    E - Before all other scrolls, and download others\' sources afterwards')
+                    if (allowed & (1 << 3)) != 0:
+                        print('    l - After all other scrolls')
                     print('    a - Abort!')
                     while True:
                         when = input()
-                        if when == 'w' or when == 'W':
-                            return 0
-                        if when == 'e':
-                            return 1
-                        if when == 'E':
-                            return 2
-                        if when == 'l' or when == 'L':
-                            return 3
+                        if (allowed & (1 << 0)) != 0:
+                            if when == 'w' or when == 'W':
+                                return 0
+                        if (allowed & (1 << 1)) != 0:
+                            if when == 'e':
+                                return 1
+                        if (allowed & (1 << 0)) != 0:
+                            if when == 'E':
+                                return 2
+                        if (allowed & (1 << 3)) != 0:
+                            if when == 'l' or when == 'L':
+                                return 3
                         if when == 'a':
                             return None
                         print('\033[01mInvalid option!\033[00m')
