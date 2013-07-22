@@ -811,7 +811,7 @@ class Spike():
                     for scroll in args[0]:
                         print('    %s' % scroll)
                     print('\033[01mWhen do you want to build scroll that require interaction:\033[00m')
-                    print('    w - Whenever, I will not leave my precious keyboard')
+                    print('    w - Whenever, I will not leave my precious magic box')
                     print('    e - Before all other scrolls')
                     print('    E - Before all other scrolls, and download others\' sources afterwards')
                     print('    l - After all other scrolls')
@@ -978,7 +978,7 @@ class Spike():
                     for scroll in args[0]:
                         print('    %s' % scroll)
                     print('\033[01mWhen do you want to build scroll that require interaction:\033[00m')
-                    print('    w - Whenever, I will not leave my precious keyboard')
+                    print('    w - Whenever, I will not leave my precious magic box')
                     print('    e - Before all other scrolls')
                     print('    E - Before all other scrolls, and download others\' sources afterwards')
                     print('    l - After all other scrolls')
