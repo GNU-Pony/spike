@@ -62,3 +62,6 @@ If a parameter is specified with `@param-` instead of `@param` it means that the
 to the method, but rather the method knows them and passes them into a method it wraps that is named like
 it but with two prepending underscores.
 
+Some classes have variables that should be reached from outside the class, in those cases a @variable is
+specified for each of those variables in the documentation for class. @variable is formated like @param.
+

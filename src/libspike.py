@@ -23,6 +23,7 @@ import re
 import inspect
 # TODO use git in commands
 
+from installer import *
 from libspikehelper import *
 from gitcord import *
 from sha3sum import *
@@ -401,13 +402,10 @@ class LibSpike(LibSpikeHelper):
                 root = root[:-1]
             SPIKE_PATH = root + SPIKE_PATH
         
-        # Constants
-        store_fields = 'pkgname pkgvel pkgrel epoch arch freedom private conflicts replaces'
-        store_fields += ' provides extension variant patch patchbefore patchafter groups'
-        store_fields += ' depends makedepends checkdepends optdepends'
-        store_fields = store_fields.split('')
-        
         # Information needed in the progress and may only be extended
+        installed_info = {}
+        scroll_info = {}
+        
         installed_field = {}
         field_installed = {}
         already_installed = {}
@@ -430,32 +428,9 @@ class LibSpike(LibSpikeHelper):
         installed_scrollfiles = locate_all_scrolls(True, None if private else False)
         for scrollfile in installed_scrollfiles:
             try:
-                # Set environment variables (re-export before each scroll in case a scroll changes it)
-                ScrollMagick.export_environment()
-                
-                # Read scroll
-                ScrollMagick.init_fields()
-                ScrollMagick.execute_scroll(scrollfile)
-                
-                # Get ScrollVersion
-                scroll = [globals()[var] for var in ('pkgname', 'epoch', 'pkgver', 'pkgrel')]
-                scroll = ScrollVersion('%s=%i:%s-%i' % scroll)
-                already_installed[scroll] = scroll
-                installed_scrolls[globals()['pkgname']] = ScrollVersion.Version('%i:%s-%i' % [globals()[var] for var in ('epoch', 'pkgver', 'pkgrel')], True)
-                
-                # Store fields and transposition
-                fields = {}
-                installed_field[scroll] = fields
-                for field in store_fields:
-                    value = globals()[field]
-                    fields[field] = value
-                    if field not in field_installed:
-                        field_installed[field] = {}
-                    map = field_installed[field]
-                    if (value is not None) and (type(value) in (str, list)):
-                        for val in value if isinstance(value, list) else [value]:
-                            if val is not None:
-                                dict_append(map, value, scroll)
+                scrollinfo = Installer.load_information(scrollfile)
+                Installer.transpose_fields(scrollinfo, installed_field)
+                installed_info[scrollinfo.scroll] = scrollinfo
             except:
                 return 255 # So how did we install it...
         
@@ -478,72 +453,22 @@ class LibSpike(LibSpikeHelper):
                     return 255 # but, the proofreader already found them...
                 else:
                     try:
-                        # Set environment variables (re-export before each scroll in case a scroll changes it)
-                        ScrollMagick.export_environment()
-                        
-                        # Read scroll
-                        ScrollMagick.init_fields()
-                        ScrollMagick.execute_scroll(scrollfile)
-                        
-                        # Store fields and transposition
-                        fields = {}
-                        scroll_field[scroll] = fields
-                        installing[scroll] = '%i:%s-%i' % [globals()[var] for var in ('epoch', 'pkgver', 'pkgrel')]
-                        for field in store_fields:
-                            value = globals()[field]
-                            fields[field] = value
-                            if field not in field_scroll:
-                                field_scroll[field] = {}
-                            map = field_scroll[field]
-                            if (value is not None) and (type(value) in (str, list)):
-                                for val in value if isinstance(value, list) else [value]:
-                                    if val is not None:
-                                        dict_append(map, val, scroll)
-                        
-                        # List as interactive if interactive
-                        if globals()['interactive']:
-                            interactive.add(ScrollVersion('%s=%s' % (scroll, installing[scroll])))
+                        scrollinfo = Installer.load_information(scrollfile)
+                        Installer.transpose_fields(scrollinfo, field_scroll)
+                        scroll_info[scrollinfo.scroll] = scrollinfo
                     except:
                         return 255 # but, the proofreader did not have any problem...
             
             # Identify scrolls that may not be installed at the same time
-            conflicts = set()
-            installed = set()
-            provided = set()
-            for scrollset in [scroll_field, installed_field]:
-                for scroll in scrollset:
-                    fields = scrollset[scroll]
-                    if not isinstance(scroll, ScrollVersion):
-                        scroll = [fields[var] for var in ('pkgname', 'epoch', 'pkgver', 'pkgrel')]
-                        scroll = ScrollVersion('%s=%i:%s-%i' % scroll)
-                    if scroll in installed:
-                        continue
-                    if scroll in conflicts:
-                        return 8
-                    scroll.union_add(installed)
-                    for provides in feilds['provides']:
-                        ScrollVersion(provides).union_add(provided)
-                    for conflict in fields['conflicts']:
-                        conflict = ScrollVersion(conflict)
-                        if (conflict in installed) or (conflict in provided):
-                            return 8
-                        conflict.union_add(conflicts)
+            if not Installer.check_conflicts([scroll_info, installed_info]):
+                return 8
             
             # Look for missing dependencies
             needed = set()
             requirer = {}
-            for scroll in scroll_field:
-                fields = scrollset[scroll]
-                makedepends = [None if dep == '' else ScrollVersion(deps) for deps in fields['makedepends']]
-                depends     = [None if dep == '' else ScrollVersion(deps) for deps in fields['depends']]
-                for deps in makedepends + depends:
-                    if dep is None:
-                        if (not os.path.exists(SPIKE_PATH)) or (not os.path.isdir(SPIKE_PATH)):
-                            return 9
-                    else:
-                        if (deps not in installed) and (deps not in provided):
-                            deps.union_add(needed)
-                            dict_append(requirer, deps.name, scroll)
+            error = find_dependencies(scroll_info, needed, requirer)
+            if error != 0:
+                return error
             
             # Locate the missing dependencies
             new_scrolls = {}
@@ -573,7 +498,7 @@ class LibSpike(LibSpikeHelper):
             # Loop if we got some additional scrolls
             if len(new_scrolls.keys()) > 0:
                 continue
-        
+            
             # We as for confirmation first because if optimisation is not done, finding provider can take some serious time
             freshinstalls = []
             reinstalls = []
@@ -595,7 +520,7 @@ class LibSpike(LibSpikeHelper):
                         update.append(scroll_version)
             accepted = aggregator(None, 6, freshinstalls, reinstalls, update, downgrading, skipping)
             if not accepted:
-                return 254;
+                return 254
             
             # Select providers and loop if any was needed
             if len(not_found) > 0:
@@ -608,12 +533,7 @@ class LibSpike(LibSpikeHelper):
                     all_scrolls = locate_all_scrolls(False)
                     
                     for scrollfile in all_scrolls:
-                        # Set environment variables (re-export before each scroll in case a scroll changes it)
-                        ScrollMagick.export_environment()
-                        
-                        # Read scroll
-                        ScrollMagick.init_fields()
-                        ScrollMagick.execute_scroll(scrollfile)
+                        Installer.load_information(scrollfile)
                         
                         scroll = [globals()[var] for var in ('pkgname', 'epoch', 'pkgver', 'pkgrel')]
                         scroll = ScrollVersion('%s=%i:%s-%i' % scroll)
