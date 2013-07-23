@@ -640,10 +640,11 @@ class LibSpike(LibSpikeHelper):
         #      if they are all at the end of the t:sorted list.
         
         # Topologically sort scrolls
-        tsorted, lost, tsortdata = [], [], {}
+        tsorted, tsortdata = [], {}
         for scroll in installing:
             deps, makedeps = set(), set()
             fields = scroll_field[scroll]
+            # TODO providers
             for dep in fields['depends']:
                 deps.add(dep)
             for dep in fields['makedepends']:
@@ -652,9 +653,9 @@ class LibSpike(LibSpikeHelper):
             version = [fields[var] for var in ('epoch', 'pkgvar', 'pkgrel')]
             scroll = ScrollVersion('%s=%s' % (scroll, '%i:%s-%i' % version))
             tsortdata[scroll] = (deps, makedeps)
-        successful = tsort(tsorted, lost, tsortdata)
-        if (not successful) or (len(lost) > 0):
-            return 255 # Should already have meen solved
+        successful = tsort(tsorted, [], tsortdata)
+        if not successful:
+            return 255 # Should already have been solved
         tsorted = [elem[0].name for elem in tsorted]
         
         # Separate scrolls that need itneraction from those that do not
