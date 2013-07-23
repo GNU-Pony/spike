@@ -951,11 +951,7 @@ class Spike():
                     for scrl in reinstalls:
                         print('Reinstalling %s' % scrl)
                     for scrl in update:
-                        if scrl[:scrl.find('=')] not in self.updateadd:
-                            print('Explicitly updating %s' % scrl)
-                    for scrl in update:
-                        if scrl[:scrl.find('=')] in self.updateadd:
-                            print('Updating %s' % scrl)
+                        print('Updating %s' % scrl)
                     for dep in self.depadd:
                         print('Adding %s, required by: %s' % (dep, ', '.join(self.depadd[dep])))
                     for replacee in self.replaceremove:
@@ -1007,7 +1003,7 @@ class Spike():
                         if (allowed & (1 << 1)) != 0:
                             if when == 'e':
                                 return 1
-                        if (allowed & (1 << 0)) != 0:
+                        if (allowed & (1 << 2)) != 0:
                             if when == 'E':
                                 return 2
                         if (allowed & (1 << 3)) != 0:

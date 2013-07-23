@@ -391,6 +391,7 @@ class LibSpike(LibSpikeHelper):
         @param   shred:bool         Whether to preform secure removal when possible
         @return  :byte              Exit value, see description of `LibSpike`, the possible ones are: 0, 6, 8, 9, 22, 254, 255 (TODO)
         '''
+        ## TODO checkdepends
         LibSpike.lock(True)
         # Set shred and root
         if shred:
@@ -633,15 +634,33 @@ class LibSpike(LibSpikeHelper):
             else:
                 break
         
-        # TODO sort topologically and at any time make dependencies have not yet been installed
+        # TODO at any time make dependencies have not yet been installed
         #      all compiled scroll are to be installed. If an interactive scroll is non-installed
         #      make dependancies whose scroll is not interactive, `when` make only be 0, or 3
         #      if they are all at the end of the t:sorted list.
         
+        # Topologically sort scrolls
+        tsorted, lost, tsortdata = [], [], {}
+        for scroll in installing:
+            deps, makedeps = set(), set()
+            fields = scroll_field[scroll]
+            for dep in fields['depends']:
+                deps.add(dep)
+            for dep in fields['makedepends']:
+                deps.add(dep)
+                makedeps.add(dep)
+            version = [fields[var] for var in ('epoch', 'pkgvar', 'pkgrel')]
+            scroll = ScrollVersion('%s=%s' % (scroll, '%i:%s-%i' % version))
+            tsortdata[scroll] = (deps, makedeps)
+        successful = tsort(tsorted, lost, tsortdata)
+        if (not successful) or (len(lost) > 0):
+            return 255 # Should already have meen solved
+        tsorted = [elem[0].name for elem in tsorted]
+        
         # Separate scrolls that need itneraction from those that do not
         interactively_installed = []
         noninteractively_installed = []
-        for scroll in installing:
+        for scroll in tsorted:
             if ScrollVersion('%s=%s' % (scroll, installing[scroll])) in interactive:
                 interactively_installed.append(scroll)
             else:
@@ -658,7 +677,7 @@ class LibSpike(LibSpikeHelper):
                 return 255
         
         # Get order to download and build scrolls
-        first_download, second_download = installing.keys(), []
+        first_download, second_download = tsorted, []
         first_build, second_build = first_download, second_build
         if when == 1:
             first_download, second_download = interactively_installed, noninteractively_installed
