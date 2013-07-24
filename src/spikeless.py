@@ -22,7 +22,7 @@ import os
 import sys
 
 from dragonsuite import *
-from scrollmagick import *
+from auxiliary.scrollmagick import *
 
 
 

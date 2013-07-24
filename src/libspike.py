@@ -30,10 +30,10 @@ from database.dbctrl import *
 from algorithmic.algospike import *
 from algorithmic.scrlver import *
 from algorithmic.sha3sum import *
+from auxiliary.scrollmagick import *
+from auxiliary.auxfunctions import *
 from libspikehelper import *
 from dragonsuite import *
-from scrollmagick import *
-from auxfunctions import *
 
 
 

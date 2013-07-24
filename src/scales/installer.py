@@ -20,8 +20,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
 from algorithmic.algospike import *
 from algorithmic.scrlver import *
-from scrollmagick import *
-from auxfunctions import *
+from auxiliary.scrollmagick import *
+from auxiliary.auxfunctions import *
 
 
 
