@@ -24,8 +24,8 @@ import inspect
 # TODO use git in commands
 
 from installer import *
+from bootstraper import *
 from libspikehelper import *
-from gitcord import *
 from sha3sum import *
 from spikedb import *
 from dbctrl import *
@@ -142,26 +142,15 @@ class LibSpike(LibSpikeHelper):
         repositories = set()
         
         # List Spike for update if not frozen
-        if not os.path.exists(SPIKE_PATH + '.git/frozen.spike'):
-            repositories.add(os.path.realpath(SPIKE_PATH))
-            update.append(SPIKE_PATH)
-            aggregator(SPIKE_PATH, 0)
+        Bootstraper.queue(SPIKE_PATH, repositories, update, aggregator)
         
         # Look for repositories and list, for update, those that are not frozen
-        for file in [SPIKE_PATH + 'repositories'] + get_confs('repositories'):
-            if os.path.isdir(file):
-                for repo in os.listdir(file):
-                    repo = os.path.realpath(file + '/' + repo)
-                    if repo not in repositories:
-                        repositories.add(repo) 
-                        if not os.path.exists(repo + '/.git/frozen.spike'):
-                            update.append(SPIKE_PATH[:-1])
-                            aggregator(SPIKE_PATH[:-1], 0)
+        Bootstraper.queue_repositores([SPIKE_PATH + 'repositories'] + get_confs('repositories'), repositories, update, aggregator)
         
         # Update Spike and repositories, those that are listed
         for repo in update:
             aggregator(repo, 1)
-            if not Gitcord(repo).update_branch(verify):
+            if not Bootstraper.update(repo, verify):
                 return 24
             aggregator(repo, 2)
         
