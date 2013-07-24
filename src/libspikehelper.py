@@ -21,10 +21,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import os
 
 from database.spikedb import *
+from database.dbctrl import *
+from algorithmic.algospike import *
+from algorithmic.sha3sum import *
 from gitcord import *
-from sha3sum import *
-from dbctrl import *
-from algospike import *
 from dragonsuite import *
 
 

@@ -27,11 +27,11 @@ from scales.bootstrapper import *
 from scales.scrollfinder import *
 from database.spikedb import *
 from database.dbctrl import *
+from algorithmic.algospike import *
+from algorithmic.scrlver import *
+from algorithmic.sha3sum import *
 from libspikehelper import *
-from sha3sum import *
-from algospike import *
 from dragonsuite import *
-from scrlver import *
 from scrollmagick import *
 from auxfunctions import *
 

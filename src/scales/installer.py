@@ -18,9 +18,9 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
+from algorithmic.algospike import *
+from algorithmic.scrlver import *
 from scrollmagick import *
-from algospike import *
-from scrlver import *
 from auxfunctions import *
 
 
