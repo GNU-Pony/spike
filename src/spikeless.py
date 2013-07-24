@@ -59,7 +59,7 @@ class Spikeless():
     '''
     
     @staticmethod
-    def install(scroll, startdir, pinpal = '', private = False, freshinstallation = True, buildpatch = None, checkpatch = None, packagepatch = None, inspection = None):
+    def install(scroll, startdir, pinpal = '', private = False, fresh_installation = True, buildpatch = None, checkpatch = None, packagepatch = None, inspection = None):
         '''
         Installs a scroll, but does not do any package managing
         
@@ -67,7 +67,7 @@ class Spikeless():
         @param   startdir:str                                                   Scroll base working directory
         @param   pinpal:str                                                     Installation root
         @param   private:bool                                                   Whether to install privately
-        @param   freshinstallation:bool                                         Whether it is a fresh installation
+        @param   fresh_installation:bool                                        Whether it is a fresh installation
         @param   buildpatch:(srcdir:str, pkgdir:str)?→void                      Scroll build patch function
         @param   checkpatch:(srcdir:str, pkgdir:str)?→void                      Scroll check patch function
         @param   packagepatch:(srcdir:str, pkgdir:str)?→void                    Scroll package patch function
@@ -90,7 +90,7 @@ class Spikeless():
         environ = {}
         for var in os.environ:
             environ[var] = os.environ[var]
-        def resetEnviron(reset_to):
+        def reset_environ(reset_to):
             delete = []
             s = set(reset_to.keys())
             for var in os.environ:
@@ -208,42 +208,42 @@ class Spikeless():
         if build is not None:
             if buildpatch is not None:
                 msg('Patching build process')
-                resetEnviron(environ)
+                reset_environ(environ)
                 os.chdir(startdir)
                 os.umask(0o022)
                 buildpatch(srcdir, pkgdir)
             msg('Building')
-            resetEnviron(environ)
+            reset_environ(environ)
             os.chdir(startdir)
             os.umask(0o022)
             build(startdir, srcdir, pkgdir, private)
         if check is not None:
             if checkpatch is not None:
                 msg('Patching check process')
-                resetEnviron(environ)
+                reset_environ(environ)
                 os.chdir(startdir)
                 os.umask(0o022)
                 checkpatch(srcdir, pkgdir)
             msg('Checking')
-            resetEnviron(environ)
+            reset_environ(environ)
             os.chdir(startdir)
             os.umask(0o022)
             check(startdir, srcdir, pkgdir, private)
         if package is not None:
             if packagepatch is not None:
                 msg('Patching package process')
-                resetEnviron(environ)
+                reset_environ(environ)
                 os.chdir(startdir)
                 os.umask(0o022)
                 packagepatch(srcdir, pkgdir)
             msg('Packaging')
-            resetEnviron(environ)
+            reset_environ(environ)
             os.chdir(startdir)
             os.umask(0o022)
             package(startdir, srcdir, pkgdir, private)
         
         os.chdir(cwd)
-        resetEnviron(environ)
+        reset_environ(environ)
         
         global useopts ## TODO default options should be load
         if useopts is None:
@@ -289,7 +289,7 @@ class Spikeless():
                         if not os.path.exists(tmpdir):
                             os.mkdir(tmpdir)
                         pre_install(tmpdir, self.root, installedfiles, self.priv)
-                resetEnviron(self.env)
+                reset_environ(self.env)
                 os.chdir(cwd)
         
         class postFunctor():
@@ -317,11 +317,11 @@ class Spikeless():
                         if not os.path.exists(tmpdir):
                             os.mkdir(tmpdir)
                         post_install(tmpdir, self.root, installedfiles, self.priv)
-                resetEnviron(self.env)
+                reset_environ(self.env)
                 os.chdir(cwd)
         
-        pre = preFunctor(freshinstallation, startdir, pinpal, private, environ)
-        post = postFunctor(freshinstallation, startdir, pinpal, private, environ)
+        pre = preFunctor(fresh_installation, startdir, pinpal, private, environ)
+        post = postFunctor(fresh_installation, startdir, pinpal, private, environ)
         return (pre, pkgdir, post)
 
 

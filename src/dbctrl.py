@@ -153,9 +153,9 @@ class DBCtrl():
         
         # Fetch and transpose information for all tables except the last one
         class Agg():
-            def __init__(self, tableIndex):
+            def __init__(self, table_index):
                 self.nones = {}
-                self.index = tableIndex
+                self.index = table_index
             def __call__(self, item):
                 if item in self.nones:
                     self.nones[item] += 1
@@ -170,26 +170,26 @@ class DBCtrl():
             sink = []
             for table in tables[i]:
                 table.fetch(sink, input if i == 0 else transpositions[i - 1].keys())
-            DBCtrl.transpose(transpositions[i], sink, midType, Agg(i), False)
+            DBCtrl.transpose(transpositions[i], sink, midType, Agg(i), False) ## FIXME there is not midType variable
         
         # Join transposed tables
         n = len(transpositions) - 2
-        lastInput = transpositions[-2].keys()
-        lastTable = transpositions[-2]
+        last_input = transpositions[-2].keys()
+        last_table = transpositions[-2]
         for i in range(n + 1):
             table = tables[n - i]
-            for key in lastInput.keys():
+            for key in last_input.keys():
                 values = []
-                for value in lastTable[key]:
+                for value in last_table[key]:
                     values.expand(table[value])
-                lastTable[key] = values
+                last_table[key] = values
         
         # Fetch information from last table and send (input, output)
         class Sink():
-            def __init__(self, errorAt, last, table):
+            def __init__(self, error_at, last, table):
                 self.nones = {}
-                self.err = errorAt
-                self.valueType = last
+                self.err = error_at
+                self.value_type = last
                 self.end_start = table
             def append(self, key_value):
                 (key, value) = key_value
@@ -201,11 +201,11 @@ class DBCtrl():
                         if self.nones[key] == self.err:
                             error[0] = True
                     return
-                value = DBCtrl.value_convert(value, self.valueType)
+                value = DBCtrl.value_convert(value, self.value_type)
                 for start in end_start[key]:
                     aggregator(start, value)
         for table in tables[-1]:
-            table.fetch(Sink(len(privs), types[-1]), lastInput, lastTable)
+            table.fetch(Sink(len(privs), types[-1]), last_input, last_table)
         
         return not error[0]
     

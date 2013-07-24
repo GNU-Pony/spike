@@ -44,15 +44,15 @@ class SpikeDB():
     a fixed value size.
     '''
     
-    def __init__(self, filePattern, valueLen):
+    def __init__(self, file_pattern, value_len):
         '''
         Constructor
         
-        @param  filePattern:str  The pattern for the database files, all ‘%’ should be duplicated after which it should include a ‘%i’ for internal use
-        @param  valueLen:int     The length of values
+        @param  file_pattern:str  The pattern for the database files, all ‘%’ should be duplicated after which it should include a ‘%i’ for internal use
+        @param  value_len:int     The length of values
         '''
-        self.filePattern = filePattern
-        self.valueLen = valueLen
+        self.file_pattern = file_pattern
+        self.value_len = value_len
     
     
     
@@ -63,7 +63,7 @@ class SpikeDB():
         # Using DragonSuite.rm because it shred:s files if the user has enabled shred:ing
         from dragonsuite import DragonSuite
         for lblen in range(64):
-            db = self.filePattern % lblen
+            db = self.file_pattern % lblen
             if os.path.exists(db):
                 DragonSuite.rm(db)
     
@@ -77,7 +77,7 @@ class SpikeDB():
         '''
         masterseeklen = 3 * (1 << (INITIALS_LEN << 2))
         for lblen in range(32):
-            db = self.filePattern % lblen
+            db = self.file_pattern % lblen
             if os.path.exists(db):
                 devblocksize = SpikeDB.__lb_blocksize(db)
                 with open(db, 'rb') as file:
@@ -98,7 +98,7 @@ class SpikeDB():
         '''
         rc = []
         for lblen in range(32):
-            db = self.filePattern % lblen
+            db = self.file_pattern % lblen
             if os.path.exists(db):
                 rc.append(db)
         return rc
@@ -125,9 +125,9 @@ class SpikeDB():
             else:
                 buckets[lblen].append(key)
         for lblen in buckets:
-            filename = self.filePattern % lblen
+            filename = self.file_pattern % lblen
             if os.path.exists(filename):
-                SpikeDB.__fetch(rc, filename, 1 << lblen, buckets[lblen], self.valueLen)
+                SpikeDB.__fetch(rc, filename, 1 << lblen, buckets[lblen], self.value_len)
             else:
                 for key in buckets[lblen]:
                     rc.append((key, None))
@@ -155,9 +155,9 @@ class SpikeDB():
             else:
                 buckets[lblen].append(key)
         for lblen in buckets:
-            filename = self.filePattern % lblen
+            filename = self.file_pattern % lblen
             if os.path.exists(filename):
-                SpikeDB.__remove(rc, filename, 1 << lblen, buckets[lblen], self.valueLen)
+                SpikeDB.__remove(rc, filename, 1 << lblen, buckets[lblen], self.value_len)
             else:
                 for key in buckets[lblen]:
                     rc.append(key)
@@ -182,7 +182,7 @@ class SpikeDB():
             else:
                 buckets[lblen].append(pair)
         for lblen in buckets:
-            filename = self.filePattern % lblen
+            filename = self.file_pattern % lblen
             if os.path.exists(filename):
                 SpikeDB.__insert(filename, 1 << lblen, buckets[lblen])
             else:
@@ -207,7 +207,7 @@ class SpikeDB():
             else:
                 buckets[lblen].append(pair)
         for lblen in buckets:
-            filename = self.filePattern % lblen
+            filename = self.file_pattern % lblen
             if os.path.exists(filename):
                 SpikeDB.__override(filename, 1 << lblen, buckets[lblen])
             else:
@@ -232,7 +232,7 @@ class SpikeDB():
             else:
                 buckets[lblen].append(pair)
         for lblen in buckets:
-            filename = self.filePattern % lblen
+            filename = self.file_pattern % lblen
             SpikeDB.__make(filename, 1 << lblen, buckets[lblen])
     
     
@@ -352,27 +352,27 @@ class SpikeDB():
                 bbucket = [(word + '\0' * (maxlen - len(word.encode('utf-8')))).encode('utf-8') for word in bucket]
                 list = Blocklist(file, devblocksize, fileoffset, keyvallen, maxlen, amount)
                 class Agg():
-                    def __init__(self, sink, keyMap, valueMap, limit):
+                    def __init__(self, sink, key_map, value_map, limit):
                         self.sink = sink
-                        self.keyMap = keyMap;
-                        self.valueMap = valueMap;
+                        self.key_map = key_map;
+                        self.value_map = value_map;
                         self.limit = limit;
                     def append(self, item):
                         val = item[1]
-                        val = None if val < 0 else self.valueMap.get_value(val)
-                        key = self.keyMap[item[0]]
-                        _key = self.valueMap.get_key(val)
+                        val = None if val < 0 else self.value_map.get_value(val)
+                        key = self.key_map[item[0]]
+                        _key = self.value_map.get_key(val)
                         self.sink.append((key, val))
                         _val = val
                         val += 1
                         while val < self.limit:
-                            if self.valueMap.get_key(val) != _key:
+                            if self.value_map.get_key(val) != _key:
                                 break
                             self.sink.append((key, val))
                             val += 1
                         val = _val - 1
                         while val >= 0:
-                            if self.valueMap.get_key(val) != _key:
+                            if self.value_map.get_key(val) != _key:
                                 break
                             self.sink.append((key, val))
                             val -= 1
@@ -420,28 +420,28 @@ class SpikeDB():
                 curremove = len(removelist)
                 list = Blocklist(file, devblocksize, fileoffset, keyvallen, maxlen, amount)
                 class Agg():
-                    def __init__(self, sink, failsink, keyMap, valueMap):
+                    def __init__(self, sink, failsink, key_map, value_map):
                         self.sink = sink
                         self.failsink = failsink
-                        self.keyMap = keyMap
-                        self.valueMap = valueMap
+                        self.key_map = key_map
+                        self.value_map = value_map
                     def append(self, item):
                         val = item[1]
                         if val < 0:
-                            self.failsink.append(self.keyMap[item[0]])
+                            self.failsink.append(self.key_map[item[0]])
                         else:
                             self.sink.append(val)
-                            _key = self.valueMap.get_key(val)
+                            _key = self.value_map.get_key(val)
                             _val = val
                             val += 1
                             while val < self.limit:
-                                if self.valueMap.get_key(val) != _key:
+                                if self.value_map.get_key(val) != _key:
                                     break
                                 self.sink.append(val)
                                 val += 1
                             val = _val - 1
                             while val >= 0:
-                                if self.valueMap.get_key(val) != _key:
+                                if self.value_map.get_key(val) != _key:
                                     break
                                 self.sink.append(val)
                                 val -= 1
@@ -518,16 +518,16 @@ class SpikeDB():
                 bbucket = [(word + '\0' * (maxlen - len(word.encode('utf-8')))).encode('utf-8') for word in bucket]
                 list = Blocklist(file, devblocksize, fileoffset, keyvallen, maxlen, amount)
                 class Agg():
-                    def __init__(self, sink, keyMap, posCalc, initials):
+                    def __init__(self, sink, key_map, pos_calc, initials):
                         self.sink = sink
-                        self.keyMap = keyMap
-                        self.posCalc = posCalc
+                        self.key_map = key_map
+                        self.pos_calc = pos_calc
                         self.initials = initials
                     def append(self, item):
                         pos = item[1]
                         pos = ~pos if pos < 0 else pos
-                        (key, val) = self.keyMap[item[0]]
-                        self.sink.append((key, val, self.posCalc(pos), self.initials))
+                        (key, val) = self.key_map[item[0]]
+                        self.sink.append((key, val, self.pos_calc(pos), self.initials))
                 multibin_search(Agg(insertlist, bucket, lambda x : fileoffset + x * keyvallen, initials), list, bbucket)
             insertlist.sort(key = lambda x : x[2])
             end = 0
@@ -602,16 +602,16 @@ class SpikeDB():
                 bbucket = [(word + '\0' * (maxlen - len(word.encode('utf-8')))).encode('utf-8') for word in bucket]
                 list = Blocklist(file, devblocksize, fileoffset, keyvallen, maxlen, amount)
                 class Agg():
-                    def __init__(self, sink, keyMap, posCalc, initials):
+                    def __init__(self, sink, key_map, pos_calc, initials):
                         self.sink = sink
-                        self.keyMap = keyMap
-                        self.posCalc = posCalc
+                        self.key_map = key_map
+                        self.pos_calc = pos_calc
                         self.initials = initials
                     def append(self, item):
                         pos = item[1]
                         (pos, inits) = (~pos, -1) if pos < 0 else (pos, self.initials)
-                        (key, val) = self.keyMap[item[0]]
-                        self.sink.append((key, val, self.posCalc(pos), inits))
+                        (key, val) = self.key_map[item[0]]
+                        self.sink.append((key, val, self.pos_calc(pos), inits))
                 multibin_search(Agg(insertlist, bucket, lambda x : fileoffset + x * keyvallen, initials), list, bbucket)
             insertlist.sort(key = lambda x : x[2])
             end = 0
@@ -687,20 +687,20 @@ class Blocklist():
     '''
     A blockdevice representated as a list
     '''
-    def __init__(self, file, lbdevblock, offset, blocksize, itemsize, length):
+    def __init__(self, file, lb_devblock, offset, blocksize, itemsize, length):
         '''
         Constructor
         
-        @param  file:inputfile  The file, it must be seekable
-        @param  lbdevblock:int  The binary logarithm of the device's block size
-        @param  offset:int      The list's offset in the file
-        @param  blocksize:int   The number of bytes between the start of elements
-        @param  itemsize:int    The size of each element
-        @param  length:int      The number of elements
+        @param  file:inputfile   The file, it must be seekable
+        @param  lb_devblock:int  The binary logarithm of the device's block size
+        @param  offset:int       The list's offset in the file
+        @param  blocksize:int    The number of bytes between the start of elements
+        @param  itemsize:int     The size of each element
+        @param  length:int       The number of elements
         '''
         self.file = file
-        self.lbdevblock = lbdevblock
-        self.devblock = 1 << lbdevblock
+        self.lb_devblock = lb_devblock
+        self.devblock = 1 << lb_devblock
         self.offset = offset
         self.blocksize = blocksize
         self.itemsize = itemsize
@@ -716,8 +716,8 @@ class Blocklist():
         @return  :bytes     The element
         '''
         pos = index * self.blocksize + self.offset
-        if self.position != pos >> self.lbdevblock:
-            self.position = pos >> self.lbdevblock
+        if self.position != pos >> self.lb_devblock:
+            self.position = pos >> self.lb_devblock
             self.buffer = __file_read(self.file, self.devblock)
         pos &= self.devblock - 1
         return self.buffer[pos : pos + itemsize]
@@ -730,8 +730,8 @@ class Blocklist():
         @return  :bytes     The associated value
         '''
         pos = index * self.blocksize + self.offset
-        if self.position != pos >> self.lbdevblock:
-            self.position = pos >> self.lbdevblock
+        if self.position != pos >> self.lb_devblock:
+            self.position = pos >> self.lb_devblock
             self.buffer = __file_read(self.file, self.devblock)
         pos &= self.devblock - 1
         return self.buffer[pos + itemsize : pos + blocksize]
@@ -744,8 +744,8 @@ class Blocklist():
         @return  :bytes     The associated key
         '''
         pos = index * self.blocksize + self.offset
-        if self.position != pos >> self.lbdevblock:
-            self.position = pos >> self.lbdevblock
+        if self.position != pos >> self.lb_devblock:
+            self.position = pos >> self.lb_devblock
             self.buffer = __file_read(self.file, self.devblock)
         pos &= self.devblock - 1
         return self.buffer[pos : pos + itemsize]
@@ -758,8 +758,8 @@ class Blocklist():
         @return  :str       The associated key
         '''
         pos = index * self.blocksize + self.offset
-        if self.position != pos >> self.lbdevblock:
-            self.position = pos >> self.lbdevblock
+        if self.position != pos >> self.lb_devblock:
+            self.position = pos >> self.lb_devblock
             self.buffer = __file_read(self.file, self.devblock)
         pos &= self.devblock - 1
         key = self.buffer[pos : pos + itemsize]
