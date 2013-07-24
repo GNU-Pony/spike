@@ -170,7 +170,7 @@ class DBCtrl():
             sink = []
             for table in tables[i]:
                 table.fetch(sink, input if i == 0 else transpositions[i - 1].keys())
-            DBCtrl.transpose(transpositions[i], sink, midType, Agg(i), False) ## FIXME there is not midType variable
+            DBCtrl.transpose(transpositions[i], sink, types[i], Agg(i), False)
         
         # Join transposed tables
         n = len(transpositions) - 2
