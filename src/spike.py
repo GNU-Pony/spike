@@ -325,15 +325,14 @@ class Spike():
                 allowed.add('--shred')
                 self.test_allowed(opts.opts, allowed, longmap, True)
                 self.test_files(opts.files, 2, True)
-                LibSpike.initialise()
+                LibSpike.initialise(shred = opts.opts['--shred'] is not None)
                 exitValue = self.write(opt.files,
                                        root         = opts.opts['--pinpal'][0] if opts.opts['--pinpal'] is not None else '/',
                                        private      = opts.opts['-u'] is not None,
                                        explicitness = 1  if opts.opts['--asexplict'] is not None else
                                                       -1 if opts.opts['--asdep']     is not None else 0,
                                        nodep        = opts.opts['--nodep'] is not None,
-                                       force        = opts.opts['--force'] is not None,
-                                       shred        = opts.opts['--shred'] is not None)
+                                       force        = opts.opts['--force'] is not None)
                 
             elif opts.opts['-U'] is not None:
                 allowed.add('--pinpal')
@@ -342,11 +341,10 @@ class Spike():
                 allowed.add('--shred')
                 self.test_allowed(opts.opts, allowed, longmap, True)
                 self.test_files(opts.files, 0, True)
-                LibSpike.initialise()
+                LibSpike.initialise(shred = opts.opts['--shred'] is not None)
                 exitValue = self.update(root    = opts.opts['--pinpal'][0] if opts.opts['--pinpal'] is not None else '/',
                                         ignores = opts.opts['-i'] if opts.opts['-i'] is not None else [],
-                                        private = opts.opts['-u'] is not None,
-                                        shred   = opts.opts['--shred'] is not None)
+                                        private = opts.opts['-u'] is not None)
                 
             elif opts.opts['-E'] is not None:
                 exclusives.add('--pinpal')
@@ -357,11 +355,10 @@ class Spike():
                 allowed.add('--shred')
                 self.test_allowed(opts.opts, allowed, longmap, True)
                 self.test_files(opts.files, 2, True)
-                LibSpike.initialise()
+                LibSpike.initialise(shred = opts.opts['--shred'] is not None)
                 exitValue = self.erase(opt.files,
                                        root    = opts.opts['--pinpal'][0] if opts.opts['--pinpal'] is not None else '/',
-                                       private = opts.opts['-u'] is not None,
-                                       shred   = opts.opts['--shred'] is not None)
+                                       private = opts.opts['-u'] is not None)
                 
             elif opts.opts['-X'] is not None:
                 allowed.add('-u')
@@ -447,13 +444,12 @@ class Spike():
                 allowed.add('--shred')
                 self.test_allowed(opts.opts, allowed, longmap, True)
                 self.test_files(opts.files, 0, True)
-                LibSpike.initialise()
+                LibSpike.initialise(shred = opts.opts['--shred'] is not None)
                 exitValue = self.rollback(opts.opts['--restore-archive'][0],
                                           keep      = opts.opts['--full'] is None,
                                           skip      = opts.opts['--shared'] is not None,
                                           gradeness = -1 if opts.opts['--downgrade'] is not None else
-                                                      1  if opts.opts['--upgrade']   is not None else 0,
-                                          shred     = opts.opts['--shred'] is not None)
+                                                      1  if opts.opts['--upgrade']   is not None else 0)
                 
             elif opts.opts['-P'] is not None:
                 self.test_allowed(opts.opts, allowed, longmap, True)
@@ -466,8 +462,8 @@ class Spike():
                 allowed.add('--shred')
                 self.test_allowed(opts.opts, allowed, longmap, True)
                 self.test_files(opts.files, 0, True)
-                LibSpike.initialise()
-                exitValue = self.clean(private = opts.opts['--private'] is not None, shred = opts.opts['--shred'] is not None)
+                LibSpike.initialise(shred = opts.opts['--shred'] is not None)
+                exitValue = self.clean(private = opts.opts['--private'] is not None)
                 
             elif opts.opts['-S'] is not None:
                 allowed.add('--viewer')
@@ -485,15 +481,15 @@ class Spike():
                 allowed.add('--shred')
                 self.test_allowed(opts.opts, allowed, longmap, True)
                 self.test_files(opts.files, 0, True)
-                LibSpike.initialise()
-                exitValue = self.interactive(shred = opts.opts['--shred'] is not None)
+                LibSpike.initialise(shred = opts.opts['--shred'] is not None)
+                exitValue = self.interactive()
             
             else:
                 allowed.add('--shred')
                 self.test_allowed(opts.opts, allowed, longmap, True)
                 self.test_files(opts.files, 0, True)
-                LibSpike.initialise()
-                exitValue = self.interactive(shred = opts.opts['--shred'] is not None)
+                LibSpike.initialise(shred = opts.opts['--shred'] is not None)
+                exitValue = self.interactive()
         
         except Exception as err:
             exitValue = 255
@@ -697,7 +693,7 @@ class Spike():
         return LibSpike.find_owner(Agg(), files)
     
     
-    def write(self, scrolls, root = '/', private = False, explicitness = 0, nodep = False, force = False, shred = False):
+    def write(self, scrolls, root = '/', private = False, explicitness = 0, nodep = False, force = False):
         '''
         Install ponies from scrolls
         
@@ -707,7 +703,6 @@ class Spike():
         @param   explicitness:int   -1 for install as dependency, 1 for install as explicit, and 0 for explicit if not previously as dependency
         @param   nodep:bool         Whether to ignore dependencies
         @param   force:bool         Whether to ignore file claims
-        @param   shred:bool         Whether to preform secure removal when possible
         @return  :byte              Exit value, see description of `mane`
         '''
         class Agg:
@@ -874,17 +869,16 @@ class Spike():
                             print('\033[%iBm', scrln - (scrli + 1))
                 return None
                 
-        return LibSpike.write(Agg(), scrolls, root, private, explicitness, nodep, force, shred)
+        return LibSpike.write(Agg(), scrolls, root, private, explicitness, nodep, force)
     
     
-    def update(self, root = '/', ignores = [], private = False, shred = False):
+    def update(self, root = '/', ignores = [], private = False):
         '''
         Update installed ponies
         
         @param   root:str           Mounted filesystem to which to perform installation
         @param   ignores:list<str>  Ponies not to update
         @param   private:bool       Whether to update user private packages
-        @param   shred:bool         Whether to preform secure removal when possible
         @return  :byte              Exit value, see description of `mane`
         '''
         class Agg:
@@ -1047,17 +1041,16 @@ class Spike():
                             print('\033[%iBm', scrln - (scrli + 1))
                 return None
         
-        return LibSpike.update(Agg(), root, ignore, shred)
+        return LibSpike.update(Agg(), root, ignore)
     
     
-    def erase(self, ponies, root = '/', private = False, shred = False):
+    def erase(self, ponies, root = '/', private = False):
         '''
         Uninstall ponies
         
         @param   ponies:list<str>  Ponies to uninstall
         @param   root:str          Mounted filesystem from which to perform uninstallation
         @param   private:bool      Whether to uninstall user private ponies rather than user shared ponies
-        @param   shred:bool        Whether to preform secure removal when possible
         @return  :byte             Exit value, see description of `mane`
         '''
         class Agg:
@@ -1089,7 +1082,7 @@ class Spike():
                 print('[%s\033[00m] %s\n' % (s, directory))
                 self.pos = p + 1
         
-        return LibSpike.erase(Agg(), ponies, root, private, shred)
+        return LibSpike.erase(Agg(), ponies, root, private)
     
     
     def ride(self, pony, private = False):
@@ -1245,7 +1238,7 @@ class Spike():
         return LibSpike.archive(Agg(), archive, scrolls)
     
     
-    def rollback(self, archive, keep = False, skip = False, gradeness = 0, shred = False):
+    def rollback(self, archive, keep = False, skip = False, gradeness = 0):
         '''
         Roll back to an archived state
         
@@ -1253,7 +1246,6 @@ class Spike():
         @param   keep:bool      Keep non-archived installed ponies rather than uninstall them
         @param   skip:bool      Skip rollback of non-installed archived ponies
         @param   gradeness:int  -1 for downgrades only, 1 for upgrades only, 0 for rollback regardless of version
-        @param   shred:bool     Whether to preform secure removal when possible
         @return  :byte          Exit value, see description of `mane`
         '''
         class Agg:
@@ -1284,7 +1276,7 @@ class Spike():
                 print('[%s\033[00m] (%i/%i) %s\n' % (s, scrolli, scrolln, scroll))
                 self.pos = p + 1
         
-        return LibSpike.rollback(Agg(), archive, keep, skipe, gradeness, shred)
+        return LibSpike.rollback(Agg(), archive, keep, skipe, gradeness)
     
     
     def proofread(self, scrolls):
@@ -1314,11 +1306,10 @@ class Spike():
         return LibSpike.proofread(Agg(), scrolls)
     
     
-    def clean(self, private = False, shred = False):
+    def clean(self, private = False):
         '''
         Remove unneeded ponies that are installed as dependencies
         
-        @param   shred:bool    Whether to preform secure removal when possible
         @param   private:bool  Whether to uninstall user private ponies rather than user shared ponies
         @return  :byte         Exit value, see description of `mane`
         '''
@@ -1351,7 +1342,7 @@ class Spike():
                 print('[%s\033[00m] %s\n' % (s, directory))
                 self.pos = p + 1
         
-        return LibSpike.clean(Agg(), shred)
+        return LibSpike.clean(Agg(), private)
     
     
     def example_shot(self, scrolls, viewer, all_at_once = False):
@@ -1387,11 +1378,10 @@ class Spike():
             Agg.done()
         return exitValue
     
-    def interactive(self, shred = False):
+    def interactive(self):
         '''
         Start interactive mode with terminal graphics
         
-        @param   shred:bool  Whether to preform secure removal when possible
         @return  :byte       Exit value, see description of `mane`
         '''
         if not sys.stdout.isatty:

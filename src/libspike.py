@@ -73,11 +73,15 @@ class LibSpike(LibSpikeHelper):
     '''
     
     @staticmethod
-    def initialise():
+    def initialise(shred = False):
         '''
         Perform initalisations
+        
+        @param  shred:bool  Whether to preform secure removal when possible
         '''
         export('SPIKE_SHRED_OPTS', '-n 3 -z -u')
+        if shred:
+            export('shred', get('SPIKE_SHRED_OPTS'))
         LibSpike.__load_addons()
         export('SPIKE_OLD_PATH', get('PATH'))
     
@@ -353,7 +357,7 @@ class LibSpike(LibSpikeHelper):
     
     
     @staticmethod
-    def write(aggregator, scrolls, root = '/', private = False, explicitness = 0, nodep = False, force = False, shred = False):
+    def write(aggregator, scrolls, root = '/', private = False, explicitness = 0, nodep = False, force = False):
         '''
         Install ponies from scrolls
         
@@ -389,14 +393,11 @@ class LibSpike(LibSpikeHelper):
         @param   explicitness:int   -1 for install as dependency, 1 for install as explicit, and 0 for explicit if not previously as dependency
         @param   nodep:bool         Whether to ignore dependencies
         @param   force:bool         Whether to ignore file claims
-        @param   shred:bool         Whether to preform secure removal when possible
         @return  :byte              Exit value, see description of `LibSpike`, the possible ones are: 0, 6, 8, 9, 22, 254, 255 (TODO)
         '''
         ## TODO checkdepends
         LibSpike.lock(True)
-        # Set shred and root
-        if shred:
-            export('shred', get('SPIKE_SHRED_OPTS'))
+        # Set root
         if root is not None:
             if root.endswith('/'):
                 root = root[:-1]
@@ -582,7 +583,7 @@ class LibSpike(LibSpikeHelper):
     
     
     @staticmethod
-    def update(aggregator, root = '/', ignores = [], private = False, shred = False):
+    def update(aggregator, root = '/', ignores = [], private = False):
         '''
         Update installed ponies
         
@@ -615,13 +616,10 @@ class LibSpike(LibSpikeHelper):
         @param   root:str           Mounted filesystem to which to perform installation
         @param   ignores:list<str>  Ponies not to update
         @param   private:bool       Whether to update user private packages
-        @param   shred:bool         Whether to preform secure removal when possible
         @return  :byte              Exit value, see description of `LibSpike`, the possible ones are: 0 (TODO)
         '''
         LibSpike.lock(True)
-        # Set shred and root
-        if shred:
-            export('shred', get('SPIKE_SHRED_OPTS'))
+        # Set root
         if root is not None:
             if root.endswith('/'):
                 root = root[:-1]
@@ -631,7 +629,7 @@ class LibSpike(LibSpikeHelper):
     
     
     @staticmethod
-    def erase(aggregator, ponies, root = '/', private = False, shred = False):
+    def erase(aggregator, ponies, root = '/', private = False):
         '''
         Uninstall ponies
         
@@ -642,7 +640,6 @@ class LibSpike(LibSpikeHelper):
         @param   ponies:list<str>  Ponies to uninstall
         @param   root:str          Mounted filesystem from which to perform uninstallation
         @param   private:bool      Whether to uninstall user private ponies rather than user shared ponies
-        @param   shred:bool        Whether to preform secure removal when possible
         @return  :byte             Exit value, see description of `LibSpike`, the possible ones are: 0, 6, 7, 14(internal bug), 20, 23, 27, 28, 255
         '''
         # TODO also remove dependencies, but verify
@@ -650,9 +647,7 @@ class LibSpike(LibSpikeHelper):
         LibSpike.lock(True)
         error = 0
         try:
-            # Set shred and root
-            if shred:
-                export('shred', get('SPIKE_SHRED_OPTS'))
+            # Set root
             if root is not None:
                 if root.endswith('/'):
                     root = root[:-1]
@@ -1390,7 +1385,7 @@ class LibSpike(LibSpikeHelper):
     
     
     @staticmethod
-    def rollback(aggregator, archive, keep = False, skip = False, gradeness = 0, shred = False):
+    def rollback(aggregator, archive, keep = False, skip = False, gradeness = 0):
         '''
         Roll back to an archived state
         
@@ -1401,12 +1396,9 @@ class LibSpike(LibSpikeHelper):
         @param   keep:bool      Keep non-archived installed ponies rather than uninstall them
         @param   skip:bool      Skip rollback of non-installed archived ponies
         @param   gradeness:int  -1 for downgrades only, 1 for upgrades only, 0 for rollback regardless of version
-        @param   shred:bool     Whether to preform secure removal when possible
         @return  :byte          Exit value, see description of `LibSpike`, the possible ones are: 0 (TODO)
         '''
         LibSpike.lock(True)
-        if shred:
-            export('shred', get('SPIKE_SHRED_OPTS'))
         return 0
     
     
@@ -1578,7 +1570,7 @@ class LibSpike(LibSpikeHelper):
     
     
     @staticmethod
-    def clean(aggregator, private = False, shred = False):
+    def clean(aggregator, private = False):
         '''
         Remove unneeded ponies that are installed as dependencies
         
@@ -1586,7 +1578,6 @@ class LibSpike(LibSpikeHelper):
                      Feed a scroll, removal progress state and removal progress end state, continuously during the progress,
                      this begins by feeding the state 0 when a scroll is enqueued, when all is enqueued the removal begins.
         
-        @param   shred:bool    Whether to preform secure removal when possible
         @param   private:bool  Whether to uninstall user private ponies rather than user shared ponies
         @return  :byte         Exit value, see description of `LibSpike`, the possible ones are: 0, 6, 7, 14(internal bug), 20, 23, 27, 28, 255
         '''
@@ -1661,7 +1652,7 @@ class LibSpike(LibSpikeHelper):
         def agg(scroll, state, end):
             if state != 0:
                 aggregator(scroll, state, end)
-        return erase(agg, queue, private = private, shred = shred)
+        return erase(agg, queue, private = private)
     
     
     @staticmethod
