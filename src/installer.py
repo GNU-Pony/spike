@@ -181,4 +181,59 @@ class Installer():
                         deps.intersection_add(needed)
                         dict_append(requirer, deps.name, scroll.scroll)
         return 0
+    
+    
+    @staticmethod
+    def replacements(scroll_info, installed_info, field_installed, aggregator):
+        '''
+        Identify and handle replacement scrolls
+        
+        @param  scroll_info:dict<ScrollVersion, Scroll>              The scrolls that are being installed
+        @param  installed_info:dict<ScrollVersion, Scroll>           The scrolls that are installed
+        @param  field_installed:dict<str, dist<¿E?, list<Scroll>>>   Field → value → installed scroll mapping
+        @param  aggregator:(replacee:str, int=5, replacer:str)→void  Function being called when a scroll is being flagged to be replaced
+        '''
+        install_remove = []
+        for scroll in scroll_info:
+            scroll = scroll_info[scroll]
+            for replaces in scroll['replaces']:
+                if replaces in installed_info:
+                    uninstall.append(replaces)
+                    del installed_info[replaces]
+                    for field in field_installed:
+                        for value in field_installed[field]:
+                            if replaces in field_installed[field][value]:
+                                field_installed[field][value].remove(replaces)
+                    aggregator(replaces.name, 5, scroll.name)
+                if replaces in installing:
+                    install_remove.append[replaces]
+        for replaces in install_remove:
+            del scroll_info[replaces]
+    
+    
+    @staticmethod
+    def update_types(scroll_info, installed_versions, freshinstalls, reinstalls, update, downgrading, skipping):
+        '''
+        Identify what type of installation is being done with each scroll
+        
+        @param  scroll_info:dict<ScrollVersion, Scroll>      The scrolls that are being installed
+        @param  installed_versions:dict<Str, ScrollVersion>  Map from scroll name to scroll version of installed scrolls
+        @param  freshinstalls:append(str)->void              List to fill with scroll what are being freshly installed
+        @param  reinstalls:append(str)->void                 List to fill with scroll what are being reinstalled
+        @param  update:append(str)->void                     List to fill with scroll what are being updated
+        @param  downgrading:append(str)->void                List to fill with scroll what are being downgraded
+        @param  skipping:append(str)->void                   List to fill with scroll what are being skipped
+        '''
+        for scroll in scroll_info:
+            scroll = scroll_info[scroll]
+            scroll_version = '%s=%s' % (scroll.name, scroll.version)
+            if scroll.named not in installed_versions:
+                freshinstalls.append(scroll_version)
+            else:
+                if scroll.scroll.lower == installed_versions[scroll.name].lower:
+                    reinstalls.append(scroll_version)
+                elif scroll.scroll.lower < installed_versions[scroll.name].lower:
+                    downgrading.append(scroll_version)
+                else:
+                    update.append(scroll_version)
 

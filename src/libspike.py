@@ -408,10 +408,10 @@ class LibSpike(LibSpikeHelper):
         
         installed_field = {}
         field_installed = {}
-        already_installed = {}
         scroll_field = {}
         field_scroll = {}
         uninstall = []
+        installed_versions = {}
         not_found = set()
         installed_scroll = {}
         installing = {}
@@ -425,12 +425,12 @@ class LibSpike(LibSpikeHelper):
         # Load information about already installed scrolls
         # TODO this should be better using spikedb
         aggregator(scroll, 0)
-        installed_scrollfiles = locate_all_scrolls(True, None if private else False)
-        for scrollfile in installed_scrollfiles:
+        for scrollfile in locate_all_scrolls(True, None if private else False):
             try:
                 scrollinfo = Installer.load_information(scrollfile)
                 Installer.transpose_fields(scrollinfo, installed_field)
                 installed_info[scrollinfo.scroll] = scrollinfo
+                installed_versions[scrollinfo.name] = scrollinfo.scroll
             except:
                 return 255 # So how did we install it...
         
@@ -481,45 +481,16 @@ class LibSpike(LibSpikeHelper):
                     aggregator(scroll.name, 4, requirer[scroll.name])
             
             # Remove replaced ponies
-            for scroll in scroll_field:
-                fields = scrollset[scroll]
-                for replaces in [ScrollVersion(deps) for deps in fields['replaces']]:
-                    if replaces in already_installed:
-                        uninstall.append(already_installed[replaces])
-                        del already_installed[replaces]
-                        del installed_field[replaces]
-                        for field in field_installed:
-                            for value in field_installed[field]:
-                                field_installed[field][value].remove(replaces)
-                        aggregator(replaces.name, 5, scroll)
-                    if replaces in installing:
-                        del installing[replaces]
+            replacements(scroll_info, installed_info, field_installed, aggregator)
             
             # Loop if we got some additional scrolls
             if len(new_scrolls.keys()) > 0:
                 continue
             
             # We as for confirmation first because if optimisation is not done, finding provider can take some serious time
-            freshinstalls = []
-            reinstalls = []
-            update = []
-            downgrading = []
-            skipping = []
-            for scroll in installing:
-                version = installing[scroll]
-                scroll_version = '%s=%s' % (scroll, version)
-                if scroll not in installed_scrolls:
-                    freshinstalls.append(scroll_version)
-                else:
-                    version = ScrollVersion.Version(version, True)
-                    if version == installed_scrolls[scroll]:
-                        reinstalls.append(scroll_version)
-                    elif version < installed_scrolls[scroll]:
-                        downgrading.append(scroll_version)
-                    else:
-                        update.append(scroll_version)
-            accepted = aggregator(None, 6, freshinstalls, reinstalls, update, downgrading, skipping)
-            if not accepted:
+            freshinstalls, reinstalls, update, downgrading, skipping = [], [], [], [], []
+            update_types(scroll_info, installed_versions, freshinstalls, reinstalls, update, downgrading, skipping)
+            if not aggregator(None, 6, freshinstalls, reinstalls, update, downgrading, skipping):
                 return 254
             
             # Select providers and loop if any was needed
