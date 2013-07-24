@@ -42,8 +42,6 @@ class SpikeDB():
     
     Spike Database can only do act as a string to bytes map, with
     a fixed value size.
-    
-    @author  Mattias Andrée (maandree@member.fsf.org)
     '''
     
     def __init__(self, filePattern, valueLen):

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 '''
 spike – a package manager running on top of git
@@ -130,7 +130,7 @@ class Installer():
         Check for conflicts
         
         @param   scroll_infos:itr<dict<ScrollVersion, Scroll>>  Scrolls to check
-        @return  :boolean                                       Whether there are not conflicts
+        @return  :bool                                          Whether there are not conflicts
         '''
         checked = set()
         conflicts = set()
@@ -213,13 +213,13 @@ class Installer():
     
     
     @staticmethod
-    def update_types(scroll_info, installed_versions, freshinstalls, reinstalls, update, downgrading, skipping):
+    def update_types(scroll_info, installed_versions, fresh_installs, reinstalls, update, downgrading, skipping):
         '''
         Identify what type of installation is being done with each scroll
         
         @param  scroll_info:dict<ScrollVersion, Scroll>      The scrolls that are being installed
         @param  installed_versions:dict<Str, ScrollVersion>  Map from scroll name to scroll version of installed scrolls
-        @param  freshinstalls:append(str)→void               List to fill with scroll what are being freshly installed
+        @param  fresh_installs:append(str)→void              List to fill with scroll what are being freshly installed
         @param  reinstalls:append(str)→void                  List to fill with scroll what are being reinstalled
         @param  update:append(str)→void                      List to fill with scroll what are being updated
         @param  downgrading:append(str)→void                 List to fill with scroll what are being downgraded
@@ -229,7 +229,7 @@ class Installer():
             scroll = scroll_info[scroll]
             scroll_version = '%s=%s' % (scroll.name, scroll.version)
             if scroll.named not in installed_versions:
-                freshinstalls.append(scroll_version)
+                fresh_installs.append(scroll_version)
             else:
                 if scroll.scroll.lower == installed_versions[scroll.name].lower:
                     reinstalls.append(scroll_version)

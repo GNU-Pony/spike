@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 '''
 spike – a package manager running on top of git
@@ -37,28 +37,28 @@ VARIADIC = 2
 Option consumes all following arguments
 '''
 
+
+
 class ArgParser():
     '''
     Simple argument parser, cannibalised from ponysay where it was cannibalised from paradis
-    
-    @author  Mattias Andrée (maandree@member.fsf.org)
     '''
     
-    def __init__(self, program, description, usage, longdescription = None, tty = True):
+    def __init__(self, program, description, usage, long_description = None, tty = True):
         '''
         Constructor.
         The short description is printed on same line as the program name
         
-        @param  program:str           The name of the program
-        @param  description:str       Short, single-line, description of the program
-        @param  usage:str             Formated, multi-line, usage text
-        @param  longdescription:str?  Long, multi-line, description of the program, may be `None`
-        @param  tty:bool              Whether the terminal is an not so capable virtual terminal
+        @param  program:str            The name of the program
+        @param  description:str        Short, single-line, description of the program
+        @param  usage:str              Formated, multi-line, usage text
+        @param  long_description:str?  Long, multi-line, description of the program, may be `None`
+        @param  tty:bool               Whether the terminal is an not so capable virtual terminal
         '''
         self.__program = program
         self.__description = description
         self.__usage = usage
-        self.__longdescription = longdescription
+        self.__long_description = long_description
         self.__arguments = []
         self.opts = {}
         self.optmap = {}
@@ -319,8 +319,8 @@ class ArgParser():
         '''
         print('\033[1m%s\033[21m %s %s' % (self.__program, '-' if self.__tty else '—', self.__description))
         print()
-        if self.__longdescription is not None:
-            print(self.__longdescription)
+        if self.__long_description is not None:
+            print(self.__long_description)
         print()
         
         print('\033[1mUSAGE:\033[21m', end='')

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 '''
 spike – a package manager running on top of git
@@ -23,6 +23,8 @@ import sys
 
 from dragonsuite import *
 from scrollmagick import *
+
+
 
 SOFTWARE_SHAREABLE = 1
 SOFTWARE_COMMERCIAL = 2
@@ -50,11 +52,10 @@ GPL_COMPATIBLE = 128
 COPYLEFT = 256
 
 
+
 class Spikeless():
     '''
     Spike but without the package managing, it just installs scrolls
-    
-    @author  Mattias Andrée (maandree@member.fsf.org)
     '''
     
     @staticmethod

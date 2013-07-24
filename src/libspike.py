@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 '''
 spike – a package manager running on top of git
@@ -68,8 +68,6 @@ class LibSpike(LibSpikeHelper):
                  28 - Pony is required by another pony
                 254 - User aborted
                 255 - Unknown error
-    
-    @author  Mattias Andrée (maandree@member.fsf.org)
     '''
     
     @staticmethod
@@ -296,7 +294,7 @@ class LibSpike(LibSpikeHelper):
                                      3 - resolving conflicts
                                      4 - scroll added because of dependency. Additional parameters: requirers:list<str>
                                      5 - scroll removed because due to being replaced. Additional parameters: replacer:str
-                                     6 - verify installation. Additional parameters: freshinstalls:list<str>, reinstalls:list<str>, update:list<str>, downgrading:list<str>, skipping:list<str>
+                                     6 - verify installation. Additional parameters: fresh_installs:list<str>, reinstalls:list<str>, update:list<str>, downgrading:list<str>, skipping:list<str>
                                                               Return: accepted:bool
                                      7 - inspecting non-install scrolls for providers
                                      8 - select provider pony. Additional parameters: options:list<str>
@@ -414,9 +412,9 @@ class LibSpike(LibSpikeHelper):
                 continue
             
             # We as for confirmation first because if optimisation is not done, finding provider can take some serious time
-            freshinstalls, reinstalls, update, downgrading, skipping = [], [], [], [], []
-            Installer.update_types(scroll_info, installed_versions, freshinstalls, reinstalls, update, downgrading, skipping)
-            if not aggregator(None, 6, freshinstalls, reinstalls, update, downgrading, skipping):
+            fresh_installs, reinstalls, update, downgrading, skipping = [], [], [], [], []
+            Installer.update_types(scroll_info, installed_versions, fresh_installs, reinstalls, update, downgrading, skipping)
+            if not aggregator(None, 6, fresh_installs, reinstalls, update, downgrading, skipping):
                 return 254
             
             # Select providers and loop if any was needed
@@ -522,7 +520,7 @@ class LibSpike(LibSpikeHelper):
                                      3 - resolving conflicts
                                      4 - scroll added because of dependency. Additional parameters: requirers:list<str>
                                      5 - scroll removed because due to being replaced. Additional parameters: replacer:str
-                                     6 - verify installation. Additional parameters: freshinstalls:list<str>, reinstalls:list<str>, update:list<str>, downgrading:list<str>, skipping:list<str>
+                                     6 - verify installation. Additional parameters: fresh_installs:list<str>, reinstalls:list<str>, update:list<str>, downgrading:list<str>, skipping:list<str>
                                                               Return: accepted:bool
                                      7 - inspecting non-install scrolls for providers
                                      8 - select provider pony. Additional parameters: options:list<str>

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 '''
 spike – a package manager running on top of git
@@ -44,8 +44,6 @@ The program name of Spike
 class LibSpikeHelper():
     '''
     Helper for LibSpike
-    
-    @author  Mattias Andrée (maandree@member.fsf.org)
     '''
     
     
@@ -128,12 +126,12 @@ class LibSpikeHelper():
     
     
     @staticmethod
-    def get_confs(conffile):
+    def get_confs(conf_file):
         '''
         Get a filename for a configuration file for Spike
         
-        @param   conffile:str  Configuration file
-        @return  :list<str>    File names
+        @param   conf_file:str  Configuration file
+        @return  :list<str>     File names
         '''
         rc = set()
         dirs = ['$XDG_CONFIG_HOME/', '$HOME/.config/', '$HOME/.', SPIKE_PATH, '$vardir/', '/var/', '$confdir/']
@@ -143,7 +141,7 @@ class LibSpikeHelper():
                     dirs.append((dir + '/').replace('//', '/'))
         dirs.append('/etc/')
         for dir in dirs:
-            file = __parse_filename(dir + SPIKE_PROGNAME + '/' + conffile)
+            file = __parse_filename(dir + SPIKE_PROGNAME + '/' + conf_file)
             if (file is not None) and os.path.exists(file):
                 rc.add(os.path.realpath(file))
         return list(rc)

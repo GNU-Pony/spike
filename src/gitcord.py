@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 '''
 spike – a package manager running on top of git
@@ -26,8 +26,6 @@ from subprocess import Popen, PIPE
 class Gitcord():
     '''
     Gitcord has awesome magic for manipulating the realms (git repositories)
-    
-    @author  Mattias Andrée (maandree@member.fsf.org)
     '''
     
     def __init__(directory):
@@ -46,7 +44,7 @@ class Gitcord():
         @return  :list<int>  The version numbers of git, with the major version at index 0
         '''
         try:
-            proc = Popen(['git', '--version'], stdin=PIPE, stdout=PIPE, stderr=None)
+            proc = Popen(['git', '--version'], stdin = PIPE, stdout = PIPE, stderr = None)
             proc.wait()
             output = proc.stdout.read() # 'git version 0.0.0.0\n'
         except:
@@ -81,7 +79,7 @@ class Gitcord():
         '''
         proc = None
         try:
-            proc = Popen(command, cwd=self.dir, stdout=sys.stderr, stdin=sys.stdin, stderr=sys.stderr)
+            proc = Popen(command, cwd = self.dir, stdout = sys.stderr, stdin = sys.stdin, stderr = sys.stderr)
             proc.wait()
             return proc.returncode
         except:
@@ -201,14 +199,14 @@ class Gitcord():
         return 0 == __exec(['git', 'add', '--force', filename])
     
     
-    def commit(message, signoff, gpgsign): ## TODO the user should be able to select a message to use and whether to sign off or sign
+    def commit(message, signoff, gpg_sign): ## TODO the user should be able to select a message to use and whether to sign off or sign
         '''
         Commit changes in the repository
         
-        @param   message:str   The commit message
-        @param   signoff:bool  Whether to add a sign-off tag to the commit message
-        @param   gpgsign:str?  `None`, if not to signed with GPG, empty for implied key ID or the key ID with which to sign
-        @return  :bool         Whether the spell casting was successful
+        @param   message:str?   The commit message, `None` for to open editor
+        @param   signoff:bool   Whether to add a sign-off tag to the commit message
+        @param   gpg_sign:str?  `None`, if not to signed with GPG, empty for implied key ID or the key ID with which to sign
+        @return  :bool          Whether the spell casting was successful
         '''
         cmd = ['git', 'commit']
         if signoff:
@@ -217,8 +215,9 @@ class Gitcord():
             if len(gpgsign) == 0:
                 cmd += '--gpg-sign'
             else:
-                cmd += '--gpg-sign=' + gpgsign
-        cmd += ['--message', message]
+                cmd += '--gpg-sign=' + gpg_sign
+        if message is not None:
+            cmd += ['--message', message]
         return 0 == __exec(cmd)
     
     
@@ -286,7 +285,7 @@ class Gitcord():
         proc = None
         out = None
         try:
-            proc = Popen(command, cwd=self.dir, stdout=PIPE, stdin=sys.stdin, stderr=sys.stderr)
+            proc = Popen(command, cwd = self.dir, stdout = PIPE, stdin = sys.stdin, stderr = sys.stderr)
             out = proc.communicate()[0]
             if proc.returncode != 0:
                 return None

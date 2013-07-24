@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 '''
 spike – a package manager running on top of git
@@ -45,9 +45,9 @@ def list_split(values, list_lambda, ignore_lambda = None):
     '''
     Splits up a list into multiple lists
     
-    @param  values:itr<¿E?>                     Values to split up
-    @param  list_lambda:(value:¿E?)→list<¿E?>   Function that gets the list to which to add the value
-    @param  ignore_lambda:(value:¿E?)?→boolean  Function that gets whether not to add the value to a list
+    @param  values:itr<¿E?>                    Values to split up
+    @param  list_lambda:(value:¿E?)→list<¿E?>  Function that gets the list to which to add the value
+    @param  ignore_lambda:(value:¿E?)?→bool    Function that gets whether not to add the value to a list
     '''
     if ignore_lambda is None:
         for value in values:
@@ -67,8 +67,8 @@ def iterator_remove(iter, remove_lambda):
     '''
     Remove items from an iteratable
     
-    @param  iter:itr<¿E?>                     The iteratable
-    @param  remove_lambda:(item:¿E?)→boolean  Function that gets whether to remove an item
+    @param  iter:itr<¿E?>                  The iteratable
+    @param  remove_lambda:(item:¿E?)→bool  Function that gets whether to remove an item
     '''
     remove = []
     for value in iter:

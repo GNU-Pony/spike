@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 '''
 spike – a package manager running on top of git
@@ -28,8 +28,6 @@ class Owlowiscious(Spike):
     '''
     Owlowiscious is the night time alternative to Spike, he is
     nocturnal in constrast to the, although eversleepy, diurnal Spike.
-    
-    @author  Mattias Andrée (maandree@member.fsf.org)
     '''
     
     def __init__(self):

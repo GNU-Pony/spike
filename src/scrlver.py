@@ -35,8 +35,6 @@ class ScrollVersion():
     @variable  lower:Version?   The lower bound in the version range
     @variable  upper:Version?   The upper bound in the version range
     @variable  complement:bool  Whether the range is stored in its complement, can only be true one exact version is specified
-    
-    @author  Mattias Andrée (maandree@member.fsf.org)
     '''
     
     def __init__(self, scroll):
@@ -338,36 +336,36 @@ class ScrollVersion():
         return ScrollVersion(full)
     
     
-    def union_add(self, scrollset):
+    def union_add(self, scroll_set):
         '''
         Updates a set of ScrollVersion:s by replacing the existing scroll with the union of that and this scroll
         
-        @param  scrollset:set<ScrollVersion>  Set of scrolls
+        @param  scroll_set:set<ScrollVersion>  Set of scrolls
         '''
-        if self in scrollset:
-            other = set([self]).intersection(scrollset)
+        if self in scroll_set:
+            other = set([self]).intersection(scroll_set)
             if other.full == self.full: # incase the behaviour of intersection changes
-                other = scrollset.intersection(set([self]))
-            scrollset.remove(other)
-            scrollset.add(self.union(other))
+                other = scroll_set.intersection(set([self]))
+            scroll_set.remove(other)
+            scroll_set.add(self.union(other))
         else:
-            scrollset.add(self)
+            scroll_set.add(self)
     
     
-    def intersection_add(self, scrollset):
+    def intersection_add(self, scroll_set):
         '''
         Updates a set of ScrollVersion:s by replacing the existing scroll with the intersaction of that and this scroll
         
-        @param  scrollset:set<ScrollVersion>  Set of scrolls
+        @param  scroll_set:set<ScrollVersion>  Set of scrolls
         '''
-        if self in scrollset:
-            other = set([self]).intersection(scrollset)
+        if self in scroll_set:
+            other = set([self]).intersection(scroll_set)
             if other.full == self.full: # incase the behaviour of intersection changes
-                other = scrollset.intersection(set([self]))
-            scrollset.remove(other)
-            scrollset.add(self.intersection(other))
+                other = scroll_set.intersection(set([self]))
+            scroll_set.remove(other)
+            scroll_set.add(self.intersection(other))
         else:
-            scrollset.add(self)
+            scroll_set.add(self)
     
     
     @staticmethod
@@ -417,43 +415,43 @@ class ScrollVersion():
         return rc
     
     
-    def slice_map(self, scrollmap, value):
+    def slice_map(self, scroll_map, value):
         '''
         Updates a map from ScrollVersion:s by splitting up scrolls with version ranges into slices and
         appending a value to a list of values
         
-        @param  scrollset:map<ScrollVersion, list<¿E?>>  Map from scrolls
-        @param  value:¿E?                                The value
+        @param  scroll_map:map<ScrollVersion, list<¿E?>>  Map from scrolls
+        @param  value:¿E?                                 The value
         '''
-        if self in scrollmap:
+        if self in scroll_map:
             others = [self]
-            for other in scrollmap:
+            for other in scroll_map:
                 if self in other:
                     other.append(other)
             slices = {}
             for slice in ScrollVersion.slice(others):
                 if slice not in slices:
                     slices[slice] = [value]
-                slices[slice] += scrollmap[slice]
-            while self in scrollmap:
-                del scrollmap[self]
+                slices[slice] += scroll_map[slice]
+            while self in scroll_map:
+                del scroll_map[self]
             for slice in slices:
-                scrollmap[slice] = slices[slice]
+                scroll_map[slice] = slices[slice]
         else:
-            scrollmap.put(self, [value])
+            scroll_map.put(self, [value])
     
     
     def get_all(self, scrollmap):
         '''
         Gets all values associated with any version of a scroll in a range of versions
         
-        @param   scrollmap:map<ScrollVersion, list<¿E?>>  The map the look in
-        @return  :list<¿E?>                               The values
+        @param   scroll_map:map<ScrollVersion, list<¿E?>>  The map the look in
+        @return  :list<¿E?>                                The values
         '''
         rc = set()
-        for scroll in scrollmap:
+        for scroll in scroll_map:
             if self in scroll:
-                for value in scrollmap[scroll]:
+                for value in scroll_map[scroll]:
                     rc.add(value)
         return list(rc)
 

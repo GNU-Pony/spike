@@ -1,9 +1,9 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 '''
 spike – a package manager running on top of git
 
-Copyright © 2013  Mattias Andrée (maandree@member.fsf.org)
+Copyright © 2012, 2013  Mattias Andrée (maandree@member.fsf.org)
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -26,8 +26,6 @@ import os
 class SHA3:
     '''
     SHA-3/Keccak[r=1024, c=576, n=576] hash algorithm implementation
-    
-    @author  Mattias Andrée  (maandree@member.fsf.org)
     '''
     
     def __init__(self):
