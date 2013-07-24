@@ -4,6 +4,7 @@ _/
 !.git*
 
 *.pyc
+*.pyo
 __pycache__/
 
 *~
