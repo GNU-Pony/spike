@@ -22,8 +22,9 @@ import os
 import inspect
 # TODO use git in commands
 
-from installer import *
-from bootstraper import *
+from scales.installer import *
+from scales.bootstraper import *
+from scales.scrollfinder import *
 from libspikehelper import *
 from sha3sum import *
 from spikedb import *

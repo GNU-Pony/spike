@@ -70,5 +70,5 @@ class Bootstraper():
         @param   verify_signatures:bool  Whether to verify signatures
         @return  :bool                   Whether the update was successful
         '''
-        return Gitcord(repository).update_branch(verify_signatures):
+        return Gitcord(repository).update_branch(verify_signatures)
 
