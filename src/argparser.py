@@ -65,6 +65,7 @@ class ArgParser():
         self.__tty = tty
     
     
+    
     def add_argumentless(self, alternatives, help = None):
         '''
         Add option that takes no arguments
@@ -77,7 +78,8 @@ class ArgParser():
         self.opts[stdalt] = None
         for alt in alternatives:
             self.optmap[alt] = (stdalt, ARGUMENTLESS)
-
+    
+    
     def add_argumented(self, alternatives, arg, help = None):
         '''
         Add option that takes one argument
@@ -92,6 +94,7 @@ class ArgParser():
         for alt in alternatives:
             self.optmap[alt] = (stdalt, ARGUMENTED)
     
+    
     def add_variadic(self, alternatives, arg, help = None):
         '''
         Add option that takes all following argument
@@ -105,6 +108,88 @@ class ArgParser():
         self.opts[stdalt] = None
         for alt in alternatives:
             self.optmap[alt] = (stdalt, VARIADIC)
+    
+    
+    
+    def test_exclusiveness(self, execprog, exclusives, longmap, do_exit = False):
+        '''
+        Test for option conflicts
+        
+        @param   execprog:str            The program command
+        @param   exclusives:set<str>     Exclusive options
+        @param   longmap:dict<str, str>  Map from short to long
+        @param   do_exit:bool            Exit program on conflict
+        @return  :bool                   Whether at most one exclusive option was used
+        '''
+        used = []
+        
+        for opt in self.opts:
+            if (self.opts[opt] is not None) and (opt in exclusives):
+                used.append((opt, longmap[opt] if opt in longmap else None))
+        
+        if len(used) > 1:
+            msg = execprog + ': conflicting options:'
+            for opt in used:
+                if opt[1] is None:
+                    msg += ' ' + opt[0]
+                else:
+                    msg += ' ' + opt[0] + '(' + opt[1] + ')'
+            printerr(msg)
+            if do_exit:
+                exit(1)
+            return False
+        return True
+    
+    
+    def test_allowed(self, execprog, allowed, longmap, do_exit = False):
+        '''
+        Test for out of context option usage
+        
+        @param   execprog:str            The program command
+        @param   allowed:set<str>        Allowed options
+        @param   longmap:dict<str, str>  Map from short to long
+        @param   do_exit:bool            Exit program on incorrect usage
+        @return  :bool                   Whether only allowed options was used
+        '''
+        for opt in self.opts:
+            if (self.opts[opt] is not None) and (opt not in allowed):
+                msg = self.execprog + ': option used out of context: ' + opt
+                if opt in longmap:
+                    msg += '(' + longmap[opt] + ')'
+                printerr(msg)
+                if do_exit:
+                    exit(1)
+                return False
+        return True
+    
+    
+    def test_files(self, execprog, files, mode, do_exit = False):
+        '''
+        Test the correctness of the number of used non-option arguments
+        
+        @param   execprog:str  The program command
+        @param   mode:int      Correctness mode: 0 - no arguments
+                                                 1 - one argument
+                                                 2 - atleast one argument
+                                                 3 - atleast two arguments
+                                                 n - atleast n − 1 arguments
+                                                −n - exactly n arguments
+        @param   do_exit:bool  Exit program on incorrectness
+        @return  :bool         Whether the usage was correct
+        '''
+        rc = True
+        if mode == 0:
+            rc = len(self.files) == 0
+        elif mode == 1:
+            rc = len(self.files) == 1
+        elif mode > 1:
+            rc = len(self.files) >= (mode - 1)
+        else:
+            rc = len(self.files) == -mode
+        if do_exit and not rc:
+            exit(1)
+        return rc
+    
     
     
     def parse(self, argv = sys.argv):
@@ -231,6 +316,7 @@ class ArgParser():
         self.message = ' '.join(self.files) if len(self.files) > 0 else None
         
         return self.rc
+    
     
     
     def help(self):

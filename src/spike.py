@@ -258,38 +258,38 @@ class Spike():
         
         try:
             if opts.opts['-v'] is not None:
-                self.test_allowed(opts.opts, allowed, longmap, True)
-                self.test_files(opts.files, 0, True)
+                opts.test_allowed(self.execprog, allowed, longmap, True)
+                opts.test_files(self.execprog, 0, True)
                 self.print_version()
             
             elif opts.opts['-h'] is not None:
-                self.test_allowed(opts.opts, allowed, longmap, True)
-                self.test_files(opts.files, 0, True)
+                opts.test_allowed(self.execprog, allowed, longmap, True)
+                opts.test_files(self.execprog, 0, True)
                 opts.help()
                 exitValue = 3
             
             elif opts.opts['-c'] is not None:
-                self.test_allowed(opts.opts, allowed, longmap, True)
-                self.test_files(opts.files, 0, True)
+                opts.test_allowed(self.execprog, allowed, longmap, True)
+                opts.test_files(self.execprog, 0, True)
                 self.print_copyright()
             
             elif opts.opts['-3'] is not None:
-                self.test_allowed(opts.opts, allowed, longmap, True)
+                opts.test_allowed(self.execprog, allowed, longmap, True)
                 LibSpike.initialise()
                 exitValue = self.sha3sum(opts.files)
             
             elif opts.opts['-B'] is not None:
                 allowed.add('--no-verify')
-                self.test_allowed(opts.opts, allowed, longmap, True)
-                self.test_files(opts.files, 0, True)
+                opts.test_allowed(self.execprog, allowed, longmap, True)
+                opts.test_files(self.execprog, 0, True)
                 LibSpike.initialise()
                 exitValue = self.bootstrap(opts.opts['--no-verify'] is not None)
             
             elif opts.opts['-F'] is not None:
                 exclusives.add('-o')
                 exclusives.add('-w')
-                self.test_exclusiveness(opts.opts, exclusives, longmap, True)
-                self.test_allowed(opts.opts, allowed, longmap, True)
+                opts.test_exclusiveness(self.execprog, exclusives, longmap, True)
+                opts.test_allowed(self.execprog, allowed, longmap, True)
                 allowed.add('-o')
                 allowed.add('-w')
                 if opts.opts['-w'] is not None:
@@ -301,7 +301,7 @@ class Spike():
                                                  installed    = opts.opts['-w'][0][0] == 'y',
                                                  notinstalled = opts.opts['-w'][0][0] == 'n')
                 elif opts.opts['-o'] is not None:
-                    self.test_files(opts.files, 2, True)
+                    opts.test_files(self.execprog, 2, True)
                     LibSpike.initialise()
                     exitValue = self.find_owner(opts.files)
                 else:
@@ -311,11 +311,11 @@ class Spike():
             elif opts.opts['-W'] is not None:
                 exclusives.add('--pinpal')
                 exclusives.add('-u')
-                self.test_exclusiveness(opts.opts, exclusives, longmap, True)
+                opts.test_exclusiveness(self.execprog, exclusives, longmap, True)
                 exclusives = set()
                 exclusives.add('--asdep')
                 exclusives.add('--asexplicit')
-                self.test_exclusiveness(opts.opts, exclusives, longmap, True)
+                opts.test_exclusiveness(self.execprog, exclusives, longmap, True)
                 allowed.add('--pinpal')
                 allowed.add('-u')
                 allowed.add('--asdep')
@@ -323,8 +323,8 @@ class Spike():
                 allowed.add('--nodep')
                 allowed.add('--force')
                 allowed.add('--shred')
-                self.test_allowed(opts.opts, allowed, longmap, True)
-                self.test_files(opts.files, 2, True)
+                opts.test_allowed(self.execprog, allowed, longmap, True)
+                opts.test_files(self.execprog, 2, True)
                 LibSpike.initialise(shred = opts.opts['--shred'] is not None)
                 exitValue = self.write(opt.files,
                                        root         = opts.opts['--pinpal'][0] if opts.opts['--pinpal'] is not None else '/',
@@ -339,8 +339,8 @@ class Spike():
                 allowed.add('-i')
                 allowed.add('-u')
                 allowed.add('--shred')
-                self.test_allowed(opts.opts, allowed, longmap, True)
-                self.test_files(opts.files, 0, True)
+                opts.test_allowed(self.execprog, allowed, longmap, True)
+                opts.test_files(self.execprog, 0, True)
                 LibSpike.initialise(shred = opts.opts['--shred'] is not None)
                 exitValue = self.update(root    = opts.opts['--pinpal'][0] if opts.opts['--pinpal'] is not None else '/',
                                         ignores = opts.opts['-i'] if opts.opts['-i'] is not None else [],
@@ -349,12 +349,12 @@ class Spike():
             elif opts.opts['-E'] is not None:
                 exclusives.add('--pinpal')
                 exclusives.add('-u')
-                self.test_exclusiveness(opts.opts, exclusives, longmap, True)
+                opts.test_exclusiveness(self.execprog, exclusives, longmap, True)
                 allowed.add('--pinpal')
                 allowed.add('-u')
                 allowed.add('--shred')
-                self.test_allowed(opts.opts, allowed, longmap, True)
-                self.test_files(opts.files, 2, True)
+                opts.test_allowed(self.execprog, allowed, longmap, True)
+                opts.test_files(self.execprog, 2, True)
                 LibSpike.initialise(shred = opts.opts['--shred'] is not None)
                 exitValue = self.erase(opt.files,
                                        root    = opts.opts['--pinpal'][0] if opts.opts['--pinpal'] is not None else '/',
@@ -362,8 +362,8 @@ class Spike():
                 
             elif opts.opts['-X'] is not None:
                 allowed.add('-u')
-                self.test_allowed(opts.opts, allowed, longmap, True)
-                self.test_files(opts.files, 1, True)
+                opts.test_allowed(self.execprog, allowed, longmap, True)
+                opts.test_files(self.execprog, 1, True)
                 LibSpike.initialise()
                 exitValue = self.ride(opt.files[0],
                                       private = opts.opts['-u'] is not None)
@@ -371,13 +371,13 @@ class Spike():
             elif opts.opts['-R'] is not None:
                 exclusives.add('-l')
                 exclusives.add('-f')
-                self.test_exclusiveness(opts.opts, exclusives, longmap, True)
+                opts.test_exclusiveness(self.execprog, exclusives, longmap, True)
                 allowed.add('-l')
                 allowed.add('-f')
                 if opts.opts['-l'] is None:
                     allowed.add('-w')
-                self.test_allowed(opts.opts, allowed, longmap, True)
-                self.test_files(opts.files, 1, True)
+                opts.test_allowed(self.execprog, allowed, longmap, True)
+                opts.test_files(self.execprog, 1, True)
                 if opts.opts['-l'] is not None:
                     exitValue = self.read_files(opt.files)
                 else:
@@ -396,13 +396,13 @@ class Spike():
             elif opts.opts['-C'] is not None:
                 exclusives.add('--recursive')
                 exclusives.add('--entire')
-                self.test_exclusiveness(opts.opts, exclusives, longmap, True)
+                opts.test_exclusiveness(self.execprog, exclusives, longmap, True)
                 allowed.add('--recursive')
                 allowed.add('--entire')
                 allowed.add('-u')
                 allowed.add('--force')
-                self.test_allowed(opts.opts, allowed, longmap, True)
-                self.test_files(opts.files, 3, True)
+                opts.test_allowed(self.execprog, allowed, longmap, True)
+                opts.test_files(self.execprog, 3, True)
                 LibSpike.initialise()
                 exitValue = self.claim(opt.files[:-1], opt.files[-1],
                                        recursiveness = 1 if opts.opts['--recursive'] is not None else
@@ -414,7 +414,7 @@ class Spike():
                 allowed.add('--recursive')
                 allowed.add('-u')
                 self.test_allowed(opts.opts, allowed, longmap, True)
-                self.test_files(opts.files, 3, True)
+                opts.test_files(self.execprog, 3, True)
                 LibSpike.initialise()
                 exitValue = self.disclaim(opt.files[:-1], opt.files[-1],
                                           recursive = opts.opts['--recursive'] is not None,
@@ -422,8 +422,8 @@ class Spike():
                 
             elif opts.opts['-A'] is not None:
                 allowed.add('-s')
-                self.test_allowed(opts.opts, allowed, longmap, True)
-                self.test_files(opts.files, 0, True)
+                opts.test_allowed(self.execprog, allowed, longmap, True)
+                opts.test_files(self.execprog, 0, True)
                 LibSpike.initialise()
                 exitValue = self.archive(opts.opts['-A'][0], scrolls = opts.opts['-s'] is not None)
                 
@@ -431,19 +431,19 @@ class Spike():
                 exclusives.add('--shared')
                 exclusives.add('--full')
                 exclusives.add('--old')
-                self.test_exclusiveness(opts.opts, exclusives, longmap, True)
+                opts.test_exclusiveness(self.execprog, exclusives, longmap, True)
                 exclusives = set()
                 exclusives.add('--downgrade')
                 exclusives.add('--upgrade')
-                self.test_exclusiveness(opts.opts, exclusives, longmap, True)
+                opts.test_exclusiveness(self.execprog, exclusives, longmap, True)
                 allowed.add('--shared')
                 allowed.add('--full')
                 allowed.add('--old')
                 allowed.add('--downgrade')
                 allowed.add('--upgrade')
                 allowed.add('--shred')
-                self.test_allowed(opts.opts, allowed, longmap, True)
-                self.test_files(opts.files, 0, True)
+                opts.test_allowed(self.execprog, allowed, longmap, True)
+                opts.test_files(self.execprog, 0, True)
                 LibSpike.initialise(shred = opts.opts['--shred'] is not None)
                 exitValue = self.rollback(opts.opts['--restore-archive'][0],
                                           keep      = opts.opts['--full'] is None,
@@ -452,24 +452,24 @@ class Spike():
                                                       1  if opts.opts['--upgrade']   is not None else 0)
                 
             elif opts.opts['-P'] is not None:
-                self.test_allowed(opts.opts, allowed, longmap, True)
-                self.test_files(opts.files, 2, True)
+                opts.test_allowed(self.execprog, allowed, longmap, True)
+                opts.test_files(self.execprog, 2, True)
                 LibSpike.initialise()
                 exitValue = self.proofread(opts.files)
             
             elif opts.opts['-N'] is not None:
                 allowed.add('--private')
                 allowed.add('--shred')
-                self.test_allowed(opts.opts, allowed, longmap, True)
-                self.test_files(opts.files, 0, True)
+                opts.test_allowed(self.execprog, allowed, longmap, True)
+                opts.test_files(self.execprog, 0, True)
                 LibSpike.initialise(shred = opts.opts['--shred'] is not None)
                 exitValue = self.clean(private = opts.opts['--private'] is not None)
                 
             elif opts.opts['-S'] is not None:
                 allowed.add('--viewer')
                 allowed.add('-a')
-                self.test_allowed(opts.opts, allowed, longmap, True)
-                self.test_files(opts.files, 2, True)
+                opts.test_allowed(self.execprog, allowed, longmap, True)
+                opts.test_files(self.execprog, 2, True)
                 envDisplay = os.environ['DISPLAY']
                 defaultViewer = 'xloadimage' if (envDisplay is not None) and envDisplay.startsWith(':') else 'jfbview'
                 LibSpike.initialise()
@@ -479,15 +479,15 @@ class Spike():
                 
             elif opts.opts['-I'] is not None:
                 allowed.add('--shred')
-                self.test_allowed(opts.opts, allowed, longmap, True)
-                self.test_files(opts.files, 0, True)
+                opts.test_allowed(self.execprog, allowed, longmap, True)
+                opts.test_files(self.execprog, 0, True)
                 LibSpike.initialise(shred = opts.opts['--shred'] is not None)
                 exitValue = self.interactive()
             
             else:
                 allowed.add('--shred')
-                self.test_allowed(opts.opts, allowed, longmap, True)
-                self.test_files(opts.files, 0, True)
+                opts.test_allowed(self.execprog, allowed, longmap, True)
+                opts.test_files(self.execprog, 0, True)
                 LibSpike.initialise(shred = opts.opts['--shred'] is not None)
                 exitValue = self.interactive()
         
@@ -501,86 +501,6 @@ class Spike():
         LibSpike.terminate()
         exit(exitValue)
     
-    
-    
-    def test_exclusiveness(self, opts, exclusives, longmap, do_exit = False):
-        '''
-        Test for option conflicts
-        
-        @param   opts:dict<str, list<str>>  Current options
-        @param   exclusives:set<str>        Exclusive options
-        @param   longmap:dict<str, str>     Map from short to long
-        @param   do_exit:bool               Exit program on conflict
-        @return  :bool                      Whether at most one exclusive option was used
-        '''
-        used = []
-        
-        for opt in opts:
-            if (opts[opt] is not None) and (opt in exclusives):
-                used.append((opt, longmap[opt] if opt in longmap else None))
-        
-        if len(used) > 1:
-            msg = self.execprog + ': conflicting options:'
-            for opt in used:
-                if opt[1] is None:
-                    msg += ' ' + opt[0]
-                else:
-                    msg += ' ' + opt[0] + '(' + opt[1] + ')'
-            printerr(msg)
-            if do_exit:
-                exit(1)
-            return False
-        return True
-    
-    
-    def test_allowed(self, opts, allowed, longmap, do_exit = False):
-        '''
-        Test for out of context option usage
-        
-        @param   opts:dict<str, list<str>>  Current options
-        @param   allowed:set<str>           Allowed options
-        @param   longmap:dict<str, str>     Map from short to long
-        @param   do_exit:bool               Exit program on incorrect usage
-        @return  :bool                      Whether only allowed options was used
-        '''
-        for opt in opts:
-            if (opts[opt] is not None) and (opt not in allowed):
-                msg = self.execprog + ': option used out of context: ' + opt
-                if opt in longmap:
-                    msg += '(' + longmap[opt] + ')'
-                printerr(msg)
-                if do_exit:
-                    exit(1)
-                return False
-        return True
-    
-    
-    def test_files(self, files, mode, do_exit = False):
-        '''
-        Test the correctness of the number of used non-option arguments
-        
-        @param   files:list<str>    Non-option arguments
-        @param   mode:int           Correctness mode: 0 - no arguments
-                                                      1 - one argument
-                                                      2 - atleast one argument
-                                                      3 - atleast two arguments
-                                                      n - atleast n − 1 arguments
-                                                     −n - exactly n arguments
-        @param   do_exit:bool       Exit program on incorrectness
-        @return  :bool              Whether the usage was correct
-        '''
-        rc = True
-        if mode == 0:
-            rc = len(files) == 0
-        elif mode == 1:
-            rc = len(files) == 1
-        elif mode > 1:
-            rc = len(files) >= (mode - 1)
-        else:
-            rc = len(files) == -mode
-        if do_exit and not rc:
-            exit(1)
-        return rc
     
     
     def print_version(self):
