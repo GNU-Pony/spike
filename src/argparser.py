@@ -173,10 +173,13 @@ class ArgParser():
         @param   do_exit:bool    Exit program on incorrectness
         @return  :bool           Whether the usage was correct
         '''
-        rc = True
-        rc = min_count <= len(self.files)
+        n = len(self.files)
+        rc = min_count <= n
+        msg = self.execprog + ': too few unnamed arguments: %i but %i needed' % (n, min_count)
         if rc and (max_count is not None):
-            rc = len(self.files) <= max_count
+            rc = n <= max_count
+            if not rc:
+                msg = self.execprog + ': too many unnamed arguments: %i but only %i allowed' % (n, max_count)
         if do_exit and not rc:
             exit(1)
         return rc
