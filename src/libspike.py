@@ -79,13 +79,16 @@ class LibSpike(LibSpikeHelper):
         
         @param  shred:bool  Whether to preform secure removal when possible
         '''
+        util = lambda u : SPIKE_PATH + 'src/util-replacements/' + u
         export('SPIKE_SHRED_OPTS', '-n 3 -z -u')
         if shred:
             export('shred', get('SPIKE_SHRED_OPTS'))
-        LibSpike.__load_addons()
-        util = lambda u : SPIKE_PATH + 'src/util-replacements/' + u
+        optlibexec = SPIKE_PATH + 'add-on/libexec'
+        if os.path.exists(optlibexec) and os.path.isdir(optlibexec):
+            export('PATH', '%s:%s' % (optlibexec, get('PATH')))
         if os.path.exists(util('common')) and os.path.isdir(util('common')):
             export('PATH', '%s:%s' % (util('common'), get('PATH')))
+        LibSpike.__load_addons()
         if shred:
             export('PATH', '%s:%s' % (util('shred'), get('PATH')))
         export('SPIKE_OLD_PATH', get('PATH'))
