@@ -163,29 +163,20 @@ class ArgParser():
         return True
     
     
-    def test_files(self, execprog, files, mode, do_exit = False):
+    def test_files(self, execprog, files, min_count, max_count, do_exit = False):
         '''
         Test the correctness of the number of used non-option arguments
         
-        @param   execprog:str  The program command
-        @param   mode:int      Correctness mode: 0 - no arguments
-                                                 1 - one argument
-                                                 2 - atleast one argument
-                                                 3 - atleast two arguments
-                                                 n - atleast n − 1 arguments
-                                                −n - exactly n arguments
-        @param   do_exit:bool  Exit program on incorrectness
-        @return  :bool         Whether the usage was correct
+        @param   execprog:str    The program command
+        @param   min_count:int   The minimum allowed number of files
+        @param   max_count:int?  The maximum allowed number of files, `None` for unlimited
+        @param   do_exit:bool    Exit program on incorrectness
+        @return  :bool           Whether the usage was correct
         '''
         rc = True
-        if mode == 0:
-            rc = len(self.files) == 0
-        elif mode == 1:
-            rc = len(self.files) == 1
-        elif mode > 1:
-            rc = len(self.files) >= (mode - 1)
-        else:
-            rc = len(self.files) == -mode
+        rc = min_count <= len(self.files)
+        if rc and (max_count is not None):
+            rc = len(self.files) <= max_count
         if do_exit and not rc:
             exit(1)
         return rc

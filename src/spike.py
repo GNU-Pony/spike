@@ -259,18 +259,18 @@ class Spike():
         try:
             if opts.opts['-v'] is not None:
                 opts.test_allowed(self.execprog, allowed, longmap, True)
-                opts.test_files(self.execprog, 0, True)
+                opts.test_files(self.execprog, 0, 0, True)
                 self.print_version()
             
             elif opts.opts['-h'] is not None:
                 opts.test_allowed(self.execprog, allowed, longmap, True)
-                opts.test_files(self.execprog, 0, True)
+                opts.test_files(self.execprog, 0, 0, True)
                 opts.help()
                 exitValue = 3
             
             elif opts.opts['-c'] is not None:
                 opts.test_allowed(self.execprog, allowed, longmap, True)
-                opts.test_files(self.execprog, 0, True)
+                opts.test_files(self.execprog, 0, 0, True)
                 self.print_copyright()
             
             elif opts.opts['-3'] is not None:
@@ -281,7 +281,7 @@ class Spike():
             elif opts.opts['-B'] is not None:
                 allowed.add('--no-verify')
                 opts.test_allowed(self.execprog, allowed, longmap, True)
-                opts.test_files(self.execprog, 0, True)
+                opts.test_files(self.execprog, 0, 0, True)
                 LibSpike.initialise()
                 exitValue = self.bootstrap(opts.opts['--no-verify'] is not None)
             
@@ -301,7 +301,7 @@ class Spike():
                                                  installed    = opts.opts['-w'][0][0] == 'y',
                                                  notinstalled = opts.opts['-w'][0][0] == 'n')
                 elif opts.opts['-o'] is not None:
-                    opts.test_files(self.execprog, 2, True)
+                    opts.test_files(self.execprog, 1, None, True)
                     LibSpike.initialise()
                     exitValue = self.find_owner(opts.files)
                 else:
@@ -324,7 +324,7 @@ class Spike():
                 allowed.add('--force')
                 allowed.add('--shred')
                 opts.test_allowed(self.execprog, allowed, longmap, True)
-                opts.test_files(self.execprog, 2, True)
+                opts.test_files(self.execprog, 1, None, True)
                 LibSpike.initialise(shred = opts.opts['--shred'] is not None)
                 exitValue = self.write(opt.files,
                                        root         = opts.opts['--pinpal'][0] if opts.opts['--pinpal'] is not None else '/',
@@ -340,7 +340,7 @@ class Spike():
                 allowed.add('-u')
                 allowed.add('--shred')
                 opts.test_allowed(self.execprog, allowed, longmap, True)
-                opts.test_files(self.execprog, 0, True)
+                opts.test_files(self.execprog, 0, 0, True)
                 LibSpike.initialise(shred = opts.opts['--shred'] is not None)
                 exitValue = self.update(root    = opts.opts['--pinpal'][0] if opts.opts['--pinpal'] is not None else '/',
                                         ignores = opts.opts['-i'] if opts.opts['-i'] is not None else [],
@@ -354,7 +354,7 @@ class Spike():
                 allowed.add('-u')
                 allowed.add('--shred')
                 opts.test_allowed(self.execprog, allowed, longmap, True)
-                opts.test_files(self.execprog, 2, True)
+                opts.test_files(self.execprog, 1, None, True)
                 LibSpike.initialise(shred = opts.opts['--shred'] is not None)
                 exitValue = self.erase(opt.files,
                                        root    = opts.opts['--pinpal'][0] if opts.opts['--pinpal'] is not None else '/',
@@ -363,7 +363,7 @@ class Spike():
             elif opts.opts['-X'] is not None:
                 allowed.add('-u')
                 opts.test_allowed(self.execprog, allowed, longmap, True)
-                opts.test_files(self.execprog, 1, True)
+                opts.test_files(self.execprog, 1, None, True)
                 LibSpike.initialise()
                 exitValue = self.ride(opt.files[0],
                                       private = opts.opts['-u'] is not None)
@@ -377,7 +377,7 @@ class Spike():
                 if opts.opts['-l'] is None:
                     allowed.add('-w')
                 opts.test_allowed(self.execprog, allowed, longmap, True)
-                opts.test_files(self.execprog, 1, True)
+                opts.test_files(self.execprog, 1, 1, True) ## TODO should it not be 1, None
                 if opts.opts['-l'] is not None:
                     exitValue = self.read_files(opt.files)
                 else:
@@ -402,7 +402,7 @@ class Spike():
                 allowed.add('-u')
                 allowed.add('--force')
                 opts.test_allowed(self.execprog, allowed, longmap, True)
-                opts.test_files(self.execprog, 3, True)
+                opts.test_files(self.execprog, 2, None, True)
                 LibSpike.initialise()
                 exitValue = self.claim(opt.files[:-1], opt.files[-1],
                                        recursiveness = 1 if opts.opts['--recursive'] is not None else
@@ -414,7 +414,7 @@ class Spike():
                 allowed.add('--recursive')
                 allowed.add('-u')
                 self.test_allowed(opts.opts, allowed, longmap, True)
-                opts.test_files(self.execprog, 3, True)
+                opts.test_files(self.execprog, 2, None, True)
                 LibSpike.initialise()
                 exitValue = self.disclaim(opt.files[:-1], opt.files[-1],
                                           recursive = opts.opts['--recursive'] is not None,
@@ -423,7 +423,7 @@ class Spike():
             elif opts.opts['-A'] is not None:
                 allowed.add('-s')
                 opts.test_allowed(self.execprog, allowed, longmap, True)
-                opts.test_files(self.execprog, 0, True)
+                opts.test_files(self.execprog, 0, 0, True)
                 LibSpike.initialise()
                 exitValue = self.archive(opts.opts['-A'][0], scrolls = opts.opts['-s'] is not None)
                 
@@ -443,7 +443,7 @@ class Spike():
                 allowed.add('--upgrade')
                 allowed.add('--shred')
                 opts.test_allowed(self.execprog, allowed, longmap, True)
-                opts.test_files(self.execprog, 0, True)
+                opts.test_files(self.execprog, 0, 0, True)
                 LibSpike.initialise(shred = opts.opts['--shred'] is not None)
                 exitValue = self.rollback(opts.opts['--restore-archive'][0],
                                           keep      = opts.opts['--full'] is None,
@@ -453,7 +453,7 @@ class Spike():
                 
             elif opts.opts['-P'] is not None:
                 opts.test_allowed(self.execprog, allowed, longmap, True)
-                opts.test_files(self.execprog, 2, True)
+                opts.test_files(self.execprog, 1, None, True)
                 LibSpike.initialise()
                 exitValue = self.proofread(opts.files)
             
@@ -461,7 +461,7 @@ class Spike():
                 allowed.add('--private')
                 allowed.add('--shred')
                 opts.test_allowed(self.execprog, allowed, longmap, True)
-                opts.test_files(self.execprog, 0, True)
+                opts.test_files(self.execprog, 1, None, True)
                 LibSpike.initialise(shred = opts.opts['--shred'] is not None)
                 exitValue = self.clean(private = opts.opts['--private'] is not None)
                 
@@ -469,7 +469,7 @@ class Spike():
                 allowed.add('--viewer')
                 allowed.add('-a')
                 opts.test_allowed(self.execprog, allowed, longmap, True)
-                opts.test_files(self.execprog, 2, True)
+                opts.test_files(self.execprog, 1, None, True)
                 envDisplay = os.environ['DISPLAY']
                 defaultViewer = 'xloadimage' if (envDisplay is not None) and envDisplay.startsWith(':') else 'jfbview'
                 LibSpike.initialise()
@@ -480,14 +480,14 @@ class Spike():
             elif opts.opts['-I'] is not None:
                 allowed.add('--shred')
                 opts.test_allowed(self.execprog, allowed, longmap, True)
-                opts.test_files(self.execprog, 0, True)
+                opts.test_files(self.execprog, 0, 0, True)
                 LibSpike.initialise(shred = opts.opts['--shred'] is not None)
                 exitValue = self.interactive()
             
             else:
                 allowed.add('--shred')
                 opts.test_allowed(self.execprog, allowed, longmap, True)
-                opts.test_files(self.execprog, 0, True)
+                opts.test_files(self.execprog, 0, 0, True)
                 LibSpike.initialise(shred = opts.opts['--shred'] is not None)
                 exitValue = self.interactive()
         
