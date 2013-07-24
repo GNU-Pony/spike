@@ -184,13 +184,14 @@ class Installer():
     
     
     @staticmethod
-    def replacements(scroll_info, installed_info, field_installed, aggregator):
+    def replacements(scroll_info, installed_info, field_installed, uninstall, aggregator):
         '''
         Identify and handle replacement scrolls
         
         @param  scroll_info:dict<ScrollVersion, Scroll>              The scrolls that are being installed
         @param  installed_info:dict<ScrollVersion, Scroll>           The scrolls that are installed
         @param  field_installed:dict<str, dist<¿E?, list<Scroll>>>   Field → value → installed scroll mapping
+        @param  uninstall:append(str)→void                           List to fill with scroll what are being uninstalled
         @param  aggregator:(replacee:str, int=5, replacer:str)→void  Function being called when a scroll is being flagged to be replaced
         '''
         install_remove = []
@@ -218,11 +219,11 @@ class Installer():
         
         @param  scroll_info:dict<ScrollVersion, Scroll>      The scrolls that are being installed
         @param  installed_versions:dict<Str, ScrollVersion>  Map from scroll name to scroll version of installed scrolls
-        @param  freshinstalls:append(str)->void              List to fill with scroll what are being freshly installed
-        @param  reinstalls:append(str)->void                 List to fill with scroll what are being reinstalled
-        @param  update:append(str)->void                     List to fill with scroll what are being updated
-        @param  downgrading:append(str)->void                List to fill with scroll what are being downgraded
-        @param  skipping:append(str)->void                   List to fill with scroll what are being skipped
+        @param  freshinstalls:append(str)→void               List to fill with scroll what are being freshly installed
+        @param  reinstalls:append(str)→void                  List to fill with scroll what are being reinstalled
+        @param  update:append(str)→void                      List to fill with scroll what are being updated
+        @param  downgrading:append(str)→void                 List to fill with scroll what are being downgraded
+        @param  skipping:append(str)→void                    List to fill with scroll what are being skipped
         '''
         for scroll in scroll_info:
             scroll = scroll_info[scroll]
@@ -236,4 +237,30 @@ class Installer():
                     downgrading.append(scroll_version)
                 else:
                     update.append(scroll_version)
+    
+    
+    @staticmethod
+    def tsort_scrolls(scroll_info):
+        '''
+        Topologically sort scrolls
+        
+        @param   scroll_info:dict<ScrollVersion, Scroll>  The scrolls that are being installed
+        @return  :list<(Scroll, list<ScrollVersion>?)>?   List of scrolls in topological order, `None` if not possible.
+                                                          Accompanied with each scroll is either `None` or a list of scrolls that is require buts must be installed later (cyclic dependency).
+        '''
+        tsorted, tsortdata = [], {}
+        for scroll in scroll_info:
+            scroll = scroll_info[scroll]
+            deps, makedeps = set(), set()
+            # TODO providers
+            for dep in scroll['depends']:
+                deps.add(dep)
+            for dep in scroll['makedepends']:
+                deps.add(dep)
+                makedeps.add(dep)
+            tsortdata[scroll.scroll] = (deps, makedeps)
+        successful = tsort(tsorted, [], tsortdata)
+        if not successful:
+            return None
+        return [(scroll_info[elem[0]], elem[1]) for elem in tsorted]
 

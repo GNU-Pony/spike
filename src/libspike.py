@@ -405,19 +405,17 @@ class LibSpike(LibSpikeHelper):
         # Information needed in the progress and may only be extended
         installed_info = {}
         scroll_info = {}
-        
-        installed_field = {}
         field_installed = {}
-        scroll_field = {}
         field_scroll = {}
-        uninstall = []
         installed_versions = {}
-        not_found = set()
-        installed_scroll = {}
-        installing = {}
         providers = None
-        provider_file = None
-        interactive = set()
+        provider_files = None
+        not_found = set()
+        uninstall = []
+        
+        scroll_field = {}
+        installing = {}
+        
         new_scrolls = {}
         for scroll in scrolls:
             new_scrolls[scroll] = None
@@ -428,7 +426,7 @@ class LibSpike(LibSpikeHelper):
         for scrollfile in locate_all_scrolls(True, None if private else False):
             try:
                 scrollinfo = Installer.load_information(scrollfile)
-                Installer.transpose_fields(scrollinfo, installed_field)
+                Installer.transpose_fields(scrollinfo, field_installed)
                 installed_info[scrollinfo.scroll] = scrollinfo
                 installed_versions[scrollinfo.name] = scrollinfo.scroll
             except:
@@ -481,7 +479,7 @@ class LibSpike(LibSpikeHelper):
                     aggregator(scroll.name, 4, requirer[scroll.name])
             
             # Remove replaced ponies
-            replacements(scroll_info, installed_info, field_installed, aggregator)
+            Installer.replacements(scroll_info, installed_info, field_installed, uninstall, aggregator)
             
             # Loop if we got some additional scrolls
             if len(new_scrolls.keys()) > 0:
@@ -489,7 +487,7 @@ class LibSpike(LibSpikeHelper):
             
             # We as for confirmation first because if optimisation is not done, finding provider can take some serious time
             freshinstalls, reinstalls, update, downgrading, skipping = [], [], [], [], []
-            update_types(scroll_info, installed_versions, freshinstalls, reinstalls, update, downgrading, skipping)
+            Installer.update_types(scroll_info, installed_versions, freshinstalls, reinstalls, update, downgrading, skipping)
             if not aggregator(None, 6, freshinstalls, reinstalls, update, downgrading, skipping):
                 return 254
             
@@ -500,27 +498,23 @@ class LibSpike(LibSpikeHelper):
                 if providers is None:
                     aggregator(None, 7)
                     providers = {}
-                    provider_file = {}
-                    all_scrolls = locate_all_scrolls(False)
-                    
-                    for scrollfile in all_scrolls:
-                        Installer.load_information(scrollfile)
-                        
-                        scroll = [globals()[var] for var in ('pkgname', 'epoch', 'pkgver', 'pkgrel')]
-                        scroll = ScrollVersion('%s=%i:%s-%i' % scroll)
-                        for provides in globals()['provides']:
-                            ScrollVersion(provides).slice_map(providers, scroll)
-                            provider_file[scroll] = scrollfile
+                    provider_files = {}
+                    for scrollfile in locate_all_scrolls(False):
+                        scroll = Installer.load_information(scrollfile)
+                        for provides in scroll['provides']:
+                            provides.slice_map(providers, scroll.scroll)
+                            provider_file[scroll.scroll.full] = scroll.file
                 
                 # Select provider
                 for scroll in not_found:
                     options = ScrollVersion(scroll).get_all(providers)
                     if len(options) == 0:
                         return 9
-                    option = aggregator(scroll, 8, options)
+                    option = aggregator(scroll, 8, [opt.scroll.full for opt in options])
                     if option is None:
                         return 254
-                    new_scrolls[option] = provider_file[option]
+                    option = ScrollVersion(option)
+                    new_scrolls[option.name] = provider_file[option]
                 not_found = set()
             else:
                 break
@@ -531,29 +525,15 @@ class LibSpike(LibSpikeHelper):
         #      if they are all at the end of the t:sorted list.
         
         # Topologically sort scrolls
-        tsorted, tsortdata = [], {}
-        for scroll in installing:
-            deps, makedeps = set(), set()
-            fields = scroll_field[scroll]
-            # TODO providers
-            for dep in fields['depends']:
-                deps.add(dep)
-            for dep in fields['makedepends']:
-                deps.add(dep)
-                makedeps.add(dep)
-            version = [fields[var] for var in ('epoch', 'pkgvar', 'pkgrel')]
-            scroll = ScrollVersion('%s=%s' % (scroll, '%i:%s-%i' % version))
-            tsortdata[scroll] = (deps, makedeps)
-        successful = tsort(tsorted, [], tsortdata)
-        if not successful:
+        tsorted = Installer.tsort_scrolls(scroll_info) 
+        if tsorted is None:
             return 255 # Should already have been solved
-        tsorted = [elem[0].name for elem in tsorted]
         
         # Separate scrolls that need itneraction from those that do not
         interactively_installed = []
         noninteractively_installed = []
-        for scroll in tsorted:
-            if ScrollVersion('%s=%s' % (scroll, installing[scroll])) in interactive:
+        for (scroll, _) in tsorted:
+            if scroll['interactive']:
                 interactively_installed.append(scroll)
             else:
                 noninteractively_installed.append(scroll)
@@ -562,7 +542,7 @@ class LibSpike(LibSpikeHelper):
         when = 0
         allowed_when = (1 << 4) - 1
         if len(interactively_installed) > 0:
-            when = aggregator(None, 9, interactively_installed, allowed_when)
+            when = aggregator(None, 9, [scroll.scroll.full in scroll for interactively_installed], allowed_when)
             if when is None:
                 return 254
             if (0 < when) or (((1 << when) & allowed_when) == 0):
