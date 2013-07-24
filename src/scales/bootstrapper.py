@@ -23,7 +23,7 @@ import os
 from gitcord import *
 
 
-class Bootstraper():
+class Bootstrapper():
     '''
     Module for libspike for bootstrapping
     '''
@@ -60,7 +60,7 @@ class Bootstraper():
                 for repo in os.listdir(file):
                     repo = os.path.realpath(file + '/' + repo)
                     if repo not in repositories:
-                        Bootstraper.queue(repo, repositories, update, aggregator)
+                        Bootstrapper.queue(repo, repositories, update, aggregator)
     
     
     @staticmethod

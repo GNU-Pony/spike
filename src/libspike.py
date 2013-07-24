@@ -23,7 +23,7 @@ import inspect
 # TODO use git in commands
 
 from scales.installer import *
-from scales.bootstraper import *
+from scales.bootstrapper import *
 from scales.scrollfinder import *
 from libspikehelper import *
 from sha3sum import *
@@ -142,15 +142,15 @@ class LibSpike(LibSpikeHelper):
         repositories = set()
         
         # List Spike for update if not frozen
-        Bootstraper.queue(SPIKE_PATH, repositories, update, aggregator)
+        Bootstrapper.queue(SPIKE_PATH, repositories, update, aggregator)
         
         # Look for repositories and list, for update, those that are not frozen
-        Bootstraper.queue_repositores([SPIKE_PATH + 'repositories'] + get_confs('repositories'), repositories, update, aggregator)
+        Bootstrapper.queue_repositores([SPIKE_PATH + 'repositories'] + get_confs('repositories'), repositories, update, aggregator)
         
         # Update Spike and repositories, those that are listed
         for repo in update:
             aggregator(repo, 1)
-            if not Bootstraper.update(repo, verify):
+            if not Bootstrapper.update(repo, verify):
                 return 24
             aggregator(repo, 2)
         
