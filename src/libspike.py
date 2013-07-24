@@ -25,10 +25,10 @@ import inspect
 from scales.installer import *
 from scales.bootstrapper import *
 from scales.scrollfinder import *
+from database.spikedb import *
+from database.dbctrl import *
 from libspikehelper import *
 from sha3sum import *
-from spikedb import *
-from dbctrl import *
 from algospike import *
 from dragonsuite import *
 from scrlver import *

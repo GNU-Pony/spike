@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
 import sys
 import os
+
 from algospike import *
 
 
@@ -28,6 +29,7 @@ INITIALS_LEN = 4
 '''
 The number of characters accounted for in the initials which are used to speed up searches
 '''
+
 
 
 class SpikeDB():
