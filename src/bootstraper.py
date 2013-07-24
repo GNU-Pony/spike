@@ -71,3 +71,4 @@ class Bootstraper():
         @return  :bool                   Whether the update was successful
         '''
         return Gitcord(repository).update_branch(verify_signatures):
+
