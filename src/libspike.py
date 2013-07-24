@@ -83,6 +83,11 @@ class LibSpike(LibSpikeHelper):
         if shred:
             export('shred', get('SPIKE_SHRED_OPTS'))
         LibSpike.__load_addons()
+        util = lambda u : SPIKE_PATH + 'src/util-replacements/' + u
+        if os.path.exists(util('common')) and os.path.isdir(util('common')):
+            export('PATH', '%s:%s' % (util('common'), get('PATH')))
+        if shred:
+            export('PATH', '%s:%s' % (util('shred'), get('PATH')))
         export('SPIKE_OLD_PATH', get('PATH'))
     
     
