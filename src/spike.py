@@ -22,7 +22,7 @@ import sys
 import os
 from subprocess import Popen
 
-from libspike import *
+from library.libspike import *
 from auxiliary.argparser import *
 
 

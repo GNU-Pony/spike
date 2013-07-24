@@ -24,7 +24,7 @@ from database.spikedb import *
 from database.dbctrl import *
 from algorithmic.algospike import *
 from algorithmic.sha3sum import *
-from gitcord import *
+from library.gitcord import *
 from dragonsuite import *
 
 
