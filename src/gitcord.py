@@ -161,6 +161,36 @@ class Gitcord():
         return 0 == __exec(['git', 'rm', '--force', filename])
     
     
+    def obliterate_file(filenames, shred = None, tag_name_filter = 'cat'):
+        '''
+        WARNING: this is a powerful spell that rewrites history, and there is not magical mystery cure for it
+        ———————
+        Remove a file from all commits the the current branch of a repository
+        
+        @param   filename:str|itr<str>  The files to remove
+        @param   shred:list<str>?       Option to used with shred, if secure file remove is needed (probably not as it is probably already in the git tree,) `None` if not needed
+        @param   tag_name_filter:str?   Command used to name the new tags, leave to default to override old tags, and set to None if you do not want to create new tags
+        @return  :bool                  Whether the spell casting was successful
+        '''
+        files = ' '.join(['\'' + f.replace('\'', '\'\\\'\'') + '\'' for f in filename])
+        index_filter = 'git rm --ignore-unmatch -r --cached -- %s' % files
+        if shred is not None:
+            shred_opts = shred[:]
+            while '-u' in shred_opts:
+                shred_opts.remove('-u')
+            while '--remove' in shred_opts:
+                shred_opts.remove('--remove')
+            shred_opts = ' '.join(['\'' + o.replace('\'', '\'\\\'\'') + '\'' for o in shred_opts])
+            shred_file = '[ -f "$file" ]; then shred %s -- "$file";' % shred_opts
+            shred_dir  = '[ -d "$file" ]; then find -mount -- "$file" | while read file; do if %s fi; done' %s shred_file
+            index_filter = 'for file in %s; do if %s elif %s fi; done; %s' % (files, shred_file, shred_dir, index_filter)
+        command = ['git', 'filter-branch', '--force', '--index-filter', index_filter, '--prune-empty']
+        if tag_name_filter is not None:
+            command.append('--tag-name-filter')
+            command.append(tag_name_filter)
+        return 0 == __exec(command + ['--', '--all'])
+    
+    
     def stage_file(filename):
         '''
         Add a new file for stage changes made to a file to the repository
