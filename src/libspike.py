@@ -548,7 +548,7 @@ class LibSpike(LibSpikeHelper):
         when = 0
         allowed_when = (1 << 4) - 1
         if len(interactively_installed) > 0:
-            when = aggregator(None, 9, [scroll.scroll.full in scroll for interactively_installed], allowed_when)
+            when = aggregator(None, 9, [scroll.scroll.full for scroll in interactively_installed], allowed_when)
             if when is None:
                 return 254
             if (0 < when) or (((1 << when) & allowed_when) == 0):
