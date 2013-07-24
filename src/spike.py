@@ -236,7 +236,7 @@ class Spike():
         for opt in 'vhcBFWUEXRCDANPSI3':
             exclusives.add('-' + opt)
         exclusives.add('--restore-archive')
-        self.test_exclusiveness(opts.opts, exclusives, longmap, True)
+        opts.test_exclusiveness(self.execprog, exclusives, longmap, True)
         
         for opt in opts.opts:
             if (opt != '-i') and (opt != '-f'): # --ignore, --info
