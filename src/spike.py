@@ -363,7 +363,7 @@ class Spike():
             elif opts.opts['-X'] is not None:
                 allowed.add('-u')
                 opts.test_allowed(self.execprog, allowed, longmap, True)
-                opts.test_files(self.execprog, 1, None, True)
+                opts.test_files(self.execprog, 1, 1, True)
                 LibSpike.initialise()
                 exitValue = self.ride(opt.files[0],
                                       private = opts.opts['-u'] is not None)
@@ -377,7 +377,7 @@ class Spike():
                 if opts.opts['-l'] is None:
                     allowed.add('-w')
                 opts.test_allowed(self.execprog, allowed, longmap, True)
-                opts.test_files(self.execprog, 1, 1, True) ## TODO should it not be 1, None
+                opts.test_files(self.execprog, 1, None, True)
                 if opts.opts['-l'] is not None:
                     exitValue = self.read_files(opt.files)
                 else:
