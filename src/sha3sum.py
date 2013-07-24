@@ -334,6 +334,8 @@ class SHA3:
         blksize = 8192
         try:
             blksize = os.stat(os.path.realpath(filename)).st_blksize
+            if blksize <= 0:
+                blksize = 8192
         except:
             pass
         rc = ''
