@@ -57,7 +57,7 @@ class Gitcord():
         return [int(n) for n in version.split('.')]
     
     
-    def checkVersion(*needed):
+    def check_version(*needed):
         '''
         Check whether the version of git in the user's path is of a specific version or any newer version
         
@@ -91,7 +91,7 @@ class Gitcord():
                 return 255
     
     
-    def updateBranch(verify):
+    def update_branch(verify):
         '''
         Update the current branch in the repository. If git is new enough (>=1.8.2.4), support signature verification.
         
@@ -100,12 +100,12 @@ class Gitcord():
         @return  :bool        Whether the spell casting was successful
         '''
         args = ['git', 'pull']
-        if verify and checkVersion(1, 8, 2, 4):
+        if verify and check_version(1, 8, 2, 4):
             args.append('--verify-signatures')
         return 0 == __exec(args)
     
     
-    def changeBranch(branch):
+    def change_branch(branch):
         '''
         Change current branch in the repository
         
@@ -130,7 +130,7 @@ class Gitcord():
             return 0 == __exec(['git', 'clone', '--branch', branch, '--single-branch', repository, directory])
     
     
-    def createRepository(directory):
+    def create_repository(directory):
         '''
         Create a new repository
         
@@ -147,17 +147,21 @@ class Gitcord():
         return rc
     
     
-    def removeFile(filename):
+    def remove_file(filename, shred = None):
         '''
         Remove a file from the repository
         
-        @param   filename:str  The file to remove
-        @return  :bool         Whether the spell casting was successful
+        @param   filename:str      The file to remove
+        @param   shred:list<str>?  Option to used with shred, if secure file remove is needed (probably not as it is probably already in the git tree,) `None` if not needed
+        @return  :bool             Whether the spell casting was successful
         '''
+        if shred is not None:
+            if 0 != (__exec(['shred'] + shred + [filename])):
+                return False
         return 0 == __exec(['git', 'rm', '--force', filename])
     
     
-    def stageFile(filename):
+    def stage_file(filename):
         '''
         Add a new file for stage changes made to a file to the repository
         
@@ -216,7 +220,7 @@ class Gitcord():
         return 0 == __exec(['git', 'stash'])
     
     
-    def popStash():
+    def pop_stash():
         '''
         Pop and apply the top of the stash stack
         
@@ -225,7 +229,7 @@ class Gitcord():
         return 0 == __exec(['git', 'stash', 'pop'])
     
     
-    def applyStash():
+    def apply_stash():
         '''
         Peek and apply the top of the stash stack
         
@@ -234,7 +238,7 @@ class Gitcord():
         return 0 == __exec(['git', 'stash', 'apply'])
     
     
-    def dropStash():
+    def drop_stash():
         '''
         Pop but do not apply the top of the stash stack
         
@@ -243,7 +247,7 @@ class Gitcord():
         return 0 == __exec(['git', 'stash', 'drop'])
     
     
-    def listStash():
+    def list_stash():
         '''
         Get all items in the stash stack, you can use this to determine of a stash operation created and object
         

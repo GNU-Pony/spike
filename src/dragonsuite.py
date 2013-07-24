@@ -1193,14 +1193,14 @@ def sha3sum(files):
     '''
     sha3 = SHA3()
     if isinstance(files, str):
-        return sha3.digestFile(files)
+        return sha3.digest_file(files)
     elif len(files) == 0:
         return []
     else:
-        rc = [sha3.digestFile(files[0])]
+        rc = [sha3.digest_file(files[0])]
         for file in files[1:]:
             sha3.reinitialise()
-            rc.append(sha3.digestFile(file))
+            rc.append(sha3.digest_file(file))
         return rc
 
 

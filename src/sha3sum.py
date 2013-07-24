@@ -58,7 +58,7 @@ class SHA3:
         return ((x >> (64 - n)) + (x << n)) & 0xFFFFFFFFFFFFFFFF
     
     
-    def keccakFRound(self, rc):
+    def keccak_f_round(self, rc):
         '''
         Perform one round of computation
         
@@ -142,38 +142,38 @@ class SHA3:
         self.S[0] ^= rc
     
     
-    def keccakF(self):
+    def keccak_f(self):
         '''
         Perform Keccak-f function
         '''
-        self.keccakFRound(0x0000000000000001)
-        self.keccakFRound(0x0000000000008082)
-        self.keccakFRound(0x800000000000808A)
-        self.keccakFRound(0x8000000080008000)
-        self.keccakFRound(0x000000000000808B)
-        self.keccakFRound(0x0000000080000001)
-        self.keccakFRound(0x8000000080008081)
-        self.keccakFRound(0x8000000000008009)
-        self.keccakFRound(0x000000000000008A)
-        self.keccakFRound(0x0000000000000088)
-        self.keccakFRound(0x0000000080008009)
-        self.keccakFRound(0x000000008000000A)
-        self.keccakFRound(0x000000008000808B)
-        self.keccakFRound(0x800000000000008B)
-        self.keccakFRound(0x8000000000008089)
-        self.keccakFRound(0x8000000000008003)
-        self.keccakFRound(0x8000000000008002)
-        self.keccakFRound(0x8000000000000080)
-        self.keccakFRound(0x000000000000800A)
-        self.keccakFRound(0x800000008000000A)
-        self.keccakFRound(0x8000000080008081)
-        self.keccakFRound(0x8000000000008080)
-        self.keccakFRound(0x0000000080000001)
-        self.keccakFRound(0x8000000080008008)
+        self.keccak_f_round(0x0000000000000001)
+        self.keccak_f_round(0x0000000000008082)
+        self.keccak_f_round(0x800000000000808A)
+        self.keccak_f_round(0x8000000080008000)
+        self.keccak_f_round(0x000000000000808B)
+        self.keccak_f_round(0x0000000080000001)
+        self.keccak_f_round(0x8000000080008081)
+        self.keccak_f_round(0x8000000000008009)
+        self.keccak_f_round(0x000000000000008A)
+        self.keccak_f_round(0x0000000000000088)
+        self.keccak_f_round(0x0000000080008009)
+        self.keccak_f_round(0x000000008000000A)
+        self.keccak_f_round(0x000000008000808B)
+        self.keccak_f_round(0x800000000000008B)
+        self.keccak_f_round(0x8000000000008089)
+        self.keccak_f_round(0x8000000000008003)
+        self.keccak_f_round(0x8000000000008002)
+        self.keccak_f_round(0x8000000000000080)
+        self.keccak_f_round(0x000000000000800A)
+        self.keccak_f_round(0x800000008000000A)
+        self.keccak_f_round(0x8000000080008081)
+        self.keccak_f_round(0x8000000000008080)
+        self.keccak_f_round(0x0000000080000001)
+        self.keccak_f_round(0x8000000080008008)
     
     
     @staticmethod
-    def toLane(message, off):
+    def to_lane(message, off):
         '''
         Convert a chunk of char:s to a 64-bit word
         
@@ -187,7 +187,7 @@ class SHA3:
     
     
     @staticmethod
-    def pad10star1(msg):
+    def pad_10star1(msg):
         '''
         pad 10*1
         
@@ -238,32 +238,32 @@ class SHA3:
         
         # Absorbing phase
         for i in range(0, nnn, 128):
-            self.S[ 0] ^= SHA3.toLane(message, 0)
-            self.S[ 5] ^= SHA3.toLane(message, 8)
-            self.S[10] ^= SHA3.toLane(message, 16)
-            self.S[15] ^= SHA3.toLane(message, 24)
-            self.S[20] ^= SHA3.toLane(message, 32)
-            self.S[ 1] ^= SHA3.toLane(message, 40)
-            self.S[ 6] ^= SHA3.toLane(message, 48)
-            self.S[11] ^= SHA3.toLane(message, 56)
-            self.S[16] ^= SHA3.toLane(message, 64)
-            self.S[21] ^= SHA3.toLane(message, 72)
-            self.S[ 2] ^= SHA3.toLane(message, 80)
-            self.S[ 7] ^= SHA3.toLane(message, 88)
-            self.S[12] ^= SHA3.toLane(message, 96)
-            self.S[17] ^= SHA3.toLane(message, 104)
-            self.S[22] ^= SHA3.toLane(message, 112)
-            self.S[ 3] ^= SHA3.toLane(message, 120)
-            self.S[ 8] ^= SHA3.toLane(message, 128)
-            self.S[13] ^= SHA3.toLane(message, 136)
-            self.S[18] ^= SHA3.toLane(message, 144)
-            self.S[23] ^= SHA3.toLane(message, 152)
-            self.S[ 4] ^= SHA3.toLane(message, 160)
-            self.S[ 9] ^= SHA3.toLane(message, 168)
-            self.S[14] ^= SHA3.toLane(message, 176)
-            self.S[19] ^= SHA3.toLane(message, 184)
-            self.S[24] ^= SHA3.toLane(message, 192)
-            self.keccakF()
+            self.S[ 0] ^= SHA3.to_lane(message, 0)
+            self.S[ 5] ^= SHA3.to_lane(message, 8)
+            self.S[10] ^= SHA3.to_lane(message, 16)
+            self.S[15] ^= SHA3.to_lane(message, 24)
+            self.S[20] ^= SHA3.to_lane(message, 32)
+            self.S[ 1] ^= SHA3.to_lane(message, 40)
+            self.S[ 6] ^= SHA3.to_lane(message, 48)
+            self.S[11] ^= SHA3.to_lane(message, 56)
+            self.S[16] ^= SHA3.to_lane(message, 64)
+            self.S[21] ^= SHA3.to_lane(message, 72)
+            self.S[ 2] ^= SHA3.to_lane(message, 80)
+            self.S[ 7] ^= SHA3.to_lane(message, 88)
+            self.S[12] ^= SHA3.to_lane(message, 96)
+            self.S[17] ^= SHA3.to_lane(message, 104)
+            self.S[22] ^= SHA3.to_lane(message, 112)
+            self.S[ 3] ^= SHA3.to_lane(message, 120)
+            self.S[ 8] ^= SHA3.to_lane(message, 128)
+            self.S[13] ^= SHA3.to_lane(message, 136)
+            self.S[18] ^= SHA3.to_lane(message, 144)
+            self.S[23] ^= SHA3.to_lane(message, 152)
+            self.S[ 4] ^= SHA3.to_lane(message, 160)
+            self.S[ 9] ^= SHA3.to_lane(message, 168)
+            self.S[14] ^= SHA3.to_lane(message, 176)
+            self.S[19] ^= SHA3.to_lane(message, 184)
+            self.S[24] ^= SHA3.to_lane(message, 192)
+            self.keccak_f()
             message = message[128:]
     
     
@@ -275,39 +275,39 @@ class SHA3:
         '''
         if msg is None:
             msg = bytes([])
-        message = SHA3.pad10star1(self.M + msg)
+        message = SHA3.pad_10star1(self.M + msg)
         self.M = None
         nnn = len(message)
         rc = [0] * 72
         
         # Absorbing phase
         for i in range(0, nnn, 128):
-            self.S[ 0] ^= SHA3.toLane(message, 0)
-            self.S[ 5] ^= SHA3.toLane(message, 8)
-            self.S[10] ^= SHA3.toLane(message, 16)
-            self.S[15] ^= SHA3.toLane(message, 24)
-            self.S[20] ^= SHA3.toLane(message, 32)
-            self.S[ 1] ^= SHA3.toLane(message, 40)
-            self.S[ 6] ^= SHA3.toLane(message, 48)
-            self.S[11] ^= SHA3.toLane(message, 56)
-            self.S[16] ^= SHA3.toLane(message, 64)
-            self.S[21] ^= SHA3.toLane(message, 72)
-            self.S[ 2] ^= SHA3.toLane(message, 80)
-            self.S[ 7] ^= SHA3.toLane(message, 88)
-            self.S[12] ^= SHA3.toLane(message, 96)
-            self.S[17] ^= SHA3.toLane(message, 104)
-            self.S[22] ^= SHA3.toLane(message, 112)
-            self.S[ 3] ^= SHA3.toLane(message, 120)
-            self.S[ 8] ^= SHA3.toLane(message, 128)
-            self.S[13] ^= SHA3.toLane(message, 136)
-            self.S[18] ^= SHA3.toLane(message, 144)
-            self.S[23] ^= SHA3.toLane(message, 152)
-            self.S[ 4] ^= SHA3.toLane(message, 160)
-            self.S[ 9] ^= SHA3.toLane(message, 168)
-            self.S[14] ^= SHA3.toLane(message, 176)
-            self.S[19] ^= SHA3.toLane(message, 184)
-            self.S[24] ^= SHA3.toLane(message, 192)
-            self.keccakF()
+            self.S[ 0] ^= SHA3.to_lane(message, 0)
+            self.S[ 5] ^= SHA3.to_lane(message, 8)
+            self.S[10] ^= SHA3.to_lane(message, 16)
+            self.S[15] ^= SHA3.to_lane(message, 24)
+            self.S[20] ^= SHA3.to_lane(message, 32)
+            self.S[ 1] ^= SHA3.to_lane(message, 40)
+            self.S[ 6] ^= SHA3.to_lane(message, 48)
+            self.S[11] ^= SHA3.to_lane(message, 56)
+            self.S[16] ^= SHA3.to_lane(message, 64)
+            self.S[21] ^= SHA3.to_lane(message, 72)
+            self.S[ 2] ^= SHA3.to_lane(message, 80)
+            self.S[ 7] ^= SHA3.to_lane(message, 88)
+            self.S[12] ^= SHA3.to_lane(message, 96)
+            self.S[17] ^= SHA3.to_lane(message, 104)
+            self.S[22] ^= SHA3.to_lane(message, 112)
+            self.S[ 3] ^= SHA3.to_lane(message, 120)
+            self.S[ 8] ^= SHA3.to_lane(message, 128)
+            self.S[13] ^= SHA3.to_lane(message, 136)
+            self.S[18] ^= SHA3.to_lane(message, 144)
+            self.S[23] ^= SHA3.to_lane(message, 152)
+            self.S[ 4] ^= SHA3.to_lane(message, 160)
+            self.S[ 9] ^= SHA3.to_lane(message, 168)
+            self.S[14] ^= SHA3.to_lane(message, 176)
+            self.S[19] ^= SHA3.to_lane(message, 184)
+            self.S[24] ^= SHA3.to_lane(message, 192)
+            self.keccak_f()
             message = message[128:]
         
         # Squeezing phase
@@ -324,7 +324,7 @@ class SHA3:
         return bytes(rc)
     
     
-    def digestFile(self, filename):
+    def digest_file(self, filename):
         '''
         Calculate the hash sum of an entire file
         

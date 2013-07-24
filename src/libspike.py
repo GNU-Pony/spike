@@ -161,7 +161,7 @@ class LibSpike(LibSpikeHelper):
         # Update Spike and repositories, those that are listed
         for repo in update:
             aggregator(repo, 1)
-            if not Gitcord(repo).updateBranch(verify):
+            if not Gitcord(repo).update_branch(verify):
                 return 24
             aggregator(repo, 2)
         
@@ -1706,7 +1706,7 @@ class LibSpike(LibSpikeHelper):
                 if error == 0:
                     error = 12 if not os.path.exists(filename) else 26
             else:
-                aggregator(filename, sha3.digestFile(filename));
+                aggregator(filename, sha3.digest_file(filename));
                 sha3.reinitialise()
         return error
 

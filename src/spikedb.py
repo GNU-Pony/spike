@@ -58,7 +58,7 @@ class SpikeDB():
     
     
     
-    def destroyDatabase(self):
+    def destroy_database(self):
         '''
         Remove the entire database
         '''
@@ -81,14 +81,14 @@ class SpikeDB():
         for lblen in range(32):
             db = self.filePattern % lblen
             if os.path.exists(db):
-                devblocksize = SpikeDB.__lbblocksize(db)
+                devblocksize = SpikeDB.__lb_blocksize(db)
                 with open(db, 'rb') as file:
                     keyvallen = 1 << lblen + vallen
                     amount = os.stat(os.path.realpath(db)).st_size
                     amount = (amount - masterseeklen) // keyvallen
                     list = Blocklist(file, devblocksize, masterseeklen, keyvallen, 1 << lblen, amount)
                     for i in range(amount):
-                        rc.append((list.getKey(i), list.getValue(i)))
+                        rc.append((list.get_key(i), list.get_value(i)))
         return rc
     
     
@@ -240,7 +240,7 @@ class SpikeDB():
     
     
     @staticmethod
-    def __lbblocksize(file):
+    def __lb_blocksize(file):
         '''
         Gets the binary logarithm of the block size of the device a file is placed in
         
@@ -254,7 +254,7 @@ class SpikeDB():
     
     
     @staticmethod
-    def __makebuckets(keys):
+    def __make_buckets(keys):
         '''
         Create key buckets
         
@@ -286,7 +286,7 @@ class SpikeDB():
     
     
     @staticmethod
-    def __makepairbuckets(pairs):
+    def __make_pair_buckets(pairs):
         '''
         Create key–value buckets
         
@@ -330,14 +330,14 @@ class SpikeDB():
         @param   valuelen:int                   The length of values
         @return  rc:                            `rc` is returned, filled with `(key:str, value:bytes?)`-pairs. `value` is `None` when not found
         '''
-        buckets = SpikeDB.__makebuckets(keys)
-        devblocksize = SpikeDB.__lbblocksize(db)
+        buckets = SpikeDB.__make_buckets(keys)
+        devblocksize = SpikeDB.__lb_blocksize(db)
         with open(db, 'rb') as file:
             offset = 0
             position = 0
             amount = 0
             masterseeklen = 3 * (1 << (INITIALS_LEN << 2))
-            masterseek = __fileread(file, masterseeklen)
+            masterseek = __file_read(file, masterseeklen)
             keyvallen = maxlen + valuelen
             for initials in sorted(buckets.keys()):
                 if position >= initials:
@@ -361,24 +361,24 @@ class SpikeDB():
                         self.limit = limit;
                     def append(self, item):
                         val = item[1]
-                        val = None if val < 0 else self.valueMap.getValue(val)
+                        val = None if val < 0 else self.valueMap.get_value(val)
                         key = self.keyMap[item[0]]
-                        _key = self.valueMap.getKey(val)
+                        _key = self.valueMap.get_key(val)
                         self.sink.append((key, val))
                         _val = val
                         val += 1
                         while val < self.limit:
-                            if self.valueMap.getKey(val) != _key:
+                            if self.valueMap.get_key(val) != _key:
                                 break
                             self.sink.append((key, val))
                             val += 1
                         val = _val - 1
                         while val >= 0:
-                            if self.valueMap.getKey(val) != _key:
+                            if self.valueMap.get_key(val) != _key:
                                 break
                             self.sink.append((key, val))
                             val -= 1
-                multibinsearch(Agg(rc, bucket, list, amount), list, bbucket)
+                multibin_search(Agg(rc, bucket, list, amount), list, bbucket)
         return rc
     
     
@@ -394,8 +394,8 @@ class SpikeDB():
         @param   valuelen:int         The length of values
         @return  rc:                  `rc` is returned
         '''
-        buckets = SpikeDB.__makebuckets(keys)
-        devblocksize = SpikeDB.__lbblocksize(db)
+        buckets = SpikeDB.__make_buckets(keys)
+        devblocksize = SpikeDB.__lb_blocksize(db)
         wdata = []
         with open(db, 'rb') as file:
             removelist = []
@@ -404,7 +404,7 @@ class SpikeDB():
             position = 0
             amount = 0
             masterseeklen = 3 * (1 << (INITIALS_LEN << 2))
-            masterseek = list(__fileread(file, masterseeklen))
+            masterseek = list(__file_read(file, masterseeklen))
             keyvallen = maxlen + valuelen
             for initials in sorted(buckets.keys()):
                 if position >= initials:
@@ -433,21 +433,21 @@ class SpikeDB():
                             self.failsink.append(self.keyMap[item[0]])
                         else:
                             self.sink.append(val)
-                            _key = self.valueMap.getKey(val)
+                            _key = self.valueMap.get_key(val)
                             _val = val
                             val += 1
                             while val < self.limit:
-                                if self.valueMap.getKey(val) != _key:
+                                if self.valueMap.get_key(val) != _key:
                                     break
                                 self.sink.append(val)
                                 val += 1
                             val = _val - 1
                             while val >= 0:
-                                if self.valueMap.getKey(val) != _key:
+                                if self.valueMap.get_key(val) != _key:
                                     break
                                 self.sink.append(val)
                                 val -= 1
-                multibinsearch(Agg(removelist, rc, bucket, list), list, bbucket)
+                multibin_search(Agg(removelist, rc, bucket, list), list, bbucket)
                 diminishamount = len(removelist) - curremove
                 if diminishamount > 0:
                     diminish.append((position - 1, diminishamount))
@@ -471,7 +471,7 @@ class SpikeDB():
                 for index in indices:
                     if pos != index:
                         file.seek(offset = masterseeklen + pos * keyvallen, whence = 0) # 0 means from the start of the stream
-                        wdata.append(__fileread(file, (index - pos) * keyvallen))
+                        wdata.append(__file_read(file, (index - pos) * keyvallen))
                     pos = index + 1
         with open(db, 'wb') as file:
             for data in wdata:
@@ -488,8 +488,8 @@ class SpikeDB():
         @param  maxlen:int                The length of keys
         @param  pairs:list<(str, bytes)>  Key–value-pairs, all values must be of same length
         '''
-        buckets = SpikeDB.__makepairbuckets(pairs)
-        devblocksize = SpikeDB.__lbblocksize(db)
+        buckets = SpikeDB.__make_pair_buckets(pairs)
+        devblocksize = SpikeDB.__lb_blocksize(db)
         insertlist = []
         initialscache = {}
         masterseek = None
@@ -499,7 +499,7 @@ class SpikeDB():
             offset = 0
             position = 0
             amount = 0
-            masterseek = list(__fileread(file, masterseeklen))
+            masterseek = list(__file_read(file, masterseeklen))
             keyvallen = maxlen + valuelen
             for initials in sorted(buckets.keys()):
                 if position >= initials:
@@ -530,7 +530,7 @@ class SpikeDB():
                         pos = ~pos if pos < 0 else pos
                         (key, val) = self.keyMap[item[0]]
                         self.sink.append((key, val, self.posCalc(pos), self.initials))
-                multibinsearch(Agg(insertlist, bucket, lambda x : fileoffset + x * keyvallen, initials), list, bbucket)
+                multibin_search(Agg(insertlist, bucket, lambda x : fileoffset + x * keyvallen, initials), list, bbucket)
             insertlist.sort(key = lambda x : x[2])
             end = 0
             pos = 0
@@ -551,7 +551,7 @@ class SpikeDB():
             file.seek(offset = last, whence = 0) # 0 means from the start of the stream
             for (key, val, pos, _) in insertlist + [(None, None, end, None)]:
                 if pos > last:
-                    data.append(__fileread(file, pos - last))
+                    data.append(__file_read(file, pos - last))
                     last = pos
                 if key is not None:
                     key = key + '\0' * (maxlen - len(key.encode('utf8')))
@@ -572,8 +572,8 @@ class SpikeDB():
         @param  maxlen:int                The length of keys
         @param  pairs:list<(str, bytes)>  Key–value-pairs, all values must be of same length
         '''
-        buckets = SpikeDB.__makepairbuckets(pairs)
-        devblocksize = SpikeDB.__lbblocksize(db)
+        buckets = SpikeDB.__make_pair_buckets(pairs)
+        devblocksize = SpikeDB.__lb_blocksize(db)
         insertlist = []
         initialscache = {}
         masterseek = None
@@ -583,7 +583,7 @@ class SpikeDB():
             offset = 0
             position = 0
             amount = 0
-            masterseek = list(__fileread(file, masterseeklen))
+            masterseek = list(__file_read(file, masterseeklen))
             keyvallen = maxlen + valuelen
             for initials in sorted(buckets.keys()):
                 if position >= initials:
@@ -614,7 +614,7 @@ class SpikeDB():
                         (pos, inits) = (~pos, -1) if pos < 0 else (pos, self.initials)
                         (key, val) = self.keyMap[item[0]]
                         self.sink.append((key, val, self.posCalc(pos), inits))
-                multibinsearch(Agg(insertlist, bucket, lambda x : fileoffset + x * keyvallen, initials), list, bbucket)
+                multibin_search(Agg(insertlist, bucket, lambda x : fileoffset + x * keyvallen, initials), list, bbucket)
             insertlist.sort(key = lambda x : x[2])
             end = 0
             pos = 0
@@ -637,7 +637,7 @@ class SpikeDB():
             file.seek(offset = last, whence = 0) # 0 means from the start of the stream
             for (key, val, pos, initials) in insertlist + [(None, None, end, None)]:
                 if pos > last:
-                    data.append(__fileread(file, pos - last))
+                    data.append(__file_read(file, pos - last))
                     last = pos
                 if key is not None:
                     key = key + '\0' * (maxlen - len(key.encode('utf8')))
@@ -660,7 +660,7 @@ class SpikeDB():
         @param  maxlen:int                The length of keys
         @param  pairs:list<(str, bytes)>  Key–value-pairs, all values must be of same length
         '''
-        buckets = SpikeDB.__makepairbuckets(pairs)
+        buckets = SpikeDB.__make_pair_buckets(pairs)
         counts = []
         with open(db, 'wb') as file:
             wbuf = bytes([0] * (1 << (INITIALS_LEN << 2)))
@@ -720,11 +720,11 @@ class Blocklist():
         pos = index * self.blocksize + self.offset
         if self.position != pos >> self.lbdevblock:
             self.position = pos >> self.lbdevblock
-            self.buffer = __fileread(self.file, self.devblock)
+            self.buffer = __file_read(self.file, self.devblock)
         pos &= self.devblock - 1
         return self.buffer[pos : pos + itemsize]
     
-    def getValue(self, index):
+    def get_value(self, index):
         '''
         Gets the associated value to an element by index
         
@@ -734,11 +734,11 @@ class Blocklist():
         pos = index * self.blocksize + self.offset
         if self.position != pos >> self.lbdevblock:
             self.position = pos >> self.lbdevblock
-            self.buffer = __fileread(self.file, self.devblock)
+            self.buffer = __file_read(self.file, self.devblock)
         pos &= self.devblock - 1
         return self.buffer[pos + itemsize : pos + blocksize]
     
-    def getKeyBinary(self, index):
+    def get_key_binary(self, index):
         '''
         Gets the associated key to an element by index
         
@@ -748,11 +748,11 @@ class Blocklist():
         pos = index * self.blocksize + self.offset
         if self.position != pos >> self.lbdevblock:
             self.position = pos >> self.lbdevblock
-            self.buffer = __fileread(self.file, self.devblock)
+            self.buffer = __file_read(self.file, self.devblock)
         pos &= self.devblock - 1
         return self.buffer[pos : pos + itemsize]
     
-    def getKey(self, index):
+    def get_key(self, index):
         '''
         Gets the associated key to an element by index
         
@@ -762,7 +762,7 @@ class Blocklist():
         pos = index * self.blocksize + self.offset
         if self.position != pos >> self.lbdevblock:
             self.position = pos >> self.lbdevblock
-            self.buffer = __fileread(self.file, self.devblock)
+            self.buffer = __file_read(self.file, self.devblock)
         pos &= self.devblock - 1
         key = self.buffer[pos : pos + itemsize]
         key = key[:key.find(0)]
@@ -779,7 +779,7 @@ class Blocklist():
 
 
 @staticmethod
-def __fileread(stream, n):
+def __file_read(stream, n):
     '''
     Read an exact amount of bytes from a file stream independent on how the native stream
     actually works (it should to the same thing for regular files, but we need to be on
