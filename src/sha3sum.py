@@ -311,23 +311,18 @@ class SHA3:
             message = message[128:]
         
         # Squeezing phase
-        olen = 576
         j = 0
         ptr = 0
-        while (olen > 0):
-            i = 0
-            while (i < 25) and (j < 72):
-                v = self.S[(i % 5) * 5 + i // 5]
-                for _ in range(8):
-                    if (j < 72):
-                        rc[ptr] = v & 255
-                        ptr += 1
-                    v >>= 8
-                    j += 1
-                i += 1
-            olen -= 1024
-            if olen > 0:
-                self.keccakF()
+        i = 0
+        while (i < 25) and (j < 72):
+            v = self.S[(i % 5) * 5 + i // 5]
+            for _ in range(8):
+                if (j < 72):
+                    rc[ptr] = v & 255
+                    ptr += 1
+                v >>= 8
+                j += 1
+            i += 1
         
         return bytes(rc)
     
