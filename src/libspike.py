@@ -19,7 +19,6 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
 import os
-import re
 import inspect
 # TODO use git in commands
 
@@ -171,92 +170,22 @@ class LibSpike(LibSpikeHelper):
         @return  :byte               Exit value, see description of `LibSpike`, the possible ones are: 0
         '''
         LibSpike.lock(False)
-        # Simplify patterns
-        pats = []
-        for pattern in patterns:
-            slashes = len(pattern) - len(patterns.replace('/', ''))
-            if slashes <= 2:
-                pats.append(('/' * (2 - slashes) + pattern).split('/'))
+        
+        patterns = ScrollFinder.simplify_pattern(patterns)
         
         # Get repository names and (path, found):s
         repositories = {}
         for superrepo in ['installed' if installed else None, 'repositories' if notinstalled else None]:
             if superrepo is not None:
                 for file in [SPIKE_PATH + superrepo] + get_confs(superrepo):
-                    if os.path.isdir(file):
-                        for repo in os.listdir(file):
-                            reponame = repo
-                            repo = os.path.realpath(file + '/' + repo)
-                            if os.path.isdir(repo) and (reponame not in repositories):
-                                repositories[reponame] = (repo, [])
+                    ScrollFinder.get_repositories(repositories, file)
         
-        # Match repositories
-        for pat in pats:
-            r = pat[0]
-            if len(r) == 0:
-                for repo in repositories.keys():
-                    repositories[repo][1].append(pat)
-            else:
-                for repo in repositories.keys():
-                    if re.search(r, repo) is not None:
-                        repositories[repo][1].append(pat)
-        
-        # Get categories
-        categories = {}
-        for repo in repositories.keys():
-            rdir = repositories[repo][0]
-            for category in os.listdir(rdir):
-                cdir = '%s/%s' % (rdir, category)
-                if os.path.isdir(cdir):
-                    if repo not in categories:
-                        categories[repo] = {}
-                    categories[repo][category] = (cdir, [])
-        
-        # Match categories
-        for repo in repositories.keys():
-            pats = repositories[repo][1]
-            out = categories[repo]
-            cats = out.keys()
-            for pat in pats:
-                c = pat[1]
-                if len(c) == 0:
-                    for cat in cats:
-                        out[cat][1].append(pat)
-                else:
-                    for cat in cats:
-                        if re.search(c, cat) is not None:
-                            out[cat][1].append(pat)
-        
-        # Flatten categories
-        repos = categories.keys()
-        for repo in repos:
-            for cat in categories[repo].keys():
-                cat = '%s/%s' % (repo, cat)
-                categories[cat] = categories[repo]
-            del categories[repo]
-        
-        # Get scrolls
-        scrolls = {}
-        for cat in categories.keys():
-            cdir = categories[cat][0]
-            for scroll in os.listdir(cdir):
-                sfile = '%s/%s' % (cdir, scroll)
-                if os.path.isfile(sfile) and scroll.endswith('.scroll') and not scroll.startswith('.'):
-                    scroll = scroll[:-len('.scroll')]
-                    dict_append(scrolls, cat, (scroll, '%s/%s' % (cat, scroll)))
-        
-        # Match and report
-        for cat in categories.keys():
-            pats = categories[cat][1]
-            for pat in pats:
-                if len(pat) == 0:
-                    for scroll in scrolls[cat]:
-                        aggregator(scroll[1])
-                else:
-                    p = pat[2]
-                    for (scroll, full) in scrolls[cat]:
-                        if re.search(p, scroll) is not None:
-                            aggregator(full)
+        ScrollFinder.match_repositories(repositories, patterns)
+        categories = ScrollFinder.get_categories(repositories)
+        ScrollFinder.match_categories(repositories, categories)
+        ScrollFinder.flatten_categories(categories)
+        scrolls = ScrollFinder.get_scrolls(categories)
+        ScrollFinder.match_and_report(categories, scrolls, aggregator)
         
         return 0
     
