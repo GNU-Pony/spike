@@ -47,7 +47,7 @@ class Gitcord():
         try:
             proc = Popen(['git', '--version'], stdin = PIPE, stdout = PIPE, stderr = None)
             proc.wait()
-            output = proc.stdout.read() # 'git version 0.0.0.0\n'
+            output = proc.stdout.read().decode('utf-8', 'replace') # 'git version 0.0.0.0\n'
         except:
             return []
         if proc.returncode != 0:
@@ -289,7 +289,7 @@ class Gitcord():
         try:
             command = 'git stash list'.split(' ')
             proc = Popen(command, cwd = self.dir, stdout = PIPE, stdin = sys.stdin, stderr = sys.stderr)
-            out = proc.communicate()[0]
+            out = proc.communicate()[0].decode('utf-8', 'replace')
             if proc.returncode != 0:
                 return None
         except:
@@ -310,10 +310,61 @@ class Gitcord():
         try:
             command = 'git log --pretty=format:%H'.split(' ')
             proc = Popen(command, cwd = self.dir, stdout = PIPE, stdin = sys.stdin, stderr = sys.stderr)
-            out = proc.communicate()[0]
+            out = proc.communicate()[0].decode('utf-8', 'replace')
             if proc.returncode != 0:
                 return None
         except:
             return None
         return out.split('\n')[0]
+    
+    
+    def what_changed(self, since):
+        '''
+        Get changes since another commit
+        
+        @param   since:str?                                            The other commit, `None` if since and including the first commit
+        @return  :list<[filename:str, old_mode:int?, new_mode:int?]>?  Updated files, `None` on error
+        '''
+        proc = None
+        out = None
+        try:
+            command = 'git whatchanged --pretty=format:%H'.split(' ')
+            proc = Popen(command, cwd = self.dir, stdout = PIPE, stdin = sys.stdin, stderr = sys.stderr)
+            out = proc.communicate()[0].decode('utf-8', 'replace')
+            if proc.returncode != 0:
+                return None
+        except:
+            return None
+        if since is None:
+            since = '*'
+        out = out.split('\n')
+        changes = []
+        for line in out:
+            if line == since:
+                break
+            if line.startswith(':'):
+                changes.append(line[1:])
+        have = {}
+        _rc = []
+        for line in reversed(changes):
+            sep = line.find('  ')
+            (old_mode, new_mode, _1, _2, action) = line[:sep].split(' ')
+            filename = line[sep + 2:]
+            if '\"' in filename:
+                filename = eval(filename)
+            old_mode = None if action == 'A' else int(old_mode)
+            new_mode = None if action == 'D' else int(new_mode)
+            if filename in have:
+                have[filename][2] = new_mode
+            else:
+                entry = [filename, old_mode, new_mode]
+                have[filename] = entry
+                _rc.append(entry)
+        rc = []
+        for entry in _rc:
+            if entry.old_mode is None:
+                if entry.new_mode is None:
+                    continue
+            rc.append(entry)
+        return rc
 
