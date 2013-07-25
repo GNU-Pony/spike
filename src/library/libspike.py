@@ -1598,10 +1598,7 @@ class LibSpike(LibSpikeHelper):
                 return 6
             else:
                 shot += '.png'
-                if os.path.exists(shot):
-                    aggregator(scroll, shot)
-                else:
-                    aggregator(scroll, None)
+                aggregator(scroll, shot if os.path.exists(shot) else None)
         return 0
     
     
