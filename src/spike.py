@@ -661,10 +661,11 @@ class Spike():
                     self.scrls.append([0, {}])
                 self.scrls[0] = self.scrls[1]
             def __call__(self, scroll, state, *args):
-                if scroll.equals('rarity'):
-                    scroll = scroll + '♥'
-                elif scroll.startswith('rarity='):
-                    scroll = scroll.replace('=', '♥=')
+                if type(self) == Spike:
+                    if scroll.equals('rarity'):
+                        scroll = scroll + '♥'
+                    elif scroll.startswith('rarity='):
+                        scroll = scroll.replace('=', '♥=')
                 if state == 0:
                     print('Inspecting installed scrolls')
                 elif state == 1:
@@ -841,10 +842,11 @@ class Spike():
                     self.scrls.append([0, {}])
                 self.scrls[0] = self.scrls[1]
             def __call__(self, scroll, state, *args):
-                if scroll.equals('rarity'):
-                    scroll = scroll + '♥'
-                elif scroll.startswith('rarity='):
-                    scroll = scroll.replace('=', '♥=')
+                if type(self) == Spike:
+                    if scroll.equals('rarity'):
+                        scroll = scroll + '♥'
+                    elif scroll.startswith('rarity='):
+                        scroll = scroll.replace('=', '♥=')
                 if state == 0:
                     print('Inspecting installed scrolls')
                 elif state == 1:
@@ -991,10 +993,11 @@ class Spike():
                 self.next = 0
                 self.pos = 0
             def __call__(self, scroll, progress, end):
-                if scroll.equals('rarity'):
-                    scroll = scroll + '😢'
-                elif scroll.startswith('rarity='):
-                    scroll = scroll.replace('=', '😢=')
+                if type(self) == Spike:
+                    if scroll.equals('rarity'):
+                        scroll = scroll + '😢'
+                    elif scroll.startswith('rarity='):
+                        scroll = scroll.replace('=', '😢=')
                 if directory not in self.dirs:
                     self.dirs[directory] = self.next
                     self.next += 1
