@@ -28,7 +28,7 @@ class Gitcord():
     Gitcord has awesome magic for manipulating the realms (git repositories)
     '''
     
-    def __init__(directory):
+    def __init__(self, directory):
         '''
         Constructor
         
@@ -37,6 +37,7 @@ class Gitcord():
         self.dir = directory
     
     
+    @staticmethod
     def version():
         '''
         Obtain the version of git in the user's path
@@ -55,6 +56,7 @@ class Gitcord():
         return [int(n) for n in version.split('.')]
     
     
+    @staticmethod
     def check_version(*needed):
         '''
         Check whether the version of git in the user's path is of a specific version or any newer version
@@ -70,7 +72,7 @@ class Gitcord():
         return True
     
     
-    def __exec(command):
+    def __exec(self, command):
         '''
         Execute an exterminal command and wait for it to finish, and print output to stderr
         
@@ -89,7 +91,7 @@ class Gitcord():
                 return 255
     
     
-    def update_branch(verify):
+    def update_branch(self, verify):
         '''
         Update the current branch in the repository. If git is new enough (>=1.8.2.4), support signature verification.
         
@@ -100,20 +102,20 @@ class Gitcord():
         args = ['git', 'pull']
         if verify and check_version(1, 8, 2, 4):
             args.append('--verify-signatures')
-        return 0 == __exec(args)
+        return 0 == self.__exec(args)
     
     
-    def change_branch(branch):
+    def change_branch(self, branch):
         '''
         Change current branch in the repository
         
         @param   branch:str  The new current branch
         @return  :bool       Whether the spell casting was successful
         '''
-        return 0 == __exec(['git', 'checkout', branch])
+        return 0 == self.__exec(['git', 'checkout', branch])
     
     
-    def clone(repository, directory, branch = None):
+    def clone(self, repository, directory, branch = None):
         '''
         Clone a remote repository
         
@@ -123,12 +125,12 @@ class Gitcord():
         @return  :bool           Whether the spell casting was successful
         '''
         if branch is None:
-            return 0 == __exec(['git', 'clone', repository, directory])
+            return 0 == self.__exec(['git', 'clone', repository, directory])
         else:
-            return 0 == __exec(['git', 'clone', '--branch', branch, '--single-branch', repository, directory])
+            return 0 == self.__exec(['git', 'clone', '--branch', branch, '--single-branch', repository, directory])
     
     
-    def create_repository(directory):
+    def create_repository(self, directory):
         '''
         Create a new repository
         
@@ -140,12 +142,12 @@ class Gitcord():
             self.dir += '/'
         self.dir += directory
         os.makedirs(self.dir)
-        rc = 0 == __exec(['git', 'init'])
+        rc = 0 == self.__exec(['git', 'init'])
         self.dir = lastdir
         return rc
     
     
-    def remove_file(filename, shred = None):
+    def remove_file(self, filename, shred = None):
         '''
         Remove a file from the repository
         
@@ -154,12 +156,12 @@ class Gitcord():
         @return  :bool             Whether the spell casting was successful
         '''
         if shred is not None:
-            if 0 != (__exec(['shred'] + shred + [filename])):
+            if 0 != (self.__exec(['shred'] + shred + [filename])):
                 return False
-        return 0 == __exec(['git', 'rm', '--force', filename])
+        return 0 == self.__exec(['git', 'rm', '--force', filename])
     
     
-    def obliterate_file(filenames, shred = None, tag_name_filter = 'cat'):
+    def obliterate_file(self, filenames, shred = None, tag_name_filter = 'cat'):
         '''
         WARNING: this is a powerful spell that rewrites history, and there is not magical mystery cure for it
         ———————
@@ -186,20 +188,20 @@ class Gitcord():
         if tag_name_filter is not None:
             command.append('--tag-name-filter')
             command.append(tag_name_filter)
-        return 0 == __exec(command + ['--', '--all'])
+        return 0 == self.__exec(command + ['--', '--all'])
     
     
-    def stage_file(filename):
+    def stage_file(self, filename):
         '''
         Add a new file for stage changes made to a file to the repository
         
         @param   filename:str  The file to stage
         @return  :bool         Whether the spell casting was successful
         '''
-        return 0 == __exec(['git', 'add', '--force', filename])
+        return 0 == self.__exec(['git', 'add', '--force', filename])
     
     
-    def commit(message, signoff, gpg_sign): ## TODO the user should be able to select a message to use and whether to sign off or sign
+    def commit(self, message, signoff, gpg_sign): ## TODO the user should be able to select a message to use and whether to sign off or sign
         '''
         Commit changes in the repository
         
@@ -218,10 +220,10 @@ class Gitcord():
                 cmd += '--gpg-sign=' + gpg_sign
         if message is not None:
             cmd += ['--message', message]
-        return 0 == __exec(cmd)
+        return 0 == self.__exec(cmd)
     
     
-    def download(repository, directory = None, branch = None):
+    def download(self, repository, directory = None, branch = None):
         '''
         Download the tip of a remote repository
         
@@ -236,47 +238,47 @@ class Gitcord():
         params.append(repository)
         if directory is not None:
             params.append(directory)
-        return 0 == __exec(params)
+        return 0 == self.__exec(params)
     
     
-    def stash():
+    def stash(self):
         '''
         Stash all uncommited staged changes
         
         @return  :bool  Whether the spell casting was successful, not it is successful even if there was
                         nothing to stash and no object has been added to the stash stack
         '''
-        return 0 == __exec(['git', 'stash'])
+        return 0 == self.__exec(['git', 'stash'])
     
     
-    def pop_stash():
+    def pop_stash(self):
         '''
         Pop and apply the top of the stash stack
         
         @return  :bool  Whether the spell casting was successful
         '''
-        return 0 == __exec(['git', 'stash', 'pop'])
+        return 0 == self.__exec(['git', 'stash', 'pop'])
     
     
-    def apply_stash():
+    def apply_stash(self):
         '''
         Peek and apply the top of the stash stack
         
         @return  :bool  Whether the spell casting was successful
         '''
-        return 0 == __exec(['git', 'stash', 'apply'])
+        return 0 == self.__exec(['git', 'stash', 'apply'])
     
     
-    def drop_stash():
+    def drop_stash(self):
         '''
         Pop but do not apply the top of the stash stack
         
         @return  :bool  Whether the spell casting was successful
         '''
-        return 0 == __exec(['git', 'stash', 'drop'])
+        return 0 == self.__exec(['git', 'stash', 'drop'])
     
     
-    def list_stash():
+    def list_stash(self):
         '''
         Get all items in the stash stack, you can use this to determine of a stash operation created and object
         
