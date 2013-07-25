@@ -287,6 +287,7 @@ class Gitcord():
         proc = None
         out = None
         try:
+            command = 'git stash list'.split(' ')
             proc = Popen(command, cwd = self.dir, stdout = PIPE, stdin = sys.stdin, stderr = sys.stderr)
             out = proc.communicate()[0]
             if proc.returncode != 0:
@@ -296,4 +297,23 @@ class Gitcord():
         while out.endswith('\n'):
             out = out[:-1]
         return out.split('\n')
+    
+    
+    def where_am_i(self):
+        '''
+        Get the hash of the current commit
+        
+        @return  :str?  Get the hash of the current commit, `None` on error
+        '''
+        proc = None
+        out = None
+        try:
+            command = 'git log --pretty=format:%H'.split(' ')
+            proc = Popen(command, cwd = self.dir, stdout = PIPE, stdin = sys.stdin, stderr = sys.stderr)
+            out = proc.communicate()[0]
+            if proc.returncode != 0:
+                return None
+        except:
+            return None
+        return out.split('\n')[0]
 
