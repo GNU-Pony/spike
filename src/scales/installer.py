@@ -164,6 +164,7 @@ class Installer():
         @param   scroll_info:dict<ScrollVersion, Scroll>  The scrolls
         @param   needed:set<ScrollVersion>                Missing dependencies, will be filled
         @param   requirer:dict<str, list<ScrollVersion>>  Mapping from scroll name to scrolls that requires the scroll, will be filled
+        @param   empty_dep_evaluator:(Scroll)→bool        Function that evaluates if the empty dependency is exists (a package manager with the same name)
         @return  :int                                     Value for indentified error, zero if none
         '''
         for scroll in scroll_info:
@@ -172,7 +173,7 @@ class Installer():
             depends     = scroll['depends']
             for deps in makedepends + depends:
                 if dep is None:
-                    if (not os.path.exists(SPIKE_PATH)) or (not os.path.isdir(SPIKE_PATH)):
+                    if not empty_dep_evaluator(scroll):
                         return 9
                 else:
                     if (deps not in installed) and (deps not in provided):

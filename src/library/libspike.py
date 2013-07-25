@@ -66,6 +66,7 @@ class LibSpike(LibSpikeHelper):
                  26 - File is of wrong type, normally a directory or regular file when the other is expected
                  27 - Corrupt database
                  28 - Pony is required by another pony
+                 29 - Circular make dependency
                 254 - User aborted
                 255 - Unknown error
     '''
@@ -318,7 +319,7 @@ class LibSpike(LibSpikeHelper):
         @param   explicitness:int   -1 for install as dependency, 1 for install as explicit, and 0 for explicit if not previously as dependency
         @param   nodep:bool         Whether to ignore dependencies
         @param   force:bool         Whether to ignore file claims
-        @return  :byte              Exit value, see description of `LibSpike`, the possible ones are: 0, 6, 8, 9, 22, 254, 255 (TODO)
+        @return  :byte              Exit value, see description of `LibSpike`, the possible ones are: 0, 6, 8, 9, 22, 29, 254, 255 (TODO)
         '''
         ## TODO checkdepends
         LibSpike.lock(True)
@@ -390,7 +391,7 @@ class LibSpike(LibSpikeHelper):
             # Look for missing dependencies
             needed = set()
             requirer = {}
-            error = find_dependencies(scroll_info, needed, requirer)
+            error = find_dependencies(scroll_info, needed, requirer, lambda scroll : (scroll.name == 'spike') and os.path.exists(SPIKE_PATH) and os.path.isdir(SPIKE_PATH))
             if error != 0:
                 return error
             
@@ -451,9 +452,9 @@ class LibSpike(LibSpikeHelper):
         #      if they are all at the end of the t:sorted list.
         
         # Topologically sort scrolls
-        tsorted = Installer.tsort_scrolls(scroll_info) 
+        tsorted = Installer.tsort_scrolls(scroll_info)
         if tsorted is None:
-            return 255 # Should already have been solved
+            return 29
         
         # Separate scrolls that need itneraction from those that do not
         interactively_installed = []
