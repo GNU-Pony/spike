@@ -60,7 +60,7 @@ class LibSpikeHelper():
             LibSpikeHelper.lock_file.flush()
         locktype = fcntl.LOCK_EX if exclusive else fcntl.LOCK_SH
         try:
-            fcntl(LibSpikeHelper.lock_file.fileno(), locktype | fcntl.LOCK_NB)
+            fcntl.fcntl(LibSpikeHelper.lock_file.fileno(), locktype | fcntl.LOCK_NB)
         except:
             if exclusive:
                 print('/run/lock/spike is currently locked.')
@@ -73,7 +73,7 @@ class LibSpikeHelper():
                     print('\A message has been left for you:\n    ')
                     print('    \n'.join(msg.split('\n')))
             print('\nWaiting until all incompatible locks have been relased...')
-        fcntl(LibSpikeHelper.lock_file.fileno(), locktype)
+        fcntl.fcntl(LibSpikeHelper.lock_file.fileno(), locktype)
     
     
     @staticmethod
@@ -83,7 +83,7 @@ class LibSpikeHelper():
         '''
         import fcntl ## We are importing here so non-Unix systems do not run into problems and can use a plug-in to implement file locking
         if LibSpikeHelper.lock_file is not None:
-            fcntl(LibSpikeHelper.lock_file.fileno(), LOCK_UN)
+            fcntl.fcntl(LibSpikeHelper.lock_file.fileno(), fcntl.LOCK_UN)
             LibSpikeHelper.lock_file.close()
             LibSpikeHelper.lock_file = None
     
