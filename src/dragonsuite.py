@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 '''
 spike – a package manager running on top of git
@@ -108,19 +108,19 @@ def dirname(path):
         return [_dirname(p) for p in path]
 
 
-def uniq(items, issorted = True):
+def uniq(items, is_sorted = True):
     '''
     Remove duplicates
     
-    @param   items:itr<¿E?>  An iteratable of items
-    @param   issorted:bool   Whether the items are already sorted, otherwise a standard sort is preform
-    @return  :list<¿E?>      A list with the input items but without duplicates
+    @param   items:itr<¿E?>   An iteratable of items
+    @param   is_sorted:bool   Whether the items are already sorted, otherwise a standard sort is preform
+    @return  :list<¿E?>       A list with the input items but without duplicates
     '''
     if len(items) == 0:
         return []
     rc = [items[0]]
     last = items[0]
-    sorteditems = items if issorted else sorted(items)
+    sorteditems = items if is_sorted else sorted(items)
     for item in sorteditems:
         if item != last:
             rc.append(item)
@@ -163,25 +163,25 @@ def readlink(path):
         return [os.readlink(p) for p in path]
 
 
-def cut(items, delimiter, fields, complement = False, onlydelimited = False, outputdelimiter = None):
+def cut(items, delimiter, fields, complement = False, only_delimited = False, output_delimiter = None):
     '''
     Remove sections of items by delimiters
     
-    @param   items:itr<str>        The items to modify
-    @param   delimiter:str         Delimiter
-    @param   fields:int|list<int>  Fields to join, in joining order
-    @param   complement:bool       Join the fields as in order when not in `fields`
-    @param   onlydelimited:bool    Whether to remove items that do not have the delimiter
-    @param   outputdelimiter:str?  Joiner, set to same as delimiter if `None`
-    @return  :list<str>            The items after the modification
+    @param   items:itr<str>         The items to modify
+    @param   delimiter:str          Delimiter
+    @param   fields:int|list<int>   Fields to join, in joining order
+    @param   complement:bool        Join the fields as in order when not in `fields`
+    @param   only_delimited:bool    Whether to remove items that do not have the delimiter
+    @param   output_delimiter:str?  Joiner, set to same as delimiter if `None`
+    @return  :list<str>             The items after the modification
     '''
     rc = []
-    od = delimiter if outputdelimiter is None else outputdelimiter
+    od = delimiter if output_delimiter is None else output_delimiter
     f = fields if isinstance(fields, list) else [fields]
     if complement:
         f = set(f)
     for item in items:
-        if onlydelimited and delimiter not in item:
+        if only_delimited and delimiter not in item:
             continue
         item = item.split(delimiter)
         if complement:
@@ -698,8 +698,7 @@ def cp_r(source, destination):
     cp(source, destination, True)
 
 
-def install(source, destination, owner = -1, group = -1, mode = -1, strip = False,
-            directory = False, parents = True, recursive = True, savemode = True):
+def install(source, destination, owner = -1, group = -1, mode = -1, strip = False, directory = False, parents = True, recursive = True, savemode = True):
     '''
     Copies files and set attributes
     
@@ -1193,14 +1192,14 @@ def sha3sum(files):
     '''
     sha3 = SHA3()
     if isinstance(files, str):
-        return sha3.digestFile(files)
+        return sha3.digest_file(files)
     elif len(files) == 0:
         return []
     else:
-        rc = [sha3.digestFile(files[0])]
+        rc = [sha3.digest_file(files[0])]
         for file in files[1:]:
             sha3.reinitialise()
-            rc.append(sha3.digestFile(file))
+            rc.append(sha3.digest_file(file))
         return rc
 
 

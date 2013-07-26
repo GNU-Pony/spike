@@ -1,7 +1,7 @@
 spike [--interative] [--shred]
 --> start interactive graphical terminal mode
 
-spike --bootstrap
+spike --bootstrap [--no-verify]
 --> update package manager and reposity
 
 spike --proofread SCROLL...
@@ -10,13 +10,13 @@ spike --proofread SCROLL...
 spike --ride SCROLL [--private]
 --> execute package in best possible way
 
-spike --read SCROLL... (--list | [--info=FIELD]... [--written=yes|no])
+spike --read SCROLL... (--list | [--info FIELD]... [--written YES/NO])
 --> get scroll information
 
 spike --write SCROLL... [--pinpal ROOT | --private] [--asdep | --asexplicit] [--nodep] [--force] [--shred]
 --> install package
 
-spike --find SCROLL... [--owner | --written=yes|no]
+spike --find SCROLL... [--owner | --written YES/NO]
 --> find a scroll either by name (default) or by ownership
 
 spike --erase SCROLL... [--pinpal ROOT | --private] [--shred]
@@ -60,6 +60,9 @@ spike --sha3sum FILE...
 --> calculate SHA3 checksums for files to use in scrolls,
 --> do not except the files to be returned in order.
 
+spike --example-shot [--viewer VIEWER] [--all-at-once] SCROLL...
+--> display example shot for a scroll
+
 
 
 -B  --bootstrap
@@ -100,4 +103,8 @@ spike --sha3sum FILE...
     --old
 -c  --copyright
     --shred
+    --no-verify
+-S  --example-shot
+-a  --all-at-once
+    --viewer
 

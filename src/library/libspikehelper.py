@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 '''
 spike – a package manager running on top of git
@@ -20,11 +20,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
 import os
 
-from gitcord import *
-from sha3sum import *
-from spikedb import *
-from dbctrl import *
-from algospike import *
+from database.spikedb import *
+from database.dbctrl import *
+from algorithmic.algospike import *
+from algorithmic.sha3sum import *
+from library.gitcord import *
 from dragonsuite import *
 
 
@@ -44,9 +44,48 @@ The program name of Spike
 class LibSpikeHelper():
     '''
     Helper for LibSpike
-    
-    @author  Mattias Andrée (maandree@member.fsf.org)
     '''
+    
+    
+    @staticmethod
+    def lock(exclusive):
+        '''
+        Lock concurrent database access lock file
+        
+        @param  exclusive:bool  Whether the lock should be exclusive, that is, you are about to do modifications
+        '''
+        import fcntl ## We are importing here so non-Unix systems do not run into problems and can use a plug-in to implement file locking
+        if LibSpikeHelper.lock_file is None:
+            LibSpikeHelper.lock_file = open('/run/lock/spike', 'a') ## TODO you should be able to change this
+            LibSpikeHelper.lock_file.flush()
+        locktype = fcntl.LOCK_EX if exclusive else fcntl.LOCK_SH
+        try:
+            fcntl.fcntl(LibSpikeHelper.lock_file.fileno(), locktype | fcntl.LOCK_NB)
+        except:
+            if exclusive:
+                print('/run/lock/spike is currently locked.')
+            else:
+                print('/run/lock/spike is currently locked for modifications.')
+            ## You can leave a message to users that are trying to access with incompatible lock by filling /run/lock/spike with the message
+            with open('/run/lock/spike', 'rb') as file:
+                msg = file.read().decode('utf-8', 'replace')
+                if msg != '':
+                    print('\A message has been left for you:\n    ')
+                    print('    \n'.join(msg.split('\n')))
+            print('\nWaiting until all incompatible locks have been relased...')
+        fcntl.fcntl(LibSpikeHelper.lock_file.fileno(), locktype)
+    
+    
+    @staticmethod
+    def unlock():
+        '''
+        Unlock concurrent database access lock file
+        '''
+        import fcntl ## We are importing here so non-Unix systems do not run into problems and can use a plug-in to implement file locking
+        if LibSpikeHelper.lock_file is not None:
+            fcntl.fcntl(LibSpikeHelper.lock_file.fileno(), fcntl.LOCK_UN)
+            LibSpikeHelper.lock_file.close()
+            LibSpikeHelper.lock_file = None
     
     
     @staticmethod
@@ -66,11 +105,13 @@ class LibSpikeHelper():
                     buf += c
                     esc = False
                 elif var is not None:
-                    if c == '/':
+                    if (var == '') and (c == '{'):
+                        continue
+                    if c in '/}':
                         var = os.environ[var] if var in os.environ else ''
                         if len(var) == 0:
                             return None
-                        buf += var + c
+                        buf += var + (c if c != '}' else '')
                         var = None
                     else:
                         var += c
@@ -85,12 +126,12 @@ class LibSpikeHelper():
     
     
     @staticmethod
-    def get_confs(conffile):
+    def get_confs(conf_file):
         '''
         Get a filename for a configuration file for Spike
         
-        @param   conffile:str  Configuration file
-        @return  :list<str>    File names
+        @param   conf_file:str  Configuration file
+        @return  :list<str>     File names
         '''
         rc = set()
         dirs = ['$XDG_CONFIG_HOME/', '$HOME/.config/', '$HOME/.', SPIKE_PATH, '$vardir/', '/var/', '$confdir/']
@@ -100,7 +141,7 @@ class LibSpikeHelper():
                     dirs.append((dir + '/').replace('//', '/'))
         dirs.append('/etc/')
         for dir in dirs:
-            file = __parse_filename(dir + SPIKE_PROGNAME + '/' + conffile)
+            file = __parse_filename(dir + SPIKE_PROGNAME + '/' + conf_file)
             if (file is not None) and os.path.exists(file):
                 rc.add(os.path.realpath(file))
         return list(rc)
@@ -234,6 +275,8 @@ class LibSpikeHelper():
             printerr('%s: \033[01;31m%s\033[00m' % (SPIKE_PROGNAME, 'Multiple scrolls found, there should only be one!'));
         return rc[0] if len(rc) == 1 else None
 
+
+LibSpikeHelper.lock_file = None
 
 
 if 'SPIKE_PATH' not in os.environ:

@@ -4,6 +4,7 @@ _/
 !.git*
 
 *.pyc
+*.pyo
 __pycache__/
 
 *~
@@ -15,4 +16,5 @@ __pycache__/
 /testdb*
 /var
 /repositories
+/add-on
 

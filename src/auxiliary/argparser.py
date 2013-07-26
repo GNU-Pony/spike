@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 '''
 spike – a package manager running on top of git
@@ -37,32 +37,33 @@ VARIADIC = 2
 Option consumes all following arguments
 '''
 
+
+
 class ArgParser():
     '''
     Simple argument parser, cannibalised from ponysay where it was cannibalised from paradis
-    
-    @author  Mattias Andrée (maandree@member.fsf.org)
     '''
     
-    def __init__(self, program, description, usage, longdescription = None, tty = True):
+    def __init__(self, program, description, usage, long_description = None, tty = True):
         '''
         Constructor.
         The short description is printed on same line as the program name
         
-        @param  program:str           The name of the program
-        @param  description:str       Short, single-line, description of the program
-        @param  usage:str             Formated, multi-line, usage text
-        @param  longdescription:str?  Long, multi-line, description of the program, may be `None`
-        @param  tty:bool              Whether the terminal is an not so capable virtual terminal
+        @param  program:str            The name of the program
+        @param  description:str        Short, single-line, description of the program
+        @param  usage:str              Formated, multi-line, usage text
+        @param  long_description:str?  Long, multi-line, description of the program, may be `None`
+        @param  tty:bool               Whether the terminal is an not so capable virtual terminal
         '''
         self.__program = program
         self.__description = description
         self.__usage = usage
-        self.__longdescription = longdescription
+        self.__long_description = long_description
         self.__arguments = []
         self.opts = {}
         self.optmap = {}
         self.__tty = tty
+    
     
     
     def add_argumentless(self, alternatives, help = None):
@@ -77,7 +78,8 @@ class ArgParser():
         self.opts[stdalt] = None
         for alt in alternatives:
             self.optmap[alt] = (stdalt, ARGUMENTLESS)
-
+    
+    
     def add_argumented(self, alternatives, arg, help = None):
         '''
         Add option that takes one argument
@@ -92,6 +94,7 @@ class ArgParser():
         for alt in alternatives:
             self.optmap[alt] = (stdalt, ARGUMENTED)
     
+    
     def add_variadic(self, alternatives, arg, help = None):
         '''
         Add option that takes all following argument
@@ -105,6 +108,82 @@ class ArgParser():
         self.opts[stdalt] = None
         for alt in alternatives:
             self.optmap[alt] = (stdalt, VARIADIC)
+    
+    
+    
+    def test_exclusiveness(self, execprog, exclusives, longmap, do_exit = False):
+        '''
+        Test for option conflicts
+        
+        @param   execprog:str            The program command
+        @param   exclusives:set<str>     Exclusive options
+        @param   longmap:dict<str, str>  Map from short to long
+        @param   do_exit:bool            Exit program on conflict
+        @return  :bool                   Whether at most one exclusive option was used
+        '''
+        used = []
+        
+        for opt in self.opts:
+            if (self.opts[opt] is not None) and (opt in exclusives):
+                used.append((opt, longmap[opt] if opt in longmap else None))
+        
+        if len(used) > 1:
+            msg = execprog + ': conflicting options:'
+            for opt in used:
+                if opt[1] is None:
+                    msg += ' ' + opt[0]
+                else:
+                    msg += ' ' + opt[0] + '(' + opt[1] + ')'
+            printerr(msg)
+            if do_exit:
+                exit(1)
+            return False
+        return True
+    
+    
+    def test_allowed(self, execprog, allowed, longmap, do_exit = False):
+        '''
+        Test for out of context option usage
+        
+        @param   execprog:str            The program command
+        @param   allowed:set<str>        Allowed options
+        @param   longmap:dict<str, str>  Map from short to long
+        @param   do_exit:bool            Exit program on incorrect usage
+        @return  :bool                   Whether only allowed options was used
+        '''
+        for opt in self.opts:
+            if (self.opts[opt] is not None) and (opt not in allowed):
+                msg = self.execprog + ': option used out of context: ' + opt
+                if opt in longmap:
+                    msg += '(' + longmap[opt] + ')'
+                printerr(msg)
+                if do_exit:
+                    exit(1)
+                return False
+        return True
+    
+    
+    def test_files(self, execprog, files, min_count, max_count, do_exit = False):
+        '''
+        Test the correctness of the number of used non-option arguments
+        
+        @param   execprog:str    The program command
+        @param   min_count:int   The minimum allowed number of files
+        @param   max_count:int?  The maximum allowed number of files, `None` for unlimited
+        @param   do_exit:bool    Exit program on incorrectness
+        @return  :bool           Whether the usage was correct
+        '''
+        n = len(self.files)
+        rc = min_count <= n
+        msg = self.execprog + ': too few unnamed arguments: %i but %i needed' % (n, min_count)
+        if rc and (max_count is not None):
+            rc = n <= max_count
+            if not rc:
+                msg = self.execprog + ': too many unnamed arguments: %i but only %i allowed' % (n, max_count)
+        if do_exit and not rc:
+            exit(1)
+        return rc
+    
     
     
     def parse(self, argv = sys.argv):
@@ -233,14 +312,15 @@ class ArgParser():
         return self.rc
     
     
+    
     def help(self):
         '''
         Prints a colourful help message
         '''
         print('\033[1m%s\033[21m %s %s' % (self.__program, '-' if self.__tty else '—', self.__description))
         print()
-        if self.__longdescription is not None:
-            print(self.__longdescription)
+        if self.__long_description is not None:
+            print(self.__long_description)
         print()
         
         print('\033[1mUSAGE:\033[21m', end='')

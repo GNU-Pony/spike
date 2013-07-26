@@ -43,7 +43,7 @@ def unique(sorted):
     return rc
 
 
-def binsearch(list, item, min, max):
+def bin_search(list, item, min, max):
     '''
     Find the index of an item in a list, with time complexity 𝓞(log n) and memory complexity 𝓞(1)
     
@@ -67,7 +67,7 @@ def binsearch(list, item, min, max):
     return ~mid
 
 
-def multibinsearch(rc, list, items):
+def multibin_search(rc, list, items):
     '''
     Find the indices of multiple items in a list, with time complexity 𝓞(log n + m) and memory complexity 𝓞(log m) 
     
@@ -83,13 +83,13 @@ def multibinsearch(rc, list, items):
             while max != min:
                 (lastmax, lastlmax) = (max, lmax)
                 max = min + ((max - min) >> 1)
-                lmax = binsearch(list, items[max], lmin, lmax)
+                lmax = bin_search(list, items[max], lmin, lmax)
                 rc.append((max, lmax))
                 if lmax < 0:
                     lmax = ~lmax
                 minomax.append((max + 1, lastmax, lmax + 1, lastlmax))
         max = count - 1
-        lmax = binsearch(list, items[max], lmin, lmax)
+        lmax = bin_search(list, items[max], lmin, lmax)
         rc.append((max, lmax))
 
 

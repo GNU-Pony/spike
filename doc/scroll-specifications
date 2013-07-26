@@ -43,7 +43,7 @@ pkgdesc:str
 
 upstream:str
 	The URL that is associated with the software being packaged.
-	Typically the project’s website.
+	Typically the project's website.
 
 arch:list<str>
 	List of known architecture compatibilities. The architecture's
@@ -52,17 +52,48 @@ arch:list<str>
 	If architecture independent, the only architecture should
 	be `any`.
 
-freedom:or-flag:SOFTWARE,MEDIA
-	SOFTWARE should be on if the software and all required resource
-	files are free, or if the packages does not contain any software.
-	MEDIA should be on if the package contain only free media files
-	that are not a requirement for the software, or if no such media
-	exists in the package.
+freedom:or-flag:SOFTWARE_SHAREABLE,SOFTWARE_COMMERCIAL,SOFTWARE_DERIVATIVE,
+	        MEDIA_SHAREABLE,MEDIA_COMMERCIAL,MEDIA_DERIVATIVE,TRADEMARKED,PATENTED
+	SOFTWARE (a macro for SOFTWARE_SHAREABLE | SOFTWARE_COMMERCIAL |
+	SOFTWARE_DERIVATIVE) should be on if the software and all required
+	resource files are free, or if the packages does not contain any software.
+	MEDIA (a macro for MEDIA_SHAREABLE | MEDIA_COMMERCIAL | MEDIA_DERIVATIVE)
+	should be on if the package contain only free media files that are not a
+	requirement for the software, or if no such media exists in the package.
+	SOFTWARE_SHAREABLE and MEDIA_SHAREABLE should be used if the software or
+	media files, respectively is freely be shared unmodified and uncommerically.
+	SOFTWARE_COMMERCIAL and MEDIA_COMMERCIAL should be used if it can also
+	be shared commercially. SOFTWARE_DERIVATIVE and MEDIA_DERIVATIVE should be
+	used if derivatives can also be shared.
+	TRADEMARKED should be used if there is trademark protections in the package,
+	keep in mind that outside the U.S. it may not be necessary to use ™ or ® on
+	what is trademarked.
+	PATENTED should be used if the package contains patented information.
+	If the package does not contain software, SOFTWARE should be used so it does
+	not hide from ponies that put restrictions on software they install.
+	If the package does not contain media files, MEDIA should be used so it does
+	not hide from ponies that put restrictions on software they install.
 
 license:list<str>
 	Licences that applies to the package, the part of the package that
 	the license applies to may be specified. If so, the license and the
 	that text should be separated by a colon.
+
+metalicense:list<(value:or-flag:¿F?, mask:or-flag:¿F?)?>?=None
+        		F=NO_TRADEMARKS,NO_PATENTS,CONTRACT_BASED,COMMERCIAL,
+			  DERIVATIVE,FSF_APPROVED,OSI_APPROVED,GPL_COMPATIBLE,COPYLEFT
+	Information about used licenses. `mark` is used for which fields that are
+	known, and `value` is used to indicate the value of the known fields.
+	NO_TRADEMARKS is used if the license prohibits trademark protection.
+	NO_PATENTS is used if the license prohibits patent protection.
+	CONTRACT_BASED is used if the license is contract based.
+	SHAREABLE is used if redistribution is allowed.
+	COMMERCIAL is used if commercial redistributions are allowed.
+	DERIVATIVE is used if derivative redistributions are allowed.
+	FSF_APPROVED is used if the license is approved by the Free Software Foundation.
+	OSI_APPROVED is used if the license is approved by the Open Source Initiative.
+	GPL_COMPATIBLE is used if the license if GNU General Publice License compatible.
+	COPYLEFT is used if the license is a copyleft license.
 
 private:excl-flag:UNSUPPORTED,SUPPORTED,MANDITORY=UNSUPPORTED
 	Specify --private support status.
@@ -139,21 +170,9 @@ options:list<str>=[]
 	exclamation mark are turned off, others are turned on.
 
 	strip	     Strip symbols from binaries and libraries
-	docs	     Keep files installed to /usr{,/share,/local/share}/doc
-	info	     Keep files installed to /usr{,/local}/share/info
-	man	     Keep files installed to /usr{,/local}/share/man
 	licenses     Keep files installed to /usr{,/local}/share/licenses
 	changelogs   Keep files installed to /usr{,/local}/share/changelogs
 	libtool	     Leave .la files in packages
-	docs=	     Uncompress .pdf, .ps and .dvi files /usr{,/share,/local/share}/doc
-	docs=gz	     Compress .pdf, .ps and .dvi files /usr{,/share,/local/share}/doc with gzip
-	docs=xz	     Compress .pdf, .ps and .dvi files /usr{,/share,/local/share}/doc with xz
-	info=	     Uncompress files in /usr{,/local}/share/info
-	info=gz	     Compress files in /usr{,/local}/share/info with gzip
-	info=xz	     Compress files in /usr{,/local}/share/info with xz
-	man=	     Uncompress files in /usr{,/local}/share/man
-	man=gz	     Compress files in /usr{,/local}/share/man with gzip
-	man=xz	     Compress files in /usr{,/local}/share/man with xz
 	upx	     Compress binary executable files using UPX
 
 

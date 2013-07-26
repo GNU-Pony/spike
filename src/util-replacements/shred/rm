@@ -1,0 +1,116 @@
+#!/usr/bin/env bash
+
+# spike – a package manager running on top of git
+# 
+# Copyright © 2012, 2013  Mattias Andrée (maandree@member.fsf.org)
+# 
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+export PATH="${SPIKE_OLD_PATH}"
+
+force=0
+recursive=0
+dir=0
+xdev=1
+
+args="$(getopt --name rm --options frRdviI --longoptions 'force,recursive,dir,verbose,one-file-system,no-preserve-root,preserve-root,interactive,help,version::' -- "$@")"
+
+if [ $? = 0 ]; then
+    set -- $args
+    while [ $# -gt 0 ]; do
+	case "$1" in
+	    (-f)
+		force=1 ;;
+	    (-r)
+		dir=1
+		recursive=1 ;;
+	    (-R)
+		dir=1
+		recursive=1 ;;
+	    (-d)
+		dir=1 ;;
+	    (--force)
+		forice=1 ;;
+	    (--recursive)
+		dir=1
+		recursive=1 ;;
+	    (--dir)
+		dir=1 ;;
+	    (--one-file-system)
+		xdev=0 ;;
+	    (--help)
+		rm --help
+		exit 0
+		;;
+	    (--version)
+		rm --version
+		exit 0
+		;;
+	    (--)
+		shift
+		break
+		;;
+	    (-*)
+		exit 1 ;;
+	    (*)
+		break ;;
+	esac
+	shift
+    done
+else
+    while getopts frRdviI OPT; do
+	case "${OPT}" in
+	    (f)
+		force=1 ;;
+	    (r)
+		dir=1
+		recursive=1 ;;
+	    (R)
+		dir=1
+		recursive=1 ;;
+	    (d)
+		dir=1 ;;
+	esac
+	shift $(( $OPTIND - 1 ))
+    done
+fi
+
+options=
+if [ $force = 1 ]; then
+    options="${options} -f"
+fi
+
+if [ $recursive = 0 ]; then
+    for file in "$@"; do
+	if [ -d "$file" ]; then
+	    rm $options -d -- "$file"
+	else
+	    shred $options ${SPIKE_SHRED_OPTS} -- "$file"
+	fi
+    done
+else
+    find_options=
+    if [ $xdev = 0 ]; then
+	find_options="${find_options} -mount"
+    fi
+    find $find_options -- "$@" | tac | while read file; do
+	if [ -d "$file" ]; then
+	    rm $options -d -- "$file"
+	else
+	    shred $options ${SPIKE_SHRED_OPTS} -- "$file"
+	fi
+    done
+fi
+

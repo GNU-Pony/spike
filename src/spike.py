@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 '''
 spike – a package manager running on top of git
@@ -20,9 +20,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
 import sys
 import os
+from subprocess import Popen
 
-from libspike import *
-from argparser import *
+from library.libspike import *
+from auxiliary.argparser import *
 
 
 
@@ -60,8 +61,6 @@ def printerr(text = '', end = '\n'):
 class Spike():
     '''
     Spike is your number one package manager
-    
-    @author  Mattias Andrée (maandree@member.fsf.org)
     '''
     
     def __init__(self):
@@ -106,6 +105,8 @@ class Spike():
                      26 - File is of wrong type, normally a directory or regular file when the other is expected
                      27 - Corrupt database
                      28 - Pony is required by another pony
+                     29 - Circular make dependency
+                    254 - User aborted
                     255 - Unknown error
         
         @param  args:list<str>  Command line arguments, including invoked program alias ($0)
@@ -141,7 +142,8 @@ class Spike():
         opts.add_argumentless(['-h', '--help'],                       help = 'Print this help')
         opts.add_argumentless(['-c', '--copyright'],                  help = 'Print copyright information')
         
-        opts.add_argumentless(['-B', '--bootstrap'],                  help = 'Update spike and scroll repositories')
+        opts.add_argumentless(['-B', '--bootstrap'],                  help = 'Update spike and scroll repositories\n'
+                                                             'slaves: [--no-verify]')
         opts.add_argumentless(['-F', '--find'],                       help = 'Find a scroll either by name or by ownership\n'
                                                              'slaves: [--owner | --written=]')
         opts.add_argumentless(['-W', '--write'],                      help = 'Install a pony (package) from scroll\n'
@@ -165,6 +167,8 @@ class Spike():
         opts.add_argumentless(['-N', '--clean'],                      help = 'Uninstall unneeded ponies\n'
                                                              'slaves: [--private] [--shred]')
         opts.add_argumentless(['-P', '--proofread'],                  help = 'Verify that a scroll is correct')
+        opts.add_argumentless(['-S', '--example-shot'],               help = 'Display example shot for scrolls\n'
+                                                             'slaves: [--viewer=] [--all-at-once]')
         opts.add_argumentless(['-I', '--interactive'],                help = 'Start in interative graphical terminal mode\n'
                                                                              '(supports installation and uninstallation only)\n'
                                                                              'slaves: [--shred]')
@@ -191,6 +195,9 @@ class Spike():
         opts.add_argumentless([      '--downgrade'],                  help = 'Do only perform pony downgrades')
         opts.add_argumentless([      '--upgrade'],                    help = 'Do only perform pony upgrades')
         opts.add_argumentless([      '--shred'],                      help = 'Perform secure removal with `shred` when removing old files')
+        opts.add_argumentless([      '--no-verify'],                  help = 'Skip verification of signatures')
+        opts.add_argumentless(['-a', '--all-at-once'],                help = 'Display all example shots in one single process instance')
+        opts.add_argumented(  [      '--viewer'],    arg = 'VIEWER',  help = 'Select image viewer for example shots')
         
         if not opts.parse(args):
             printerr(self.execprog + ': use of unrecognised option')
@@ -212,6 +219,7 @@ class Spike():
         longmap['-A'] = '--archive'
         longmap['-N'] = '--clean'
         longmap['-P'] = '--proofread'
+        longmap['-S'] = '--example-shot'
         longmap['-I'] = '--interactive'
         longmap['-3'] = '--sha3sum'
         longmap['-o'] = '--owner'
@@ -221,12 +229,13 @@ class Spike():
         longmap['-l'] = '--list'
         longmap['-f'] = '--info'
         longmap['-s'] = '--scrolls'
+        longmap['-a'] = '--all-at-once'
         
         exclusives = set()
-        for opt in 'vhcBFWUEXRCDANPI3':
+        for opt in 'vhcBFWUEXRCDANPSI3':
             exclusives.add('-' + opt)
         exclusives.add('--restore-archive')
-        self.test_exclusiveness(opts.opts, exclusives, longmap, True)
+        opts.test_exclusiveness(self.execprog, exclusives, longmap, True)
         
         for opt in opts.opts:
             if (opt != '-i') and (opt != '-f'): # --ignore, --info
@@ -244,62 +253,68 @@ class Spike():
                 break
         
         exclusives = set()
-        exitValue = 0
+        exit_value = 0
         
         try:
             if opts.opts['-v'] is not None:
-                self.test_allowed(opts.opts, allowed, longmap, True)
-                self.test_files(opts.files, 0, True)
+                opts.test_allowed(self.execprog, allowed, longmap, True)
+                opts.test_files(self.execprog, 0, 0, True)
                 self.print_version()
             
             elif opts.opts['-h'] is not None:
-                self.test_allowed(opts.opts, allowed, longmap, True)
-                self.test_files(opts.files, 0, True)
+                opts.test_allowed(self.execprog, allowed, longmap, True)
+                opts.test_files(self.execprog, 0, 0, True)
                 opts.help()
-                exitValue = 3
+                exit_value = 3
             
             elif opts.opts['-c'] is not None:
-                self.test_allowed(opts.opts, allowed, longmap, True)
-                self.test_files(opts.files, 0, True)
+                opts.test_allowed(self.execprog, allowed, longmap, True)
+                opts.test_files(self.execprog, 0, 0, True)
                 self.print_copyright()
             
             elif opts.opts['-3'] is not None:
-                self.test_allowed(opts.opts, allowed, longmap, True)
-                exitValue = self.sha3sum(opts.files)
+                opts.test_allowed(self.execprog, allowed, longmap, True)
+                LibSpike.initialise()
+                exit_value = self.sha3sum(opts.files)
             
             elif opts.opts['-B'] is not None:
-                self.test_allowed(opts.opts, allowed, longmap, True)
-                self.test_files(opts.files, 0, True)
-                exitValue = self.bootstrap()
+                allowed.add('--no-verify')
+                opts.test_allowed(self.execprog, allowed, longmap, True)
+                opts.test_files(self.execprog, 0, 0, True)
+                LibSpike.initialise()
+                exit_value = self.bootstrap(opts.opts['--no-verify'] is not None)
             
             elif opts.opts['-F'] is not None:
                 exclusives.add('-o')
                 exclusives.add('-w')
-                self.test_exclusiveness(opts.opts, exclusives, longmap, True)
-                self.test_allowed(opts.opts, allowed, longmap, True)
+                opts.test_exclusiveness(self.execprog, exclusives, longmap, True)
+                opts.test_allowed(self.execprog, allowed, longmap, True)
                 allowed.add('-o')
                 allowed.add('-w')
                 if opts.opts['-w'] is not None:
                     if opts.opts['-w'][0] not in ('y', 'yes', 'n', 'no'):
                         printerr(self.execprog + ': only \'yes\',  \'y\', \'no\' and \'n\' are allowed for -w(--written)')
                         exit(4)
-                    exitValue = self.find_scroll(opts.files,
-                                                 installed    = opts.opts['-w'][0][0] == 'y',
-                                                 notinstalled = opts.opts['-w'][0][0] == 'n')
+                    LibSpike.initialise()
+                    exit_value = self.find_scroll(opts.files,
+                                                  installed    = opts.opts['-w'][0][0] == 'y',
+                                                  notinstalled = opts.opts['-w'][0][0] == 'n')
                 elif opts.opts['-o'] is not None:
-                    self.test_files(opts.files, 2, True)
-                    exitValue = self.find_owner(opts.files)
+                    opts.test_files(self.execprog, 1, None, True)
+                    LibSpike.initialise()
+                    exit_value = self.find_owner(opts.files)
                 else:
-                    exitValue = self.find_scroll(opts.files, installed = True, notinstalled = True)
+                    LibSpike.initialise()
+                    exit_value = self.find_scroll(opts.files, installed = True, notinstalled = True)
                 
             elif opts.opts['-W'] is not None:
                 exclusives.add('--pinpal')
                 exclusives.add('-u')
-                self.test_exclusiveness(opts.opts, exclusives, longmap, True)
+                opts.test_exclusiveness(self.execprog, exclusives, longmap, True)
                 exclusives = set()
                 exclusives.add('--asdep')
                 exclusives.add('--asexplicit')
-                self.test_exclusiveness(opts.opts, exclusives, longmap, True)
+                opts.test_exclusiveness(self.execprog, exclusives, longmap, True)
                 allowed.add('--pinpal')
                 allowed.add('-u')
                 allowed.add('--asdep')
@@ -307,245 +322,189 @@ class Spike():
                 allowed.add('--nodep')
                 allowed.add('--force')
                 allowed.add('--shred')
-                self.test_allowed(opts.opts, allowed, longmap, True)
-                self.test_files(opts.files, 2, True)
-                exitValue = self.write(opt.files,
-                                       root         = opts.opts['--pinpal'][0] if opts.opts['--pinpal'] is not None else '/',
-                                       private      = opts.opts['-u'] is not None,
-                                       explicitness = 1  if opts.opts['--asexplict'] is not None else
-                                                      -1 if opts.opts['--asdep']     is not None else 0,
-                                       nodep        = opts.opts['--nodep'] is not None,
-                                       force        = opts.opts['--force'] is not None,
-                                       shred        = opts.opts['--shred'] is not None)
+                opts.test_allowed(self.execprog, allowed, longmap, True)
+                opts.test_files(self.execprog, 1, None, True)
+                LibSpike.initialise(shred = opts.opts['--shred'] is not None)
+                exit_value = self.write(opt.files,
+                                        root         = opts.opts['--pinpal'][0] if opts.opts['--pinpal'] is not None else '/',
+                                        private      = opts.opts['-u'] is not None,
+                                        explicitness = 1  if opts.opts['--asexplict'] is not None else
+                                                       -1 if opts.opts['--asdep']     is not None else 0,
+                                        nodep        = opts.opts['--nodep'] is not None,
+                                        force        = opts.opts['--force'] is not None)
                 
             elif opts.opts['-U'] is not None:
                 allowed.add('--pinpal')
                 allowed.add('-i')
                 allowed.add('-u')
                 allowed.add('--shred')
-                self.test_allowed(opts.opts, allowed, longmap, True)
-                self.test_files(opts.files, 0, True)
-                exitValue = self.update(root    = opts.opts['--pinpal'][0] if opts.opts['--pinpal'] is not None else '/',
-                                        ignores = opts.opts['-i'] if opts.opts['-i'] is not None else [],
-                                        private = opts.opts['-u'] is not None,
-                                        shred   = opts.opts['--shred'] is not None)
+                opts.test_allowed(self.execprog, allowed, longmap, True)
+                opts.test_files(self.execprog, 0, 0, True)
+                LibSpike.initialise(shred = opts.opts['--shred'] is not None)
+                exit_value = self.update(root    = opts.opts['--pinpal'][0] if opts.opts['--pinpal'] is not None else '/',
+                                         ignores = opts.opts['-i'] if opts.opts['-i'] is not None else [],
+                                         private = opts.opts['-u'] is not None)
                 
             elif opts.opts['-E'] is not None:
                 exclusives.add('--pinpal')
                 exclusives.add('-u')
-                self.test_exclusiveness(opts.opts, exclusives, longmap, True)
+                opts.test_exclusiveness(self.execprog, exclusives, longmap, True)
                 allowed.add('--pinpal')
                 allowed.add('-u')
                 allowed.add('--shred')
-                self.test_allowed(opts.opts, allowed, longmap, True)
-                self.test_files(opts.files, 2, True)
-                exitValue = self.erase(opt.files,
-                                       root    = opts.opts['--pinpal'][0] if opts.opts['--pinpal'] is not None else '/',
-                                       private = opts.opts['-u'] is not None,
-                                       shred   = opts.opts['--shred'] is not None)
+                opts.test_allowed(self.execprog, allowed, longmap, True)
+                opts.test_files(self.execprog, 1, None, True)
+                LibSpike.initialise(shred = opts.opts['--shred'] is not None)
+                exit_value = self.erase(opt.files,
+                                        root    = opts.opts['--pinpal'][0] if opts.opts['--pinpal'] is not None else '/',
+                                        private = opts.opts['-u'] is not None)
                 
             elif opts.opts['-X'] is not None:
                 allowed.add('-u')
-                self.test_allowed(opts.opts, allowed, longmap, True)
-                self.test_files(opts.files, 1, True)
-                exitValue = self.ride(opt.files[0],
-                                      private = opts.opts['-u'] is not None)
+                opts.test_allowed(self.execprog, allowed, longmap, True)
+                opts.test_files(self.execprog, 1, 1, True)
+                LibSpike.initialise()
+                exit_value = self.ride(opt.files[0],
+                                       private = opts.opts['-u'] is not None)
                 
             elif opts.opts['-R'] is not None:
                 exclusives.add('-l')
                 exclusives.add('-f')
-                self.test_exclusiveness(opts.opts, exclusives, longmap, True)
+                opts.test_exclusiveness(self.execprog, exclusives, longmap, True)
                 allowed.add('-l')
                 allowed.add('-f')
                 if opts.opts['-l'] is None:
                     allowed.add('-w')
-                self.test_allowed(opts.opts, allowed, longmap, True)
-                self.test_files(opts.files, 1, True)
+                opts.test_allowed(self.execprog, allowed, longmap, True)
+                opts.test_files(self.execprog, 1, None, True)
                 if opts.opts['-l'] is not None:
-                    exitValue = self.read_files(opt.files)
+                    exit_value = self.read_files(opt.files)
                 else:
                     if opts.opts['-w'] is not None:
                         if opts.opts['-w'][0] not in ('y', 'yes', 'n', 'no'):
                             printerr(self.execprog + ': only \'yes\',  \'y\', \'no\' and \'n\' are allowed for -w(--written)')
                             exit(4)
-                        exitValue = self.read_info(opt.files, field = opts.opts['-f'],
-                                                   installed = opts.opts['-w'][0][0] == 'y',
-                                                   notinstalled = opts.opts['-w'][0][0] == 'n')
+                        LibSpike.initialise()
+                        exit_value = self.read_info(opt.files, field = opts.opts['-f'],
+                                                    installed = opts.opts['-w'][0][0] == 'y',
+                                                    notinstalled = opts.opts['-w'][0][0] == 'n')
                     else:
-                        exitValue = self.read_info(opt.files, field = opts.opts['-f'])
+                        LibSpike.initialise()
+                        exit_value = self.read_info(opt.files, field = opts.opts['-f'])
                     
             elif opts.opts['-C'] is not None:
                 exclusives.add('--recursive')
                 exclusives.add('--entire')
-                self.test_exclusiveness(opts.opts, exclusives, longmap, True)
+                opts.test_exclusiveness(self.execprog, exclusives, longmap, True)
                 allowed.add('--recursive')
                 allowed.add('--entire')
                 allowed.add('-u')
                 allowed.add('--force')
-                self.test_allowed(opts.opts, allowed, longmap, True)
-                self.test_files(opts.files, 3, True)
-                exitValue = self.claim(opt.files[:-1], opt.files[-1],
-                                       recursiveness = 1 if opts.opts['--recursive'] is not None else
-                                                       2 if opts.opts['--entire']    is not None else 0,
-                                       private       = opts.opts['-u'] is not None,
-                                       force         = opts.opts['--force'] is not None)
+                opts.test_allowed(self.execprog, allowed, longmap, True)
+                opts.test_files(self.execprog, 2, None, True)
+                LibSpike.initialise()
+                exit_value = self.claim(opt.files[:-1], opt.files[-1],
+                                        recursiveness = 1 if opts.opts['--recursive'] is not None else
+                                                        2 if opts.opts['--entire']    is not None else 0,
+                                        private       = opts.opts['-u'] is not None,
+                                        force         = opts.opts['--force'] is not None)
                 
             elif opts.opts['-D'] is not None:
                 allowed.add('--recursive')
                 allowed.add('-u')
                 self.test_allowed(opts.opts, allowed, longmap, True)
-                self.test_files(opts.files, 3, True)
-                exitValue = self.disclaim(opt.files[:-1], opt.files[-1],
-                                          recursive = opts.opts['--recursive'] is not None,
-                                          private   = opts.opts['-u'] is not None)
+                opts.test_files(self.execprog, 2, None, True)
+                LibSpike.initialise()
+                exit_value = self.disclaim(opt.files[:-1], opt.files[-1],
+                                           recursive = opts.opts['--recursive'] is not None,
+                                           private   = opts.opts['-u'] is not None)
                 
             elif opts.opts['-A'] is not None:
                 allowed.add('-s')
-                self.test_allowed(opts.opts, allowed, longmap, True)
-                self.test_files(opts.files, 0, True)
-                exitValue = self.archive(opts.opts['-A'][0], scrolls = opts.opts['-s'] is not None)
+                opts.test_allowed(self.execprog, allowed, longmap, True)
+                opts.test_files(self.execprog, 0, 0, True)
+                LibSpike.initialise()
+                exit_value = self.archive(opts.opts['-A'][0], scrolls = opts.opts['-s'] is not None)
                 
             elif opts.opts['--restore-archive'] is not None:
                 exclusives.add('--shared')
                 exclusives.add('--full')
                 exclusives.add('--old')
-                self.test_exclusiveness(opts.opts, exclusives, longmap, True)
+                opts.test_exclusiveness(self.execprog, exclusives, longmap, True)
                 exclusives = set()
                 exclusives.add('--downgrade')
                 exclusives.add('--upgrade')
-                self.test_exclusiveness(opts.opts, exclusives, longmap, True)
+                opts.test_exclusiveness(self.execprog, exclusives, longmap, True)
                 allowed.add('--shared')
                 allowed.add('--full')
                 allowed.add('--old')
                 allowed.add('--downgrade')
                 allowed.add('--upgrade')
                 allowed.add('--shred')
-                self.test_allowed(opts.opts, allowed, longmap, True)
-                self.test_files(opts.files, 0, True)
-                exitValue = self.rollback(opts.opts['--restore-archive'][0],
-                                          keep      = opts.opts['--full'] is None,
-                                          skip      = opts.opts['--shared'] is not None,
-                                          gradeness = -1 if opts.opts['--downgrade'] is not None else
-                                                      1  if opts.opts['--upgrade']   is not None else 0,
-                                          shred     = opts.opts['--shred'] is not None)
+                opts.test_allowed(self.execprog, allowed, longmap, True)
+                opts.test_files(self.execprog, 0, 0, True)
+                LibSpike.initialise(shred = opts.opts['--shred'] is not None)
+                exit_value = self.rollback(opts.opts['--restore-archive'][0],
+                                           keep      = opts.opts['--full'] is None,
+                                           skip      = opts.opts['--shared'] is not None,
+                                           gradeness = -1 if opts.opts['--downgrade'] is not None else
+                                                       1  if opts.opts['--upgrade']   is not None else 0)
                 
             elif opts.opts['-P'] is not None:
-                self.test_allowed(opts.opts, allowed, longmap, True)
-                self.test_files(opts.files, 2, True)
-                exitValue = self.proofread(opts.files)
+                opts.test_allowed(self.execprog, allowed, longmap, True)
+                opts.test_files(self.execprog, 1, None, True)
+                LibSpike.initialise()
+                exit_value = self.proofread(opts.files)
             
             elif opts.opts['-N'] is not None:
                 allowed.add('--private')
                 allowed.add('--shred')
-                self.test_allowed(opts.opts, allowed, longmap, True)
-                self.test_files(opts.files, 0, True)
-                exitValue = self.clean(private = opts.opts['--private'] is not None, shred = opts.opts['--shred'] is not None)
-            
+                opts.test_allowed(self.execprog, allowed, longmap, True)
+                opts.test_files(self.execprog, 1, None, True)
+                LibSpike.initialise(shred = opts.opts['--shred'] is not None)
+                exit_value = self.clean(private = opts.opts['--private'] is not None)
+                
+            elif opts.opts['-S'] is not None:
+                allowed.add('--viewer')
+                allowed.add('-a')
+                opts.test_allowed(self.execprog, allowed, longmap, True)
+                opts.test_files(self.execprog, 1, None, True)
+                env_display = os.environ['DISPLAY']
+                default_viewer = 'xloadimage' if (env_display is not None) and env_display.startsWith(':') else 'jfbview'
+                LibSpike.initialise()
+                exit_value = self.example_shot(opt.files,
+                                               viewer      = opts.opts['--viewer'][0] if opts.opts['--viewer'] is not None else default_viewer,
+                                               all_at_once = opts.opts['-a'] is not None)
+                
             elif opts.opts['-I'] is not None:
                 allowed.add('--shred')
-                self.test_allowed(opts.opts, allowed, longmap, True)
-                self.test_files(opts.files, 0, True)
-                exitValue = self.interactive(shred = opts.opts['--shred'] is not None)
+                opts.test_allowed(self.execprog, allowed, longmap, True)
+                opts.test_files(self.execprog, 0, 0, True)
+                LibSpike.initialise(shred = opts.opts['--shred'] is not None)
+                exit_value = self.interactive()
             
             else:
                 allowed.add('--shred')
-                self.test_allowed(opts.opts, allowed, longmap, True)
-                self.test_files(opts.files, 0, True)
-                exitValue = self.interactive(shred = opts.opts['--shred'] is not None)
+                opts.test_allowed(self.execprog, allowed, longmap, True)
+                opts.test_files(self.execprog, 0, 0, True)
+                LibSpike.initialise(shred = opts.opts['--shred'] is not None)
+                exit_value = self.interactive()
         
         except Exception as err:
-            exitValue = 255
+            exit_value = 255
             printerr('%s: %s' % (self.execprog, str(err)))
         
-        if exitValue == 27:
+        if exit_value == 27:
             printerr('%s: \033[01;31m%s\033[00m' % (self.execprog, 'corrupt database'))
-        exit(exitValue)
-    
-    
-    
-    def test_exclusiveness(self, opts, exclusives, longmap, do_exit = False):
-        '''
-        Test for option conflicts
         
-        @param   opts:dict<str, list<str>>  Current options
-        @param   exclusives:set<str>        Exclusive options
-        @param   longmap:dict<str, str>     Map from short to long
-        @param   do_exit:bool               Exit program on conflict
-        @return  :bool                      Whether at most one exclusive option was used
-        '''
-        used = []
-        
-        for opt in opts:
-            if (opts[opt] is not None) and (opt in exclusives):
-                used.append((opt, longmap[opt] if opt in longmap else None))
-        
-        if len(used) > 1:
-            msg = self.execprog + ': conflicting options:'
-            for opt in used:
-                if opt[1] is None:
-                    msg += ' ' + opt[0]
-                else:
-                    msg += ' ' + opt[0] + '(' + opt[1] + ')'
-            printerr(msg)
-            if do_exit:
-                exit(1)
-            return False
-        return True
+        LibSpike.terminate()
+        exit(exit_value)
     
-    
-    def test_allowed(self, opts, allowed, longmap, do_exit = False):
-        '''
-        Test for out of context option usage
-        
-        @param   opts:dict<str, list<str>>  Current options
-        @param   allowed:set<str>           Allowed options
-        @param   longmap:dict<str, str>     Map from short to long
-        @param   do_exit:bool               Exit program on incorrect usage
-        @return  :bool                      Whether only allowed options was used
-        '''
-        for opt in opts:
-            if (opts[opt] is not None) and (opt not in allowed):
-                msg = self.execprog + ': option used out of context: ' + opt
-                if opt in longmap:
-                    msg += '(' + longmap[opt] + ')'
-                printerr(msg)
-                if do_exit:
-                    exit(1)
-                return False
-        return True
-    
-    
-    def test_files(self, files, mode, do_exit = False):
-        '''
-        Test the correctness of the number of used non-option arguments
-        
-        @param   files:list<str>    Non-option arguments
-        @param   mode:int           Correctness mode: 0 - no arguments
-                                                      1 - one argument
-                                                      2 - atleast one argument
-                                                      3 - atleast two arguments
-                                                      n - atleast n − 1 arguments
-                                                     −n - exactly n arguments
-        @param   do_exit:bool       Exit program on incorrectness
-        @return  :bool              Whether the usage was correct
-        '''
-        rc = True
-        if mode == 0:
-            rc = len(files) == 0
-        elif mode == 1:
-            rc = len(files) == 1
-        elif mode > 1:
-            rc = len(files) >= (mode - 1)
-        else:
-            rc = len(files) == -mode
-        if do_exit and not rc:
-            exit(1)
-        return rc
     
     
     def print_version(self):
         '''
-        Prints spike fellowed by a blank spacs and the version of spike to stdout
+        Prints spike followed by a blank spacs and the version of spike to stdout
         '''
         print('spike ' + self.version)
     
@@ -573,11 +532,12 @@ class Spike():
     
     
     
-    def bootstrap(self):
+    def bootstrap(self, verify):
         '''
         Update the spike and the scroll archives
         
-        @return  :byte  Exit value, see description of `mane` 
+        @parma   verify:bool  Whether to verify signatures
+        @return  :byte        Exit value, see description of `mane` 
         '''
         class Agg:
             '''
@@ -603,7 +563,7 @@ class Spike():
                 print('[%s\033[00m] %s\n' % (s, directory))
                 self.pos = p + 1
         
-        return LibSpike.bootstrap(Agg())
+        return LibSpike.bootstrap(Agg(), verify)
     
     
     def find_scroll(self, patterns, installed = True, notinstalled = True):
@@ -652,7 +612,7 @@ class Spike():
         return LibSpike.find_owner(Agg(), files)
     
     
-    def write(self, scrolls, root = '/', private = False, explicitness = 0, nodep = False, force = False, shred = False):
+    def write(self, scrolls, root = '/', private = False, explicitness = 0, nodep = False, force = False):
         '''
         Install ponies from scrolls
         
@@ -662,78 +622,96 @@ class Spike():
         @param   explicitness:int   -1 for install as dependency, 1 for install as explicit, and 0 for explicit if not previously as dependency
         @param   nodep:bool         Whether to ignore dependencies
         @param   force:bool         Whether to ignore file claims
-        @param   shred:bool         Whether to perform secure removal when possible
         @return  :byte              Exit value, see description of `mane`
         '''
         class Agg:
             '''
-            aggregator:(str?, int, [*])→(void|bool|str)
-                Feed a scroll (`None` only at state 2 and 5) and a state (can be looped) during the process of a scroll.
-                The states are: 0 - proofreading
-                                1 - scroll added because of being updated
-                                2 - resolving conflicts
-                                3 - scroll added because of dependency. Additional parameters: requirers:list<str>
-                                4 - scroll removed because due to being replaced. Additional parameters: replacer:str
-                                5 - verify installation. Additional parameters: freshinstalls:list<str>, reinstalls:list<str>, update:list<str>, skipping:list<str>
+            aggregator:(str?, int, [*])→(void|bool|str|int?)
+                Feed a scroll (`None` only at state 0, 3, 6, 7 and 9) and a state (can be looped) during the process of a scroll.
+                The states are: 0 - inspecting installed scrolls
+                                1 - proofreading
+                                2 - scroll added because of being updated
+                                3 - resolving conflicts
+                                4 - scroll added because of dependency. Additional parameters: requirers:list<str>
+                                5 - scroll removed because due to being replaced. Additional parameters: replacer:str
+                                6 - verify installation. Additional parameters: fresh_installs:list<str>, reinstalls:list<str>, update:list<str>, downgrading:list<str>, skipping:list<str>
                                                          Return: accepted:bool
-                                6 - select provider pony. Additional parameters: options:list<str>
+                                7 - inspecting non-install scrolls for providers
+                                8 - select provider pony. Additional parameters: options:list<str>
                                                           Return: select provider:str? `None` if aborted
-                                7 - fetching source. Additional parameters: source:str, progress state:int, progress end:int
-                                8 - verifying source. Additional parameters: progress state:int, progress end:int
-                                9 - compiling
-                               10 - file conflict check: Additional parameters: progress state:int, progress end:int
-                               11 - installing files: Additional parameters: progress state:int, progress end:int
+                                9 - select when to build ponies which require interaction. Additional parameters: interactive:list<str>, allowed:int
+                                                                                           Return: when:excl-flag? `None` if aborted
+                               10 - fetching source. Additional parameters: source:str, progress state:int, progress end:int
+                               11 - verifying source. Additional parameters: progress state:int, progress end:int
+                               12 - compiling
+                               13 - file conflict check: Additional parameters: progress state:int, progress end:int
+                               14 - installing files: Additional parameters: progress state:int, progress end:int
+                when:excl-flag values: 0 - Build whenever
+                                       1 - Build early
+                                       2 - Build early and fetch separately
+                                       3 - Build late
+                allowed:int values: The union of all `1 << when` with allowed `when`
             '''
             def __init__(self):
-                self.updateadd = []
-                self.depadd = {}
-                self.replaceremove = {}
-                self.skipping = []
-                self.scrls = [[0, {}]] * 6
+                self.update_add = set()
+                self.dep_add = {}
+                self.replace_remove = {}
+                self.scrls = []
+                for i in range(6):
+                    self.scrls.append([0, {}])
                 self.scrls[0] = self.scrls[1]
             def __call__(self, scroll, state, *args):
+                if type(self) == Spike:
+                    if scroll.equals('rarity'):
+                        scroll = scroll + '♥'
+                    elif scroll.startswith('rarity='):
+                        scroll = scroll.replace('=', '♥=')
                 if state == 0:
-                    print('Proofreading: %s' % scroll)
+                    print('Inspecting installed scrolls')
                 elif state == 1:
-                    self.updateadd.append(scroll)
+                    print('Proofreading: %s' % scroll)
                 elif state == 2:
-                    print('Resolving conflicts')
+                    self.updateadd.add(scroll[:(scroll + '=').find('=')])
                 elif state == 3:
-                    if scroll in self.depadd:
-                        self.depadd[scroll] += args[0]
-                    else:
-                        self.depadd[scroll] = args[0]
+                    print('Resolving conflicts')
                 elif state == 4:
-                    if scroll in self.replaceremove:
-                        self.replaceremove[scroll] += args[0]
+                    if scroll in self.dep_add:
+                        self.dep_add[scroll] += args[0]
                     else:
-                        self.replaceremove[scroll] = args[0]
+                        self.dep_add[scroll] = args[0]
                 elif state == 5:
-                    self.skipping = args[3]
-                    if len(self.skipping) > 0:
-                        for re in self.skipping:
-                            print('Skipping %s' % re)
-                    elif len(args[0]) > 0:
-                        for fresh in args[2]:
-                            print('Installing%s' % fresh)
-                    elif len(args[1]) > 0:
-                        for re in args[2]:
-                            print('Reinstalling %s' % re)
-                    elif len(args[2]) > 0:
-                        for update in args[2]:
-                            print('Explicitly updating %s' % update)
-                    elif len(self.updateadd) > 0:
-                        for update in self.updateadd:
-                            print('Updating %s' % update)
-                    elif len(self.depadd) > 0:
-                        for dep in self.depadd:
-                            print('Adding %s, required by: %s' % (dep, ', '.join(self.depadd[dep])))
-                    elif len(self.replaceremove) > 0:
-                        for replacee in self.replaceremove:
-                            print('Replacing %s with %s' % (replacee, ', '.join(self.replaceremove[replacee])))
-                    print('\033[01mContinue? (y/n)\033[00m')
-                    return input().lower().startswith('y')
+                    if scroll in self.replace_remove:
+                        self.replace_remove[scroll] += args[0]
+                    else:
+                        self.replace_remove[scroll] = args[0]
                 elif state == 6:
+                    fresh_installs, reinstalls, update, downgrading, skipping = args
+                    for scrl in skipping:
+                        print('Skipping %s' % scrl)
+                    for scrl in fresh_installs:
+                        print('Installing %s' % scrl)
+                    for scrl in reinstalls:
+                        print('Reinstalling %s' % scrl)
+                    for scrl in update:
+                        if scrl[:scrl.find('=')] not in self.update_add:
+                            print('Explicitly updating %s' % scrl)
+                    for scrl in update:
+                        if scrl[:scrl.find('=')] in self.updat_eadd:
+                            print('Updating %s' % scrl)
+                    for dep in self.dep_add:
+                        print('Adding %s, required by: %s' % (dep, ', '.join(self.dep_add[dep])))
+                    for replacee in self.replace_remove:
+                        print('Replacing %s with %s' % (replacee, ', '.join(self.replace_remove[replacee])))
+                    for scrl in downgrading:
+                        print('Downgrading %s' % scrl)
+                    while True:
+                        print('\033[01mContinue? (y/n)\033[00m')
+                        answer = input().lower()
+                        if answer.startswith('y') or answer.startswith('n'):
+                            return answer.startswith('y')
+                elif state == 7:
+                    print('Inspecting scroll repository for providers')
+                elif state == 8:
                     print('\033[01mSelect provider for virtual pony: %s\033[00m' % scroll)
                     i = 0
                     for prov in args[0]:
@@ -748,123 +726,169 @@ class Spike():
                     except:
                         pass
                     return None
+                elif state == 9:
+                    print('There are sone scrolls that require pony interaction to be build:')
+                    for scroll in args[0]:
+                        print('    %s' % scroll)
+                    allowed = args[1]
+                    print('\033[01mWhen do you want to build scroll that require interaction:\033[00m')
+                    if (allowed & (1 << 0)) != 0:
+                        print('    w - Whenever, I will not leave my precious magic box')
+                    if (allowed & (1 << 1)) != 0:
+                        print('    e - Before all other scrolls')
+                    if (allowed & (1 << 2)) != 0:
+                        print('    E - Before all other scrolls, and download others\' sources afterwards')
+                    if (allowed & (1 << 3)) != 0:
+                        print('    l - After all other scrolls')
+                    print('    a - Abort!')
+                    while True:
+                        when = input()
+                        if (allowed & (1 << 0)) != 0:
+                            if when == 'w' or when == 'W':
+                                return 0
+                        if (allowed & (1 << 1)) != 0:
+                            if when == 'e':
+                                return 1
+                        if (allowed & (1 << 2)) != 0:
+                            if when == 'E':
+                                return 2
+                        if (allowed & (1 << 3)) != 0:
+                            if when == 'l' or when == 'L':
+                                return 3
+                        if when == 'a':
+                            return None
+                        print('\033[01mInvalid option!\033[00m')
                 else:
-                    if scroll not in self.scrls[state - 7][1]:
-                        self.scrls[state - 7][0] += 1
-                        self.scrls[state - 7][1][scroll] = self.scrls[state - 7][0]
-                    (scrli, scrln) = (self.scrls[state - 7][1][scroll], self.scrls[state - 7][0])
+                    if scroll not in self.scrls[state - 10][1]:
+                        self.scrls[state - 10][0] += 1
+                        self.scrls[state - 10][1][scroll] = self.scrls[state - 10][0]
+                    (scrli, scrln) = (self.scrls[state - 10][1][scroll], self.scrls[state - 10][0])
                     if scrli != scrln:
-                        if state != 9:
+                        if state != 12:
                             print('\033[%iAm', scrln - scrli)
-                    if state == 7:
+                    if state == 10:
                         (source, progress, end) = args
                         bar = '[\033[01;3%im%s\033[00m]'
                         bar %= (2, 'DONE') if progress == end else (3, '%2.1f' % (progress / end))
                         print('[%s] (%i/%i) Downloading %s: %s' % (bar, scrli, scrln, scroll, source))
-                    elif state == 8:
+                    elif state == 11:
                         (progress, end) = args
                         bar = '[\033[01;3%im%s\033[00m]'
                         bar %= (2, 'DONE') if progress == end else (3, '%2.1f' % (progress / end))
                         print('[%s] (%i/%i) Verifing %s' % (bar, scrli, scrln, scroll))
-                    elif state == 9:
+                    elif state == 12:
                         print('(%i/%i) Compiling %s' % (scrli + 1, scrln, scroll))
-                    elif state == 10:
+                    elif state == 13:
                         (progress, end) = args
                         bar = '[\033[01;3%im%s\033[00m]'
                         bar %= (2, 'DONE') if progress == end else (3, '%2.1f' % (progress / end))
                         print('[%s] (%i/%i) Checking file conflicts for %s' % (bar, scrli, scrln, scroll))
-                    elif state == 11:
+                    elif state == 14:
                         (progress, end) = args
                         bar = '[\033[01;3%im%s\033[00m]'
                         bar %= (2, 'DONE') if progress == end else (3, '%2.1f' % (progress / end))
                         print('[%s] (%i/%i) Installing %s' % (bar, scrli, scrln, scroll))
                     if scrli != scrln:
-                        if state != 9:
+                        if state != 12:
                             print('\033[%iBm', scrln - (scrli + 1))
                 return None
                 
-        return LibSpike.write(Agg(), scrolls, root, private, explicitness, nodep, force, shred)
+        return LibSpike.write(Agg(), scrolls, root, private, explicitness, nodep, force)
     
     
-    def update(self, root = '/', ignores = [], private = False, shred = False):
+    def update(self, root = '/', ignores = [], private = False):
         '''
         Update installed ponies
         
         @param   root:str           Mounted filesystem to which to perform installation
         @param   ignores:list<str>  Ponies not to update
         @param   private:bool       Whether to update user private packages
-        @param   shred:bool         Whether to perform secure removal when possible
         @return  :byte              Exit value, see description of `mane`
         '''
         class Agg:
             '''
-            aggregator:(str?, int, [*])→(void|bool|str)
-                Feed a scroll (`None` only at state 2 and 5) and a state (can be looped) during the process of a scroll.
-                The states are: 0 - proofreading
-                                1 - scroll added because of being updated
-                                2 - resolving conflicts
-                                3 - scroll added because of dependency. Additional parameters: requirers:list<str>
-                                4 - scroll removed because due to being replaced. Additional parameters: replacer:str
-                                5 - verify installation. Additional parameters: freshinstalls:list<str>, reinstalls:list<str>, update:list<str>, skipping:list<str>
+            aggregator:(str?, int, [*])→(void|bool|str|int?)
+                Feed a scroll (`None` only at state 0, 3, 6, 7 and 9) and a state (can be looped) during the process of a scroll.
+                The states are: 0 - inspecting installed scrolls
+                                1 - proofreading
+                                2 - scroll added because of being updated
+                                3 - resolving conflicts
+                                4 - scroll added because of dependency. Additional parameters: requirers:list<str>
+                                5 - scroll removed because due to being replaced. Additional parameters: replacer:str
+                                6 - verify installation. Additional parameters: fresh_installs:list<str>, reinstalls:list<str>, update:list<str>, downgrading:list<str>, skipping:list<str>
                                                          Return: accepted:bool
-                                6 - select provider pony. Additional parameters: options:list<str>
+                                7 - inspecting non-install scrolls for providers
+                                8 - select provider pony. Additional parameters: options:list<str>
                                                           Return: select provider:str? `None` if aborted
-                                7 - fetching source. Additional parameters: source:str, progress state:int, progress end:int
-                                8 - verifying source. Additional parameters: progress state:int, progress end:int
-                                9 - compiling
-                               10 - file conflict check: Additional parameters: progress state:int, progress end:int
-                               11 - installing files: Additional parameters: progress state:int, progress end:int
+                                9 - select when to build ponies which require interaction. Additional parameters: interactive:list<str>, allowed:int
+                                                                                           Return: when:excl-flag? `None` if aborted
+                               10 - fetching source. Additional parameters: source:str, progress state:int, progress end:int
+                               11 - verifying source. Additional parameters: progress state:int, progress end:int
+                               12 - compiling
+                               13 - file conflict check: Additional parameters: progress state:int, progress end:int
+                               14 - installing files: Additional parameters: progress state:int, progress end:int
+                when:excl-flag values: 0 - Build whenever
+                                       1 - Build early
+                                       2 - Build early and fetch separately
+                                       3 - Build late
+                allowed:int values: The union of all `1 << when` with allowed `when`
             '''
             def __init__(self):
-                self.updateadd = []
-                self.depadd = {}
-                self.replaceremove = {}
-                self.skipping = []
-                self.scrls = [[0, {}]] * 6
+                self.update_add = set()
+                self.dep_add = {}
+                self.replace_remove = {}
+                self.scrls = []
+                for i in range(6):
+                    self.scrls.append([0, {}])
                 self.scrls[0] = self.scrls[1]
             def __call__(self, scroll, state, *args):
+                if type(self) == Spike:
+                    if scroll.equals('rarity'):
+                        scroll = scroll + '♥'
+                    elif scroll.startswith('rarity='):
+                        scroll = scroll.replace('=', '♥=')
                 if state == 0:
-                    print('Proofreading: %s' % scroll)
+                    print('Inspecting installed scrolls')
                 elif state == 1:
-                    self.updateadd.append(scroll)
+                    print('Proofreading: %s' % scroll)
                 elif state == 2:
-                    print('Resolving conflicts')
+                    self.update_add.add(scroll[:(scroll + '=').find('=')])
                 elif state == 3:
-                    if scroll in self.depadd:
-                        self.depadd[scroll] += args[0]
-                    else:
-                        self.depadd[scroll] = args[0]
+                    print('Resolving conflicts')
                 elif state == 4:
-                    if scroll in self.replaceremove:
-                        self.replaceremove[scroll] += args[0]
+                    if scroll in self.dep_add:
+                        self.dep_add[scroll] += args[0]
                     else:
-                        self.replaceremove[scroll] = args[0]
+                        self.dep_add[scroll] = args[0]
                 elif state == 5:
-                    self.skipping = args[3]
-                    if len(self.skipping) > 0:
-                        for re in self.skipping:
-                            print('Skipping %s' % re)
-                    elif len(args[0]) > 0:
-                        for fresh in args[2]:
-                            print('Installing%s' % fresh)
-                    elif len(args[1]) > 0:
-                        for re in args[2]:
-                            print('Reinstalling %s' % re)
-                    elif len(args[2]) > 0:
-                        for update in args[2]:
-                            print('Explicitly updating %s' % update)
-                    elif len(self.updateadd) > 0:
-                        for update in self.updateadd:
-                            print('Updating %s' % update)
-                    elif len(self.depadd) > 0:
-                        for dep in self.depadd:
-                            print('Adding %s, required by: %s' % (dep, ', '.join(self.depadd[dep])))
-                    elif len(self.replaceremove) > 0:
-                        for replacee in self.replaceremove:
-                            print('Replacing %s with %s' % (replacee, ', '.join(self.replaceremove[replacee])))
-                    print('\033[01mContinue? (y/n)\033[00m')
-                    return input().lower().startswith('y')
+                    if scroll in self.replace_remove:
+                        self.replace_remove[scroll] += args[0]
+                    else:
+                        self.replace_remove[scroll] = args[0]
                 elif state == 6:
+                    fresh_installs, reinstalls, update, downgrading, skipping = args
+                    for scrl in skipping:
+                        print('Skipping %s' % scrl)
+                    for scrl in fresh_installs:
+                        print('Installing %s' % scrl)
+                    for scrl in reinstalls:
+                        print('Reinstalling %s' % scrl)
+                    for scrl in update:
+                        print('Updating %s' % scrl)
+                    for dep in self.dep_add:
+                        print('Adding %s, required by: %s' % (dep, ', '.join(self.dep_add[dep])))
+                    for replacee in self.replace_remove:
+                        print('Replacing %s with %s' % (replacee, ', '.join(self.replace_remove[replacee])))
+                    for scrl in downgrading:
+                        print('Downgrading %s' % scrl)
+                    while True:
+                        print('\033[01mContinue? (y/n)\033[00m')
+                        answer = input().lower()
+                        if answer.startswith('y') or answer.startswith('n'):
+                            return answer.startswith('y')
+                elif state == 7:
+                    print('Inspecting scroll repository for providers')
+                elif state == 8:
                     print('\033[01mSelect provider for virtual pony: %s\033[00m' % scroll)
                     i = 0
                     for prov in args[0]:
@@ -879,52 +903,83 @@ class Spike():
                     except:
                         pass
                     return None
+                elif state == 9:
+                    print('There are sone scrolls that require pony interaction to be build:')
+                    for scroll in args[0]:
+                        print('    %s' % scroll)
+                    allowed = args[1]
+                    print('\033[01mWhen do you want to build scroll that require interaction:\033[00m')
+                    if (allowed & (1 << 0)) != 0:
+                        print('    w - Whenever, I will not leave my precious magic box')
+                    if (allowed & (1 << 1)) != 0:
+                        print('    e - Before all other scrolls')
+                    if (allowed & (1 << 2)) != 0:
+                        print('    E - Before all other scrolls, and download others\' sources afterwards')
+                    if (allowed & (1 << 3)) != 0:
+                        print('    l - After all other scrolls')
+                    print('    a - Abort!')
+                    while True:
+                        when = input()
+                        if (allowed & (1 << 0)) != 0:
+                            if when == 'w' or when == 'W':
+                                return 0
+                        if (allowed & (1 << 1)) != 0:
+                            if when == 'e':
+                                return 1
+                        if (allowed & (1 << 2)) != 0:
+                            if when == 'E':
+                                return 2
+                        if (allowed & (1 << 3)) != 0:
+                            if when == 'l' or when == 'L':
+                                return 3
+                        if when == 'a':
+                            return None
+                        print('\033[01mInvalid option!\033[00m')
                 else:
-                    if scroll not in self.scrls[state - 7][1]:
-                        self.scrls[state - 7][0] += 1
-                        self.scrls[state - 7][1][scroll] = self.scrls[state - 7][0]
-                    (scrli, scrln) = (self.scrls[state - 7][1][scroll], self.scrls[state - 7][0])
+                    if scroll not in self.scrls[state - 10][1]:
+                        self.scrls[state - 10][0] += 1
+                        self.scrls[state - 10][1][scroll] = self.scrls[state - 10][0]
+                    (scrli, scrln) = (self.scrls[state - 10][1][scroll], self.scrls[state - 10][0])
                     if scrli != scrln:
-                        if state != 9:
+                        if state != 12:
                             print('\033[%iAm', scrln - scrli)
-                    if state == 7:
+                    if state == 10:
                         (source, progress, end) = args
                         bar = '[\033[01;3%im%s\033[00m]'
                         bar %= (2, 'DONE') if progress == end else (3, '%2.1f' % (progress / end))
                         print('[%s] (%i/%i) Downloading %s: %s' % (bar, scrli, scrln, scroll, source))
-                    elif state == 8:
+                    elif state == 11:
                         (progress, end) = args
                         bar = '[\033[01;3%im%s\033[00m]'
                         bar %= (2, 'DONE') if progress == end else (3, '%2.1f' % (progress / end))
                         print('[%s] (%i/%i) Verifing %s' % (bar, scrli, scrln, scroll))
-                    elif state == 9:
+                    elif state == 12:
                         print('(%i/%i) Compiling %s' % (scrli + 1, scrln, scroll))
-                    elif state == 10:
+                    elif state == 13:
                         (progress, end) = args
                         bar = '[\033[01;3%im%s\033[00m]'
                         bar %= (2, 'DONE') if progress == end else (3, '%2.1f' % (progress / end))
                         print('[%s] (%i/%i) Checking file conflicts for %s' % (bar, scrli, scrln, scroll))
-                    elif state == 11:
+                    elif state == 14:
                         (progress, end) = args
                         bar = '[\033[01;3%im%s\033[00m]'
                         bar %= (2, 'DONE') if progress == end else (3, '%2.1f' % (progress / end))
                         print('[%s] (%i/%i) Installing %s' % (bar, scrli, scrln, scroll))
                     if scrli != scrln:
-                        if state != 9:
+                        if state != 12:
                             print('\033[%iBm', scrln - (scrli + 1))
                 return None
         
-        return LibSpike.update(Agg(), root, ignore, shred)
+        return LibSpike.update(Agg(), root, ignore)
     
     
-    def erase(self, ponies, root = '/', private = False, shred = False):
+    def erase(self, ponies, root = '/', private = False):
         '''
         Uninstall ponies
         
         @param   ponies:list<str>  Ponies to uninstall
         @param   root:str          Mounted filesystem from which to perform uninstallation
         @param   private:bool      Whether to uninstall user private ponies rather than user shared ponies
-        @param   shred:bool        Whether to perform secure removal when possible
         @return  :byte             Exit value, see description of `mane`
         '''
         class Agg:
@@ -938,6 +993,11 @@ class Spike():
                 self.next = 0
                 self.pos = 0
             def __call__(self, scroll, progress, end):
+                if type(self) == Spike:
+                    if scroll.equals('rarity'):
+                        scroll = scroll + '😢'
+                    elif scroll.startswith('rarity='):
+                        scroll = scroll.replace('=', '😢=')
                 if directory not in self.dirs:
                     self.dirs[directory] = self.next
                     self.next += 1
@@ -956,7 +1016,7 @@ class Spike():
                 print('[%s\033[00m] %s\n' % (s, directory))
                 self.pos = p + 1
         
-        return LibSpike.erase(Agg(), ponies, root, private, shred)
+        return LibSpike.erase(Agg(), ponies, root, private)
     
     
     def ride(self, pony, private = False):
@@ -1112,7 +1172,7 @@ class Spike():
         return LibSpike.archive(Agg(), archive, scrolls)
     
     
-    def rollback(self, archive, keep = False, skip = False, gradeness = 0, shred = False):
+    def rollback(self, archive, keep = False, skip = False, gradeness = 0):
         '''
         Roll back to an archived state
         
@@ -1120,7 +1180,6 @@ class Spike():
         @param   keep:bool      Keep non-archived installed ponies rather than uninstall them
         @param   skip:bool      Skip rollback of non-installed archived ponies
         @param   gradeness:int  -1 for downgrades only, 1 for upgrades only, 0 for rollback regardless of version
-        @param   shred:bool     Whether to perform secure removal when possible
         @return  :byte          Exit value, see description of `mane`
         '''
         class Agg:
@@ -1151,7 +1210,7 @@ class Spike():
                 print('[%s\033[00m] (%i/%i) %s\n' % (s, scrolli, scrolln, scroll))
                 self.pos = p + 1
         
-        return LibSpike.rollback(Agg(), archive, keep, skipe, gradeness, shred)
+        return LibSpike.rollback(Agg(), archive, keep, skipe, gradeness)
     
     
     def proofread(self, scrolls):
@@ -1181,11 +1240,10 @@ class Spike():
         return LibSpike.proofread(Agg(), scrolls)
     
     
-    def clean(self, private = False, shred = False):
+    def clean(self, private = False):
         '''
         Remove unneeded ponies that are installed as dependencies
         
-        @param   shred:bool    Whether to perform secure removal when possible
         @param   private:bool  Whether to uninstall user private ponies rather than user shared ponies
         @return  :byte         Exit value, see description of `mane`
         '''
@@ -1218,14 +1276,46 @@ class Spike():
                 print('[%s\033[00m] %s\n' % (s, directory))
                 self.pos = p + 1
         
-        return LibSpike.clean(Agg(), shred)
+        return LibSpike.clean(Agg(), private)
     
     
-    def interactive(self, shred = False):
+    def example_shot(self, scrolls, viewer, all_at_once = False):
+        '''
+        Display example shots for scrolls
+        
+        @param   scrolls:list<str>  Scrolls of which to display example shots
+        @param   viewer:str         The PNG viewer to use
+        @param   all_at_once:bool   Whether to display all images in a single process instance
+        @return  :byte              Exit value, see description of `mane`
+        '''
+        class Agg:
+            '''
+            aggregator:(str, str?)→void
+                Feed a scroll and its example shot file when found, or the scroll and `None` if there is not example shot.
+            '''
+            def __init__(self):
+                self.queue = [viewer]
+            def __call__(self, scroll, shot):
+                if shot is None:
+                    print('%s has no example shot' % scroll)
+                elif all_at_once:
+                    self.queue.append(shot)
+                else:
+                    print(scroll)
+                    Popen([viewer, shot]).communicate()
+            def done(self):
+                if all_at_once:
+                    Popen(self.queue).communicate()
+        
+        exit_value = LibSpike.example_shot(Agg(), scrolls)
+        if exit_value != 0:
+            Agg.done()
+        return exit_value
+    
+    def interactive(self):
         '''
         Start interactive mode with terminal graphics
         
-        @param   shred:bool  Whether to perform secure removal when possible
         @return  :byte       Exit value, see description of `mane`
         '''
         if not sys.stdout.isatty:

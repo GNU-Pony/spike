@@ -7,7 +7,7 @@ in the package installations and package repositories, and local changes
 can be done to the repositories that will be preserved even when that part
 of the repository is updated.
 
-Spike inheritally has integrity control, this however does not been that
+Spike inheritally has integrity control, this however does not mean that
 a packages does not need signing, but git does support GPG-signing and
 verification [Git 1.8.2-rc4].
 

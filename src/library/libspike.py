@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 '''
 spike – a package manager running on top of git
@@ -19,20 +19,21 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
 import os
-import re
 import inspect
 # TODO use git in commands
 
-from libspikehelper import *
-from gitcord import *
-from sha3sum import *
-from spikedb import *
-from dbctrl import *
-from algospike import *
+from scales.installer import *
+from scales.bootstrapper import *
+from scales.scrollfinder import *
+from database.spikedb import *
+from database.dbctrl import *
+from algorithmic.algospike import *
+from algorithmic.scrlver import *
+from algorithmic.sha3sum import *
+from auxiliary.scrollmagick import *
+from auxiliary.auxfunctions import *
+from library.libspikehelper import *
 from dragonsuite import *
-from scrlver import *
-from scrollmagick import *
-from auxfunctions import *
 
 
 
@@ -65,14 +66,62 @@ class LibSpike(LibSpikeHelper):
                  26 - File is of wrong type, normally a directory or regular file when the other is expected
                  27 - Corrupt database
                  28 - Pony is required by another pony
+                 29 - Circular make dependency
+                254 - User aborted
                 255 - Unknown error
-    
-    @author  Mattias Andrée (maandree@member.fsf.org)
     '''
+    
+    @staticmethod
+    def initialise(shred = False):
+        '''
+        Perform initalisations
+        
+        @param  shred:bool  Whether to preform secure removal when possible
+        '''
+        util = lambda u : SPIKE_PATH + 'src/util-replacements/' + u
+        export('SPIKE_SHRED_OPTS', '-n 3 -z -u')
+        if shred:
+            export('shred', get('SPIKE_SHRED_OPTS'))
+        optlibexec = SPIKE_PATH + 'add-on/libexec'
+        if os.path.exists(optlibexec) and os.path.isdir(optlibexec):
+            export('PATH', '%s:%s' % (optlibexec, get('PATH')))
+        if os.path.exists(util('common')) and os.path.isdir(util('common')):
+            export('PATH', '%s:%s' % (util('common'), get('PATH')))
+        LibSpike.__load_addons()
+        if shred:
+            export('PATH', '%s:%s' % (util('shred'), get('PATH')))
+        export('SPIKE_OLD_PATH', get('PATH'))
     
     
     @staticmethod
-    def bootstrap(aggregator):
+    def terminate():
+        '''
+        Perform terminations
+        '''
+        LibSpike.unlock()
+    
+    
+    @staticmethod
+    def __load_addons():
+        '''
+        Load add-ons
+        '''
+        if os.path.isdir(SPIKE_PATH + 'add-on'):
+            for addon in os.listdir(SPIKE_PATH + 'add-on'):
+                addon = SPIKE_PATH + 'add-on/' + addon
+                if (addon[-1] != '~') and os.path.isfile(addon) and os.access(addon, os.R_OK | os.X_OK):
+                    try:
+                        code = None
+                        with open(addon, 'rb') as file:
+                            code = file.read().decode('utf8', 'replace') + '\n'
+                            code = compile(code, addon, 'exec')
+                        exec(code, globals())
+                    except:
+                        pass
+    
+    
+    @staticmethod
+    def bootstrap(aggregator, verify):
         '''
         Update the spike and the scroll archives
         
@@ -81,8 +130,10 @@ class LibSpike(LibSpikeHelper):
                      Feed a directory path and 1 when a directory bootstrap process is beginning.
                      Feed a directory path and 2 when a directory bootstrap process has ended.
         
-        @return  :byte  Exit value, see description of `LibSpike`, the possible ones are: 0, 12, 24
+        @param   verify:bool  Whether to verify signatures
+        @return  :byte        Exit value, see description of `LibSpike`, the possible ones are: 0, 12, 24
         '''
+        LibSpike.lock(True)
         if not os.path.exists(SPIKE_PATH):
             return 12
         
@@ -90,26 +141,15 @@ class LibSpike(LibSpikeHelper):
         repositories = set()
         
         # List Spike for update if not frozen
-        if not os.path.exists(SPIKE_PATH + '.git/frozen.spike'):
-            repositories.add(os.path.realpath(SPIKE_PATH))
-            update.append(SPIKE_PATH)
-            aggregator(SPIKE_PATH, 0)
+        Bootstrapper.queue(SPIKE_PATH, repositories, update, aggregator)
         
         # Look for repositories and list, for update, those that are not frozen
-        for file in [SPIKE_PATH + 'repositories'] + get_confs('repositories'):
-            if os.path.isdir(file):
-                for repo in os.listdir(file):
-                    repo = os.path.realpath(file + '/' + repo)
-                    if repo not in repositories:
-                        repositories.add(repo) 
-                        if not os.path.exists(repo + '/.git/frozen.spike'):
-                            update.append(SPIKE_PATH[:-1])
-                            aggregator(SPIKE_PATH[:-1], 0)
+        Bootstrapper.queue_repositores([SPIKE_PATH + 'repositories'] + get_confs('repositories'), repositories, update, aggregator)
         
         # Update Spike and repositories, those that are listed
         for repo in update:
             aggregator(repo, 1)
-            if not Gitcord(repo).updateBranch():
+            if not Bootstrapper.update(repo, verify):
                 return 24
             aggregator(repo, 2)
         
@@ -129,92 +169,23 @@ class LibSpike(LibSpikeHelper):
         @param   notinstalled:bool   Look for not installed packages
         @return  :byte               Exit value, see description of `LibSpike`, the possible ones are: 0
         '''
-        # Simplify patterns
-        pats = []
-        for pattern in patterns:
-            slashes = len(pattern) - len(patterns.replace('/', ''))
-            if slashes <= 2:
-                pats.append(('/' * (2 - slashes) + pattern).split('/'))
+        LibSpike.lock(False)
+        
+        patterns = ScrollFinder.simplify_pattern(patterns)
         
         # Get repository names and (path, found):s
         repositories = {}
         for superrepo in ['installed' if installed else None, 'repositories' if notinstalled else None]:
             if superrepo is not None:
                 for file in [SPIKE_PATH + superrepo] + get_confs(superrepo):
-                    if os.path.isdir(file):
-                        for repo in os.listdir(file):
-                            reponame = repo
-                            repo = os.path.realpath(file + '/' + repo)
-                            if os.path.isdir(repo) and (reponame not in repositories):
-                                repositories[reponame] = (repo, [])
+                    ScrollFinder.get_repositories(repositories, file)
         
-        # Match repositories
-        for pat in pats:
-            r = pat[0]
-            if len(r) == 0:
-                for repo in repositories.keys():
-                    repositories[repo][1].append(pat)
-            else:
-                for repo in repositories.keys():
-                    if re.search(r, repo) is not None:
-                        repositories[repo][1].append(pat)
-        
-        # Get categories
-        categories = {}
-        for repo in repositories.keys():
-            rdir = repositories[repo][0]
-            for category in os.listdir(rdir):
-                cdir = '%s/%s' % (rdir, category)
-                if os.path.isdir(cdir):
-                    if repo not in categories:
-                        categories[repo] = {}
-                    categories[repo][category] = (cdir, [])
-        
-        # Match categories
-        for repo in repositories.keys():
-            pats = repositories[repo][1]
-            out = categories[repo]
-            cats = out.keys()
-            for pat in pats:
-                c = pat[1]
-                if len(c) == 0:
-                    for cat in cats:
-                        out[cat][1].append(pat)
-                else:
-                    for cat in cats:
-                        if re.search(c, cat) is not None:
-                            out[cat][1].append(pat)
-        
-        # Flatten categories
-        repos = categories.keys()
-        for repo in repos:
-            for cat in categories[repo].keys():
-                cat = '%s/%s' % (repo, cat)
-                categories[cat] = categories[repo]
-            del categories[repo]
-        
-        # Get scrolls
-        scrolls = {}
-        for cat in categories.keys():
-            cdir = categories[cat][0]
-            for scroll in os.listdir(cdir):
-                sfile = '%s/%s' % (cdir, scroll)
-                if os.path.isfile(sfile) and scroll.endswith('.scroll') and not scroll.startswith('.'):
-                    scroll = scroll[:-len('.scroll')]
-                    dict_append(scrolls, cat, (scroll, '%s/%s' % (cat, scroll)))
-        
-        # Match and report
-        for cat in categories.keys():
-            pats = categories[cat][1]
-            for pat in pats:
-                if len(pat) == 0:
-                    for scroll in scrolls[cat]:
-                        aggregator(scroll[1])
-                else:
-                    p = pat[2]
-                    for (scroll, full) in scrolls[cat]:
-                        if re.search(p, scroll) is not None:
-                            aggregator(full)
+        ScrollFinder.match_repositories(repositories, patterns)
+        categories = ScrollFinder.get_categories(repositories)
+        ScrollFinder.match_categories(repositories, categories)
+        ScrollFinder.flatten_categories(categories)
+        scrolls = ScrollFinder.get_scrolls(categories)
+        ScrollFinder.match_and_report(categories, scrolls, aggregator)
         
         return 0
     
@@ -231,6 +202,7 @@ class LibSpike(LibSpikeHelper):
         @param   files:list<str>  Files for which to do lookup
         @return  :byte            Exit value, see description of `LibSpike`, the possible ones are: 0, 27
         '''
+        LibSpike.lock(False)
         files = [os.path.abspath(file) for file in files]
         DB = DBCtrl(SPIKE_PATH)
         
@@ -311,26 +283,35 @@ class LibSpike(LibSpikeHelper):
     
     
     @staticmethod
-    def write(aggregator, scrolls, root = '/', private = False, explicitness = 0, nodep = False, force = False, shred = False):
+    def write(aggregator, scrolls, root = '/', private = False, explicitness = 0, nodep = False, force = False):
         '''
         Install ponies from scrolls
         
-        @param   aggregator:(str?, int, [*])→(void|bool|str)
-                     Feed a scroll (`None` only at state 2 and 5) and a state (can be looped) during the process of a scroll.
-                     The states are: 0 - proofreading
-                                     1 - scroll added because of being updated
-                                     2 - resolving conflicts
-                                     3 - scroll added because of dependency. Additional parameters: requirers:list<str>
-                                     4 - scroll removed because due to being replaced. Additional parameters: replacer:str
-                                     5 - verify installation. Additional parameters: freshinstalls:list<str>, reinstalls:list<str>, update:list<str>, skipping:list<str>
+        @param   aggregator:(str?, int, [*])→(void|bool|str|int?)
+                     Feed a scroll (`None` only at state 0, 3, 6, 7 and 9) and a state (can be looped) during the process of a scroll.
+                     The states are: 0 - inspecting installed scrolls
+                                     1 - proofreading
+                                     2 - scroll added because of being updated
+                                     3 - resolving conflicts
+                                     4 - scroll added because of dependency. Additional parameters: requirers:list<str>
+                                     5 - scroll removed because due to being replaced. Additional parameters: replacer:str
+                                     6 - verify installation. Additional parameters: fresh_installs:list<str>, reinstalls:list<str>, update:list<str>, downgrading:list<str>, skipping:list<str>
                                                               Return: accepted:bool
-                                     6 - select provider pony. Additional parameters: options:list<str>
+                                     7 - inspecting non-install scrolls for providers
+                                     8 - select provider pony. Additional parameters: options:list<str>
                                                                Return: select provider:str? `None` if aborted
-                                     7 - fetching source. Additional parameters: source:str, progress state:int, progress end:int
-                                     8 - verifying source. Additional parameters: progress state:int, progress end:int
-                                     9 - compiling
-                                    10 - file conflict check: Additional parameters: progress state:int, progress end:int
-                                    11 - installing files: Additional parameters: progress state:int, progress end:int
+                                     9 - select when to build ponies which require interaction. Additional parameters: interactive:list<str>, allowed:int
+                                                                                                Return: when:excl-flag? `None` if aborted
+                                    10 - fetching source. Additional parameters: source:str, progress state:int, progress end:int
+                                    11 - verifying source. Additional parameters: progress state:int, progress end:int
+                                    12 - compiling
+                                    13 - file conflict check: Additional parameters: progress state:int, progress end:int
+                                    14 - installing files: Additional parameters: progress state:int, progress end:int
+                     when:excl-flag values: 0 - Build whenever
+                                            1 - Build early
+                                            2 - Build early and fetch separately
+                                            3 - Build late
+                     allowed:int values: The union of all `1 << when` with allowed `when`
         
         @param   scrolls:list<str>  Scroll to install
         @param   root:str           Mounted filesystem to which to perform installation
@@ -338,206 +319,233 @@ class LibSpike(LibSpikeHelper):
         @param   explicitness:int   -1 for install as dependency, 1 for install as explicit, and 0 for explicit if not previously as dependency
         @param   nodep:bool         Whether to ignore dependencies
         @param   force:bool         Whether to ignore file claims
-        @param   shred:bool         Whether to perform secure removal when possible
-        @return  :byte              Exit value, see description of `LibSpike`, the possible ones are: 0, 6, 8, 9, 22, 255 (TODO)
+        @return  :byte              Exit value, see description of `LibSpike`, the possible ones are: 0, 6, 8, 9, 22, 29, 254, 255 (TODO)
         '''
-        # Set shred and root
-        if shred:
-            export('shred', 'yes')
+        ## TODO checkdepends
+        LibSpike.lock(True)
+        # Set root
         if root is not None:
             if root.endswith('/'):
                 root = root[:-1]
             SPIKE_PATH = root + SPIKE_PATH
         
-        # Constants
-        store_fields = 'pkgname pkgvel pkgrel epoch arch freedom private conflicts replaces'
-        store_fields += ' provides extension variant patch patchbefore patchafter groups'
-        store_fields += ' depends makedepends checkdepends optdepends'
-        store_fields = store_fields.split('')
-        
         # Information needed in the progress and may only be extended
-        installed_field = {}
+        installed_info = {}
+        scroll_info = {}
         field_installed = {}
-        already_installed = {}
-        scroll_field = {}
         field_scroll = {}
-        freshinstalls = []
-        reinstalls = []
-        update = []
-        skipping = []
+        installed_versions = {}
+        providers = None
+        provider_files = None
+        not_found = set()
         uninstall = []
         
+        scroll_field = {}
+        installing = {}
+        
+        new_scrolls = {}
+        for scroll in scrolls:
+            new_scrolls[scroll] = None
+        
         # Load information about already installed scrolls
-        # TODO this should be reported as separate part in the progress
         # TODO this should be better using spikedb
-        installed_scrollfiles = locate_all_scrolls(True, None if private else False)
-        for scrollfile in installed_scrollfiles:
+        aggregator(scroll, 0)
+        for scrollfile in locate_all_scrolls(True, None if private else False):
             try:
-                # Set environment variables (re-export before each scroll in case a scroll changes it)
-                ScrollMagick.export_environment()
-                
-                # Read scroll
-                ScrollMagick.init_fields()
-                ScrollMagick.execute_scroll(scrollfile)
-                
-                # Get ScrollVersion
-                scroll = [globals()[var] for var in ('pkgname', 'epoch', 'pkgver', 'pkgrel')]
-                scroll = ScrollVersion('%s=%i:%s-%i' % scroll)
-                already_installed[scroll] = scroll
-                
-                # Store fields and transposition
-                fields = {}
-                installed_field[scroll] = fields
-                for field in store_fields:
-                    value = globals()[field]
-                    fields[field] = value
-                    if field not in field_installed:
-                        field_installed[field] = {}
-                    map = field_installed[field]
-                    if (value is not None) and (type(value) in (str, list)):
-                        for val in value if isinstance(value, list) else [value]:
-                            if val is not None:
-                                dict_append(map, value, scroll)
+                scrollinfo = Installer.load_information(scrollfile)
+                Installer.transpose_fields(scrollinfo, field_installed)
+                installed_info[scrollinfo.scroll] = scrollinfo
+                installed_versions[scrollinfo.name] = scrollinfo.scroll
             except:
                 return 255 # So how did we install it...
         
-        # Proofread scrolls
-        def agg(scroll, state, *_):
-            if state == 0:
-                aggregator(scroll, 0)
-        error = proofread(agg, scrolls)
-        if error != 0:
-            return error
-        
-        # Report that we are looking for conflicts
-        aggregator(None, 2)
-        
-        # Get scroll fields
-        for scroll in scrolls:
-            scrollfile = locate_scroll(scroll)
-            if scrollfile is None:
-                return 255 # but, the proofreader already found them...
-            else:
-                try:
-                    # Set environment variables (re-export before each scroll in case a scroll changes it)
-                    ScrollMagick.export_environment()
-                    
-                    # Read scroll
-                    ScrollMagick.init_fields()
-                    ScrollMagick.execute_scroll(scrollfile)
-                    
-                    # Store fields and transposition
-                    fields = {}
-                    scroll_field[scroll] = fields
-                    for field in store_fields:
-                        value = globals()[field]
-                        fields[field] = value
-                        if field not in field_scroll:
-                            field_scroll[field] = {}
-                        map = field_scroll[field]
-                        if (value is not None) and (type(value) in (str, list)):
-                            for val in value if isinstance(value, list) else [value]:
-                                if val is not None:
-                                    dict_append(map, val, scroll)
-                except:
-                    return 255 # but, the proofreader did not have any problem...
-        
-        # Identify scrolls that may not be installed at the same time
-        conflicts = set()
-        installed = set()
-        provided = set()
-        for scrollset in [scroll_field, installed_field]:
-            for scroll in scrollset:
-                fields = scrollset[scroll]
-                if not isinstance(scroll, ScrollVersion):
-                    scroll = [fields[var] for var in ('pkgname', 'epoch', 'pkgver', 'pkgrel')]
-                    scroll = ScrollVersion('%s=%i:%s-%i' % scroll)
-                if scroll in installed:
-                    continue
-                if scroll in conflicts:
-                    return 8
-                scroll.union_add(installed)
-                for provides in feilds['provides']:
-                    ScrollVersion(provides).union_add(provided)
-                for conflict in fields['conflicts']:
-                    conflict = ScrollVersion(conflict)
-                    if (conflict in installed) or (conflict in provided):
-                        return 8
-                    conflict.union_add(conflicts)
-        
-        # Look for missing dependencies
-        needed = set()
-        requirer = {}
-        for scroll in scroll_field:
-            fields = scrollset[scroll]
-            makedepends = [None if dep == '' else ScrollVersion(deps) for deps in fields['makedepends']]
-            depends     = [None if dep == '' else ScrollVersion(deps) for deps in fields['depends']]
-            for deps in makedepends + depends:
-                if dep is None:
-                    if (not os.path.exists(SPIKE_PATH)) or (not os.path.isdir(SPIKE_PATH)):
-                        return 9
+        while True:
+            # Proofread scrolls
+            def agg(scroll, state, *_):
+                if state == 0:
+                    aggregator(scroll, 1)
+            error = proofread(agg, new_scrolls)
+            if error != 0:
+                return error
+            
+            # Report that we are looking for conflicts
+            aggregator(None, 3)
+            
+            # Get scroll fields
+            for scroll in new_scrolls.key():
+                scrollfile = locate_scroll(scroll) if scroll[new_scrolls] is None else scroll[new_scrolls]
+                if scrollfile is None:
+                    return 255 # but, the proofreader already found them...
                 else:
-                    if (deps not in installed) and (deps not in provided):
-                        deps.union_add(needed)
-                        dict_append(requirer, deps.name, scroll)
-        
-        # Locate the missing dependencies
-        not_found = set()
-        new_scrolls = {}
-        for scroll in needed:
-            path = locate_scroll(scroll.name, False)
-            if path is None:
-                not_found.add(scroll)
+                    try:
+                        scrollinfo = Installer.load_information(scrollfile)
+                        Installer.transpose_fields(scrollinfo, field_scroll)
+                        scroll_info[scrollinfo.scroll] = scrollinfo
+                    except:
+                        return 255 # but, the proofreader did not have any problem...
+            
+            # Identify scrolls that may not be installed at the same time
+            if not Installer.check_conflicts([scroll_info, installed_info]):
+                return 8
+            
+            # Look for missing dependencies
+            needed = set()
+            requirer = {}
+            error = find_dependencies(scroll_info, needed, requirer, lambda scroll : (scroll.name == 'spike') and os.path.exists(SPIKE_PATH) and os.path.isdir(SPIKE_PATH))
+            if error != 0:
+                return error
+            
+            # Locate the missing dependencies
+            new_scrolls = {}
+            for scroll in needed:
+                path = locate_scroll(scroll.name, False)
+                if path is None:
+                    not_found.add(scroll)
+                else:
+                    new_scrolls[scroll] = path
+                    aggregator(scroll.name, 4, requirer[scroll.name])
+            
+            # Remove replaced ponies
+            Installer.replacements(scroll_info, installed_info, field_installed, uninstall, aggregator)
+            
+            # Loop if we got some additional scrolls
+            if len(new_scrolls.keys()) > 0:
+                continue
+            
+            # We as for confirmation first because if optimisation is not done, finding provider can take some serious time
+            fresh_installs, reinstalls, update, downgrading, skipping = [], [], [], [], []
+            Installer.update_types(scroll_info, installed_versions, fresh_installs, reinstalls, update, downgrading, skipping)
+            if not aggregator(None, 6, fresh_installs, reinstalls, update, downgrading, skipping):
+                return 254
+            
+            # Select providers and loop if any was needed
+            if len(not_found) > 0:
+                # Read all scrolls so we can find providers
+                # TODO this should be better using spikedb
+                if providers is None:
+                    aggregator(None, 7)
+                    providers = {}
+                    provider_files = {}
+                    for scrollfile in locate_all_scrolls(False):
+                        scroll = Installer.load_information(scrollfile)
+                        for provides in scroll['provides']:
+                            provides.slice_map(providers, scroll.scroll)
+                            provider_file[scroll.scroll.full] = scroll.file
+                
+                # Select provider
+                for scroll in not_found:
+                    options = ScrollVersion(scroll).get_all(providers)
+                    if len(options) == 0:
+                        return 9
+                    option = aggregator(scroll, 8, [opt.scroll.full for opt in options])
+                    if option is None:
+                        return 254
+                    option = ScrollVersion(option)
+                    new_scrolls[option.name] = provider_file[option]
+                not_found = set()
             else:
-                new_scrolls[scroll] = path
-                aggregator(scroll.name, 3, requirer[scroll.name])
+                break
         
-        # Remove replaced ponies
-        for scroll in scroll_field:
-            fields = scrollset[scroll]
-            replaces = [ScrollVersion(deps) for deps in fields['replaces']]
-            if replaces in already_installed:
-                uninstall.append(already_installed[replaces])
-                del installed_field[replaces]
-                for field in field_installed:
-                    for value in field_installed[field]:
-                        field_installed[field][value].remove(replaces)
-                aggregator(replaces.name, 4, scroll)
+        # TODO at any time make dependencies have not yet been installed
+        #      all compiled scroll are to be installed. If an interactive scroll is non-installed
+        #      make dependancies whose scroll is not interactive, `when` make only be 0, or 3
+        #      if they are all at the end of the t:sorted list.
+        
+        # Topologically sort scrolls
+        tsorted = Installer.tsort_scrolls(scroll_info)
+        if tsorted is None:
+            return 29
+        
+        # Separate scrolls that need itneraction from those that do not
+        interactively_installed = []
+        noninteractively_installed = []
+        for (scroll, _) in tsorted:
+            if scroll['interactive']:
+                interactively_installed.append(scroll)
+            else:
+                noninteractively_installed.append(scroll)
+        
+        # Select when to build scrolls that need interaction
+        when = 0
+        allowed_when = (1 << 4) - 1
+        if len(interactively_installed) > 0:
+            when = aggregator(None, 9, [scroll.scroll.full for scroll in interactively_installed], allowed_when)
+            if when is None:
+                return 254
+            if (0 < when) or (((1 << when) & allowed_when) == 0):
+                return 255
+        
+        # Get order to download and build scrolls
+        first_download, second_download = tsorted, []
+        first_build, second_build = first_download, second_build
+        if when == 1:
+            first_download, second_download = interactively_installed, noninteractively_installed
+        elif when == 2:
+            first_download, second_download = interactively_installed, noninteractively_installed
+            first_build, second_build = first_download, second_download
+        elif when == 3:
+            first_download, second_download = noninteractively_installed, interactively_installed
+        
+        # Download and verify sources and compile
+        for (download_list, build_list) in [(first_download, first_build), (second_download, second_build)]:
+            # Download sources
+            for scroll in download_list:
+                pass ## TODO download
+            
+            # Verify sources
+            ## TODO verify
+            
+            # Compile
+            for scroll in build_list:
+                pass ## TODO build
+        
+        # Check for file conflicts
+        if not force:
+            pass ## TODO check for file conflicts
+        
+        ## TODO install
         
         return 0
     
     
     @staticmethod
-    def update(aggregator, root = '/', ignores = [], private = False, shred = False):
+    def update(aggregator, root = '/', ignores = [], private = False):
         '''
         Update installed ponies
         
-        @param   aggregator:(str?, int, [*])→(void|bool|str)
-                     Feed a scroll (`None` only at state 2 and 5) and a state (can be looped) during the process of a scroll.
-                     The states are: 0 - proofreading
-                                     1 - scroll added because of being updated
-                                     2 - resolving conflicts
-                                     3 - scroll added because of dependency. Additional parameters: requirers:list<str>
-                                     4 - scroll removed because due to being replaced. Additional parameters: replacer:str
-                                     5 - verify installation. Additional parameters: freshinstalls:list<str>, reinstalls:list<str>, update:list<str>, skipping:list<str>
+        @param   aggregator:(str?, int, [*])→(void|bool|str|int?)
+                     Feed a scroll (`None` only at state 0, 3, 6, 7 and 9) and a state (can be looped) during the process of a scroll.
+                     The states are: 0 - inspecting installed scrolls
+                                     1 - proofreading
+                                     2 - scroll added because of being updated
+                                     3 - resolving conflicts
+                                     4 - scroll added because of dependency. Additional parameters: requirers:list<str>
+                                     5 - scroll removed because due to being replaced. Additional parameters: replacer:str
+                                     6 - verify installation. Additional parameters: fresh_installs:list<str>, reinstalls:list<str>, update:list<str>, downgrading:list<str>, skipping:list<str>
                                                               Return: accepted:bool
-                                     6 - select provider pony. Additional parameters: options:list<str>
+                                     7 - inspecting non-install scrolls for providers
+                                     8 - select provider pony. Additional parameters: options:list<str>
                                                                Return: select provider:str? `None` if aborted
-                                     7 - fetching source. Additional parameters: source:str, progress state:int, progress end:int
-                                     8 - verifying source. Additional parameters: progress state:int, progress end:int
-                                     9 - compiling
-                                    10 - file conflict check: Additional parameters: progress state:int, progress end:int
-                                    11 - installing files: Additional parameters: progress state:int, progress end:int
+                                     9 - select when to build ponies which require interaction. Additional parameters: interactive:list<str>, allowed:int
+                                                                                                Return: when:excl-flag? `None` if aborted
+                                    10 - fetching source. Additional parameters: source:str, progress state:int, progress end:int
+                                    11 - verifying source. Additional parameters: progress state:int, progress end:int
+                                    12 - compiling
+                                    13 - file conflict check: Additional parameters: progress state:int, progress end:int
+                                    14 - installing files: Additional parameters: progress state:int, progress end:int
+                     when:excl-flag values: 0 - Build whenever
+                                            1 - Build early
+                                            2 - Build early and fetch separately
+                                            3 - Build late
+                     allowed:int values: The union of all `1 << when` with allowed `when`
         
         @param   root:str           Mounted filesystem to which to perform installation
         @param   ignores:list<str>  Ponies not to update
         @param   private:bool       Whether to update user private packages
-        @param   shred:bool         Whether to perform secure removal when possible
         @return  :byte              Exit value, see description of `LibSpike`, the possible ones are: 0 (TODO)
         '''
-        # Set shred and root
-        if shred:
-            export('shred', 'yes')
+        LibSpike.lock(True)
+        # Set root
         if root is not None:
             if root.endswith('/'):
                 root = root[:-1]
@@ -547,7 +555,7 @@ class LibSpike(LibSpikeHelper):
     
     
     @staticmethod
-    def erase(aggregator, ponies, root = '/', private = False, shred = False):
+    def erase(aggregator, ponies, root = '/', private = False):
         '''
         Uninstall ponies
         
@@ -558,16 +566,14 @@ class LibSpike(LibSpikeHelper):
         @param   ponies:list<str>  Ponies to uninstall
         @param   root:str          Mounted filesystem from which to perform uninstallation
         @param   private:bool      Whether to uninstall user private ponies rather than user shared ponies
-        @param   shred:bool        Whether to perform secure removal when possible
         @return  :byte             Exit value, see description of `LibSpike`, the possible ones are: 0, 6, 7, 14(internal bug), 20, 23, 27, 28, 255
         '''
         # TODO also remove dependencies, but verify
         
+        LibSpike.lock(True)
         error = 0
         try:
-            # Set shred and root
-            if shred:
-                export('shred', 'yes')
+            # Set root
             if root is not None:
                 if root.endswith('/'):
                     root = root[:-1]
@@ -765,6 +771,7 @@ class LibSpike(LibSpikeHelper):
         @param   private:bool  Whether the pony is user private rather than user shared
         @return  :byte         Exit value, see description of `LibSpike`, the possible ones are: 0, 6, 7, 20, 21, 27, 255
         '''
+        LibSpike.lock(False)
         # Verify that the scroll has been installed
         sink = DB.open_db(private, DB_PONY_NAME, DB_PONY_ID).fetch([], [pony])
         if len(sink) != 1:
@@ -789,6 +796,7 @@ class LibSpike(LibSpikeHelper):
                     return 21
                 else:
                     try:
+                        LibSpike.unlock()
                         ride(private)
                     except:
                         return 21
@@ -814,6 +822,7 @@ class LibSpike(LibSpikeHelper):
         @param   ponies:list<str>  Installed ponies for which to list claimed files
         @return  :byte             Exit value, see description of `LibSpike`, the possible ones are: 0, 7, 27
         '''
+        LibSpike.lock(False)
         DB = DBCtrl(SPIKE_PATH)
         error = [0]
         
@@ -905,8 +914,10 @@ class LibSpike(LibSpikeHelper):
         @param   notinstalled:bool     Whether to include not installed scrolls
         @return  :byte                 Exit value, see description of `LibSpike`, the possible ones are: 0, 6, 14, 20, 255
         '''
-        # TODO add required by (manditory, optional, make, check)
+        # TODO add required by (manditory, optional, make, check) and whether there exists an example shot
+        # TODO display `metalicense`
         
+        LibSpike.lock(False)
         # Fields
         preglobals = set(globals().keys())
         ScrollMagick.init_fields()
@@ -978,6 +989,7 @@ class LibSpike(LibSpikeHelper):
                                     aggregator(scroll, field, None, installed)
                                     continue
                                 value = globals()[field]
+                                value = ScrollMagick.field_display_convert(field, value)
                                 value = convert(value)
                                 if isinstance(value, str):
                                     value = [value]
@@ -1014,6 +1026,7 @@ class LibSpike(LibSpikeHelper):
         @param   force:bool         Whether to extend current file claim
         @return  :byte              Exit value, see description of `LibSpike`, the possible ones are: 0, 10, 11, 12, 27, 255
         '''
+        LibSpike.lock(True)
         DB = DBCtrl(SPIKE_PATH)
         files = [os.path.abspath(file) for file in files]
         for file in files:
@@ -1193,6 +1206,7 @@ class LibSpike(LibSpikeHelper):
         @param   private:bool       Whether the pony is user private rather the user shared
         @return  :byte              Exit value, see description of `LibSpike`, the possible ones are: 0, 27
         '''
+        LibSpike.lock(True)
         files = [os.path.abspath(file) for file in files]
         DB = DBCtrl(SPIKE_PATH)
         
@@ -1292,11 +1306,12 @@ class LibSpike(LibSpikeHelper):
         @param   scrolls:bool  Whether to only store scroll states and not installed files
         @return  :byte         Exit value, see description of `LibSpike`, the possible ones are: 0 (TODO)
         '''
+        LibSpike.lock(False)
         return 0
     
     
     @staticmethod
-    def rollback(aggregator, archive, keep = False, skip = False, gradeness = 0, shred = False):
+    def rollback(aggregator, archive, keep = False, skip = False, gradeness = 0):
         '''
         Roll back to an archived state
         
@@ -1307,11 +1322,9 @@ class LibSpike(LibSpikeHelper):
         @param   keep:bool      Keep non-archived installed ponies rather than uninstall them
         @param   skip:bool      Skip rollback of non-installed archived ponies
         @param   gradeness:int  -1 for downgrades only, 1 for upgrades only, 0 for rollback regardless of version
-        @param   shred:bool     Whether to perform secure removal when possible
         @return  :byte          Exit value, see description of `LibSpike`, the possible ones are: 0 (TODO)
         '''
-        if shred:
-            export('shred', 'yes')
+        LibSpike.lock(True)
         return 0
     
     
@@ -1327,6 +1340,8 @@ class LibSpike(LibSpikeHelper):
         @param   scrolls:list<str>  Scrolls to proofread
         @return  :byte              Exit value, see description of `LibSpike`, the possible ones are: 0, 6, 22
         '''
+        # TODO proofread `metalicense` and check for conflicts in `freedom`
+        LibSpike.lock(False)
         (error, n) = (0, len(scrolls))
         scrollfiles = [(scrolls[i], locate_scroll(scrolls[i]), i) for i in range(n)]
         
@@ -1354,7 +1369,7 @@ class LibSpike(LibSpikeHelper):
         def ispony(x):
             chars = set(('-', '+'))
             for (start, end) in (('0', '9'), ('a', 'z')):
-                for c in range(ord(start), ord(end) + 1)):
+                for c in range(ord(start), ord(end) + 1):
                     chars.add(chr(c))
             for i in range(x):
                 if x[i] not in chars:
@@ -1404,7 +1419,7 @@ class LibSpike(LibSpikeHelper):
                     if len(arch) == 0:
                         raise Exception('Field \'arch\' may not be empty')
                     
-                    ScrollMagick.check_is_list_format('freedom', False, int, lambda x : 0 <= x < (1 << 2))
+                    ScrollMagick.check_is_list_format('freedom', False, int, lambda x : 0 <= x < (1 << 8))
                     ScrollMagick.check_is_list_format('license', False, str, lambda x : len(x) > 0)
                     ScrollMagick.check_is_list_format('private', False, int, lambda x : 0 <= x < 3)
                     ScrollMagick.check_type('interactive', False, bool)
@@ -1471,6 +1486,9 @@ class LibSpike(LibSpikeHelper):
                         if list(args) != params_list:
                             raise Exception('Method \'%s\' should have the parameters %s with those exact names', (method, params_str))
                     
+                    # Proofread using extensions
+                    ScrollMagick.addon_proofread(scroll, scrollfile)
+                    
                 except Exception as err:
                     error = max(error, 22)
                     aggregator(scroll, 1, str(err))
@@ -1478,7 +1496,7 @@ class LibSpike(LibSpikeHelper):
     
     
     @staticmethod
-    def clean(aggregator, private = False, shred = False):
+    def clean(aggregator, private = False):
         '''
         Remove unneeded ponies that are installed as dependencies
         
@@ -1486,10 +1504,10 @@ class LibSpike(LibSpikeHelper):
                      Feed a scroll, removal progress state and removal progress end state, continuously during the progress,
                      this begins by feeding the state 0 when a scroll is enqueued, when all is enqueued the removal begins.
         
-        @param   shred:bool    Whether to perform secure removal when possible
         @param   private:bool  Whether to uninstall user private ponies rather than user shared ponies
         @return  :byte         Exit value, see description of `LibSpike`, the possible ones are: 0, 6, 7, 14(internal bug), 20, 23, 27, 28, 255
         '''
+        LibSpike.lock(True)
         # TODO do not clean optionally required packages
         
         # Create id → scroll map
@@ -1560,7 +1578,28 @@ class LibSpike(LibSpikeHelper):
         def agg(scroll, state, end):
             if state != 0:
                 aggregator(scroll, state, end)
-        return erase(agg, queue, private = private, shred = shred)
+        return erase(agg, queue, private = private)
+    
+    
+    @staticmethod
+    def example_shot(aggregator, scrolls):
+        '''
+        Fetch example shots file for scrolls
+        
+        @param   aggregator:(str, str?)→void
+                     Feed a scroll and its example shot file when found, or the scroll and `None` if there is not example shot.
+        
+        @param   scrolls:itr<str>  Scroll of which to display example shots
+        @return  :byte             Exit value, see description of `LibSpike`, the possible ones are: 0, 6
+        '''
+        for scroll in scrolls:
+            shot = locate_scroll(scroll)
+            if shot is None:
+                return 6
+            else:
+                shot += '.png'
+                aggregator(scroll, shot if os.path.exists(shot) else None)
+        return 0
     
     
     @staticmethod
@@ -1570,19 +1609,19 @@ class LibSpike(LibSpikeHelper):
         
         @param   aggregator:(str, str?)→void
                      Feed a file and its checksum when one has been calculated.
-                    `None` is returned as the checksum if it is not a regular file or does not exist.
+                     `None` is returned as the checksum if it is not a regular file or does not exist.
         
         @param   files:list<str>  Files for which to calculate the checksum
         @return  :byte            Exit value, see description of `LibSpike`, the possible ones are: 0, 12, 26
         '''
         (error, sha3) = (0, SHA3())
         for filename in files:
-            if (not os.path.exists(filename)) or not (not os.path.isfile(filename)):
+            if (not os.path.exists(filename)) or (not os.path.isfile(filename)):
                 aggregator(filename, None)
                 if error == 0:
                     error = 12 if not os.path.exists(filename) else 26
             else:
-                aggregator(filename, sha3.digestFile(filename));
+                aggregator(filename, sha3.digest_file(filename));
                 sha3.reinitialise()
         return error
 

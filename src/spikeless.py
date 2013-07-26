@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 '''
 spike – a package manager running on top of git
@@ -22,26 +22,44 @@ import os
 import sys
 
 from dragonsuite import *
-from scrollmagick import *
+from auxiliary.scrollmagick import *
 
 
-MEDIA = 1
-SOFTWARE = 2
+
+SOFTWARE_SHAREABLE = 1
+SOFTWARE_COMMERCIAL = 2
+SOFTWARE_DERIVATIVE = 4
+MEDIA_SHAREABLE = 8
+MEDIA_COMMERCIAL = 16
+MEDIA_DERIVATIVE = 32
+TRADEMARKED = 64
+PATENTED = 128
+MEDIA = MEDIA_SHAREABLE | MEDIA_COMMERCIAL | MEDIA_DERIVATIVE
+SOFTWARE = SOFTWARE_SHAREABLE | SOFTWARE_COMMERCIAL | SOFTWARE_DERIVATIVE
 
 UNSUPPORTED = 0
 SUPPORTED = 1
 MANDITORY = 2
 
+NO_TRADEMARKS = 1
+NO_PATENTS = 2
+CONTRACT_BASED = 4
+COMMERCIAL = 8
+DERIVATIVE = 16
+FSF_APPROVED = 32
+OSI_APPROVED = 64
+GPL_COMPATIBLE = 128
+COPYLEFT = 256
+
+
 
 class Spikeless():
     '''
     Spike but without the package managing, it just installs scrolls
-    
-    @author  Mattias Andrée (maandree@member.fsf.org)
     '''
     
     @staticmethod
-    def install(scroll, startdir, pinpal = '', private = False, freshinstallation = True, buildpatch = None, checkpatch = None, packagepatch = None, inspection = None):
+    def install(scroll, startdir, pinpal = '', private = False, fresh_installation = True, buildpatch = None, checkpatch = None, packagepatch = None, inspection = None):
         '''
         Installs a scroll, but does not do any package managing
         
@@ -49,7 +67,7 @@ class Spikeless():
         @param   startdir:str                                                   Scroll base working directory
         @param   pinpal:str                                                     Installation root
         @param   private:bool                                                   Whether to install privately
-        @param   freshinstallation:bool                                         Whether it is a fresh installation
+        @param   fresh_installation:bool                                        Whether it is a fresh installation
         @param   buildpatch:(srcdir:str, pkgdir:str)?→void                      Scroll build patch function
         @param   checkpatch:(srcdir:str, pkgdir:str)?→void                      Scroll check patch function
         @param   packagepatch:(srcdir:str, pkgdir:str)?→void                    Scroll package patch function
@@ -72,7 +90,7 @@ class Spikeless():
         environ = {}
         for var in os.environ:
             environ[var] = os.environ[var]
-        def resetEnviron(reset_to):
+        def reset_environ(reset_to):
             delete = []
             s = set(reset_to.keys())
             for var in os.environ:
@@ -173,8 +191,8 @@ class Spikeless():
                         inetget([src, '-O', dest] + extras, dest, sha3sums[i])
                 if sha3sums[i] is not None:
                     sha3 = sha3sum(sumdests)
-                    if sha3 == sha3sums[i].upper():
-                        pass ## TODO sha3sums
+                    if sha3 != sha3sums[i].upper():
+                        raise Exception('sha3sum is not matching for %s' % d)
                 if extractsrc:
                     extract.append(os.path.abspath(dest))
                 i += 1
@@ -190,55 +208,51 @@ class Spikeless():
         if build is not None:
             if buildpatch is not None:
                 msg('Patching build process')
-                resetEnviron(environ)
+                reset_environ(environ)
                 os.chdir(startdir)
                 os.umask(0o022)
                 buildpatch(srcdir, pkgdir)
             msg('Building')
-            resetEnviron(environ)
+            reset_environ(environ)
             os.chdir(startdir)
             os.umask(0o022)
             build(startdir, srcdir, pkgdir, private)
         if check is not None:
             if checkpatch is not None:
                 msg('Patching check process')
-                resetEnviron(environ)
+                reset_environ(environ)
                 os.chdir(startdir)
                 os.umask(0o022)
                 checkpatch(srcdir, pkgdir)
             msg('Checking')
-            resetEnviron(environ)
+            reset_environ(environ)
             os.chdir(startdir)
             os.umask(0o022)
             check(startdir, srcdir, pkgdir, private)
         if package is not None:
             if packagepatch is not None:
                 msg('Patching package process')
-                resetEnviron(environ)
+                reset_environ(environ)
                 os.chdir(startdir)
                 os.umask(0o022)
                 packagepatch(srcdir, pkgdir)
             msg('Packaging')
-            resetEnviron(environ)
+            reset_environ(environ)
             os.chdir(startdir)
             os.umask(0o022)
             package(startdir, srcdir, pkgdir, private)
         
         os.chdir(cwd)
-        resetEnviron(environ)
+        reset_environ(environ)
         
-        global useopts, compresses ## TODO defualt options should be load
+        global useopts ## TODO default options should be load
         if useopts is None:
-            useopts = set(['strip', 'docs', 'info', 'man', 'licenses' 'changelogs', 'libtool', 'upx'])
-        if compresses is None:
-            compresses = {'docs' : 'gz', 'info' : 'gz', 'man' : 'gz'}
-        if options != None:
+            useopts = set(['strip', 'licenses' 'changelogs', 'libtool', 'upx'])
+        if options is not None:
             for opt in options:
                 if opt.startswith('!'):
                     if opt[1:] in useopts:
                         del useopts[opt[1:]]
-                elif '=' in opts:
-                    compresses[opts.split('=')[0]] = opts.split('=')[1]
                 else:
                     if opt not in useopts:
                         useopts.add(opt)
@@ -275,7 +289,7 @@ class Spikeless():
                         if not os.path.exists(tmpdir):
                             os.mkdir(tmpdir)
                         pre_install(tmpdir, self.root, installedfiles, self.priv)
-                resetEnviron(self.env)
+                reset_environ(self.env)
                 os.chdir(cwd)
         
         class postFunctor():
@@ -303,17 +317,20 @@ class Spikeless():
                         if not os.path.exists(tmpdir):
                             os.mkdir(tmpdir)
                         post_install(tmpdir, self.root, installedfiles, self.priv)
-                resetEnviron(self.env)
+                reset_environ(self.env)
                 os.chdir(cwd)
         
-        pre = preFunctor(freshinstallation, startdir, pinpal, private, environ)
-        post = postFunctor(freshinstallation, startdir, pinpal, private, environ)
+        pre = preFunctor(fresh_installation, startdir, pinpal, private, environ)
+        post = postFunctor(fresh_installation, startdir, pinpal, private, environ)
         return (pre, pkgdir, post)
 
 
 if __name__ == '__main__': # sic
-    global useopts, compresses
-    (useopts, compresses) = (None, None)
+    if len(sys.argv) < 3:
+        print('USAGE: spikeless SCROLL STARTDIR PINPAL [private]')
+        sys.exit(1)
+    global useopts
+    useopts = None
     def installdir(src, dest):
         if not os.path.exists(dest):
             os.makedirs(dest)

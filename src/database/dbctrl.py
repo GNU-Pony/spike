@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 '''
 spike – a package manager running on top of git
@@ -20,7 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
 import os
 
-from spikedb import *
+from database.spikedb import *
 
 
 
@@ -62,7 +62,7 @@ The maximum length of lb(file name length)
 '''
 
 
-## Value/key type, these are (typeName:str, valueSize:int, valueType:int)-tuples
+## Value/key type, these are (type_name:str, value_size:int, value_type:int)-tuples
 
 DB_FILE_NAME   = lambda n : ('file'          if n < 0 else ('file%i' % n),
                              DB_SIZE_FILELEN if n < 0 else (1 << n),
@@ -103,27 +103,25 @@ Value/key type for pony ID dependency
 class DBCtrl():
     '''
     Advanced programming interface for Spike's database
-    
-    @author  Mattias Andrée (maandree@member.fsf.org)
     '''
     
-    def __init__(self, spikePath):
+    def __init__(self, spike_path):
         '''
         Constructor
         
-        @param  spikePath:str  The path for Spike
+        @param  spike_path:str  The path for Spike
         '''
-        self.path = (spikePath + os.sep + 'var/').replace('%', '%%')
+        self.path = (spike_path + os.sep + 'var/').replace('%', '%%')
     
     
     def open_db(self, private, key, value):
         '''
         Open a database
         
-        @param   private:bool         Whether to open a private database
-        @param   key:(str,int,int)    The key type of the database
-        @param   value:(str,int,int)  The value type of the database
-        @return  :SpikeDB             The database instance
+        @param   private:bool           Whether to open a private database
+        @param   key:(str, int, int)    The key type of the database
+        @param   value:(str, int, int)  The value type of the database
+        @return  :SpikeDB               The database instance
         '''
         pre = '' if not private else 'priv_'
         db  = '%s%s_%s.%%i' % (pre, key[0], value[0])
@@ -138,10 +136,10 @@ class DBCtrl():
                     Feed a input with its output when an output value has been found,
                     but with `None` as output if there is no output
         
-        @param   input:list<str>           Input
-        @param   types:itr<(str,int,int)>  The type in order of fetch and join
-        @param   private:bool?             Whether to look in the private files rather then the public, `None` for both
-        @return  :bool                     Whether the fetch was successful, if not, the database is corrupt
+        @param   input:list<str>             Input
+        @param   types:itr<(str, int, int)>  The type in order of fetch and join
+        @param   private:bool?               Whether to look in the private files rather then the public, `None` for both
+        @return  :bool                       Whether the fetch was successful, if not, the database is corrupt
         '''
         error = [False]
         tables = []
@@ -155,9 +153,9 @@ class DBCtrl():
         
         # Fetch and transpose information for all tables except the last one
         class Agg():
-            def __init__(self, tableIndex):
+            def __init__(self, table_index):
                 self.nones = {}
-                self.index = tableIndex
+                self.index = table_index
             def __call__(self, item):
                 if item in self.nones:
                     self.nones[item] += 1
@@ -172,26 +170,26 @@ class DBCtrl():
             sink = []
             for table in tables[i]:
                 table.fetch(sink, input if i == 0 else transpositions[i - 1].keys())
-            DBCtrl.transpose(transpositions[i], sink, midType, Agg(i), False)
+            DBCtrl.transpose(transpositions[i], sink, types[i], Agg(i), False)
         
         # Join transposed tables
         n = len(transpositions) - 2
-        lastInput = transpositions[-2].keys()
-        lastTable = transpositions[-2]
+        last_input = transpositions[-2].keys()
+        last_table = transpositions[-2]
         for i in range(n + 1):
             table = tables[n - i]
-            for key in lastInput.keys():
+            for key in last_input.keys():
                 values = []
-                for value in lastTable[key]:
+                for value in last_table[key]:
                     values.expand(table[value])
-                lastTable[key] = values
+                last_table[key] = values
         
         # Fetch information from last table and send (input, output)
         class Sink():
-            def __init__(self, errorAt, last, table):
+            def __init__(self, error_at, last, table):
                 self.nones = {}
-                self.err = errorAt
-                self.valueType = last
+                self.err = error_at
+                self.value_type = last
                 self.end_start = table
             def append(self, key_value):
                 (key, value) = key_value
@@ -203,11 +201,11 @@ class DBCtrl():
                         if self.nones[key] == self.err:
                             error[0] = True
                     return
-                value = DBCtrl.value_convert(value, self.valueType)
+                value = DBCtrl.value_convert(value, self.value_type)
                 for start in end_start[key]:
                     aggregator(start, value)
         for table in tables[-1]:
-            table.fetch(Sink(len(privs), types[-1]), lastInput, lastTable)
+            table.fetch(Sink(len(privs), types[-1]), last_input, last_table)
         
         return not error[0]
     
@@ -217,9 +215,9 @@ class DBCtrl():
         '''
         Get keys that have values, there will be duplicates if the are multiple values
         
-        @param   rc:append(str)?→void  The list to which existing keys is added
-        @param   pairs:itr<(str,?)>    Key–value pairs
-        @return  rc:append(str)→void   `rc` is returned, if `None`, a list<str> is created
+        @param   rc:append(str)?→void   The list to which existing keys is added
+        @param   pairs:itr<(str, ¿E?)>  Key–value pairs
+        @return  rc:append(str)→void    `rc` is returned, if `None`, a list<str> is created
         '''
         if rc is None:
             rc = []
@@ -234,9 +232,9 @@ class DBCtrl():
         '''
         Get keys that does not have values
         
-        @param   rc:append(str)?→void  The list to which existing keys is added
-        @param   pairs:itr<(str,?)>    Key–value pairs
-        @return  rc:append(str)→void   `rc` is returned, if `None`, a list<str> is created
+        @param   rc:append(str)?→void   The list to which existing keys is added
+        @param   pairs:itr<(str, ¿E?)>  Key–value pairs
+        @return  rc:append(str)→void    `rc` is returned, if `None`, a list<str> is created
         '''
         if rc is None:
             rc = []
@@ -247,21 +245,21 @@ class DBCtrl():
     
     
     @staticmethod
-    def transpose(rc, pairs, value, noneAggregator, aggregateNone = True):
+    def transpose(rc, pairs, value, none_aggregator, aggregate_none = True):
         '''
         Create a transposed dictionary form a pair list, the value is converted
         
-        @param   rc:dict<str,list<str>>?             The dictionary to which the data is added
-        @param   pairs:itr<(str,bytes?)>             Key–value pairs
-        @param   value:(str,int,int)                 The value type of the database
-        @param   noneAggregator:(str)|(str,?)?→void  Object for which a key is passed when a key is no value
-        @param   aggregateNone:bool                  Whether to also pass `None` to `noneAggregator`
-        @return  rc:dict<str,list<str>>              `rc` is returned, if `None`, it is created
+        @param   rc:dict<str, list<str>>?                The dictionary to which the data is added
+        @param   pairs:itr<(str, bytes?)>                Key–value pairs
+        @param   value:(str, int, int)                   The value type of the database
+        @param   none_aggregator:(str)|(str, ¿E?)?→void  Object for which a key is passed when a key is no value
+        @param   aggregate_none:bool                     Whether to also pass `None` to `none_aggregator`
+        @return  rc:dict<str, list<str>>                 `rc` is returned, if `None`, it is created
         '''
         conv = value[1]
         if rc is None:
             rc = {}
-        if noneAggregator is None:
+        if none_aggregator is None:
             for (key, value) in sink:
                 if value is not None:
                     value = DBCtrl.value_convert(value, conv)
@@ -269,10 +267,10 @@ class DBCtrl():
                         rc[value].append(key)
                     else:
                         rc[value] = [key]
-        elif aggregateNone:
+        elif aggregate_none:
             for (key, value) in sink:
                 if value is None:
-                    noneAggregator(key, None)
+                    none_aggregator(key, None)
                 else:
                     value = DBCtrl.value_convert(value, conv)
                     if key in rc:
@@ -282,7 +280,7 @@ class DBCtrl():
         else:
             for (key, value) in sink:
                 if value is None:
-                    noneAggregator(key)
+                    none_aggregator(key)
                 else:
                     value = DBCtrl.value_convert(value, conv)
                     if value in rc:
@@ -293,21 +291,21 @@ class DBCtrl():
     
     
     @staticmethod
-    def tablise(rc, pairs, value, noneAggregator, aggregateNone = True):
+    def tablise(rc, pairs, value, none_aggregator, aggregate_none = True):
         '''
         Create a dictionary form a pair list, the value is converted
         
-        @param   rc:dict<str,list<str>>?             The dictionary to which the data is added
-        @param   pairs:itr<(str,bytes?)>             Key–value pairs
-        @param   value:(str,int,int)                 The value type of the database
-        @param   noneAggregator:(str)|(str,?)?→void  Object for which a key is passed when a key is no value
-        @param   aggregateNone:bool                  Whether to also pass `None` to `noneAggregator`
-        @return  rc:dict<str,list<str>>              `rc` is returned, if `None`, it is created
+        @param   rc:dict<str, list<str>>?                The dictionary to which the data is added
+        @param   pairs:itr<(str, bytes?)>                Key–value pairs
+        @param   value:(str, int, int)                   The value type of the database
+        @param   none_aggregator:(str)|(str, ¿E?)?→void  Object for which a key is passed when a key is no value
+        @param   aggregate_none:bool                     Whether to also pass `None` to `none_aggregator`
+        @return  rc:dict<str, list<str>>                 `rc` is returned, if `None`, it is created
         '''
         conv = value[1]
         if rc is None:
             rc = {}
-        if noneAggregator is None:
+        if none_aggregator is None:
             for (key, value) in sink:
                 if value is not None:
                     value = DBCtrl.value_convert(value, conv)
@@ -315,10 +313,10 @@ class DBCtrl():
                         rc[key].append(value)
                     else:
                         rc[key] = [value]
-        elif aggregateNone:
+        elif aggregate_none:
             for (key, value) in sink:
                 if value is None:
-                    noneAggregator(key, None)
+                    none_aggregator(key, None)
                 else:
                     value = DBCtrl.value_convert(value, conv)
                     if key in rc:
@@ -328,7 +326,7 @@ class DBCtrl():
         else:
             for (key, value) in sink:
                 if value is None:
-                    noneAggregator(key)
+                    none_aggregator(key)
                 else:
                     value = DBCtrl.value_convert(value, conv)
                     if key in rc:
