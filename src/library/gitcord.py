@@ -181,8 +181,8 @@ class Gitcord():
             while '--remove' in shred_opts:
                 shred_opts.remove('--remove')
             shred_opts = ' '.join(['\'' + o.replace('\'', '\'\\\'\'') + '\'' for o in shred_opts])
-            shred_file = '[ -f "$file" ]; then shred %s -- "$file";' % shred_opts
-            shred_dir  = '[ -d "$file" ]; then find -mount -- "$file" | while read file; do if %s fi; done' % shred_file
+            shred_file = '[ ! -L "$file" ] && [ -f "$file" ]; then shred %s -- "$file";' % shred_opts
+            shred_dir  = '[ ! -L "$file" ] && [ -d "$file" ]; then find -mount -- "$file" | while read file; do if %s fi; done' % shred_file
             index_filter = 'for file in %s; do if %s elif %s fi; done; %s' % (files, shred_file, shred_dir, index_filter)
         command = ['git', 'filter-branch', '--force', '--index-filter', index_filter, '--prune-empty']
         if tag_name_filter is not None:
