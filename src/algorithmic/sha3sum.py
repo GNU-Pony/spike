@@ -44,8 +44,7 @@ class SHA3:
     
     
     
-    @staticmethod
-    def rotate(x, n):
+    def rotate(self, x, n):
         '''
         Rotate a 64-bit word
         
@@ -65,45 +64,45 @@ class SHA3:
         # θ step (step 1 and 2 of 3)
         self.C[0] = (self.S[0]  ^ self.S[1])  ^ (self.S[2]  ^ self.S[3])  ^ self.S[4]
         self.C[2] = (self.S[10] ^ self.S[11]) ^ (self.S[12] ^ self.S[13]) ^ self.S[14]
-        db = self.C[0] ^ SHA3.rotate(self.C[2], 1)
+        db = self.C[0] ^ self.rotate(self.C[2], 1)
         self.C[4] = (self.S[20] ^ self.S[21]) ^ (self.S[22] ^ self.S[23]) ^ self.S[24]
-        dd = self.C[2] ^ SHA3.rotate(self.C[4], 1)
+        dd = self.C[2] ^ self.rotate(self.C[4], 1)
         self.C[1] = (self.S[5]  ^ self.S[6])  ^ (self.S[7]  ^ self.S[8])  ^ self.S[9]
-        da = self.C[4] ^ SHA3.rotate(self.C[1], 1)
+        da = self.C[4] ^ self.rotate(self.C[1], 1)
         self.C[3] = (self.S[15] ^ self.S[16]) ^ (self.S[17] ^ self.S[18]) ^ self.S[19]
-        dc = self.C[1] ^ SHA3.rotate(self.C[3], 1)
-        de = self.C[3] ^ SHA3.rotate(self.C[0], 1)
+        dc = self.C[1] ^ self.rotate(self.C[3], 1)
+        de = self.C[3] ^ self.rotate(self.C[0], 1)
         
         # ρ and π steps, with last part of θ
-        self.B[0] = SHA3.rotate(self.S[0] ^ da, 0)
-        self.B[1] = SHA3.rotate(self.S[15] ^ dd, 28)
-        self.B[2] = SHA3.rotate(self.S[5] ^ db, 1)
-        self.B[3] = SHA3.rotate(self.S[20] ^ de, 27)
-        self.B[4] = SHA3.rotate(self.S[10] ^ dc, 62)
+        self.B[0] = self.rotate(self.S[0] ^ da, 0)
+        self.B[1] = self.rotate(self.S[15] ^ dd, 28)
+        self.B[2] = self.rotate(self.S[5] ^ db, 1)
+        self.B[3] = self.rotate(self.S[20] ^ de, 27)
+        self.B[4] = self.rotate(self.S[10] ^ dc, 62)
         
-        self.B[5] = SHA3.rotate(self.S[6] ^ db, 44)
-        self.B[6] = SHA3.rotate(self.S[21] ^ de, 20)
-        self.B[7] = SHA3.rotate(self.S[11] ^ dc, 6)
-        self.B[8] = SHA3.rotate(self.S[1] ^ da, 36)
-        self.B[9] = SHA3.rotate(self.S[16] ^ dd, 55)
+        self.B[5] = self.rotate(self.S[6] ^ db, 44)
+        self.B[6] = self.rotate(self.S[21] ^ de, 20)
+        self.B[7] = self.rotate(self.S[11] ^ dc, 6)
+        self.B[8] = self.rotate(self.S[1] ^ da, 36)
+        self.B[9] = self.rotate(self.S[16] ^ dd, 55)
         
-        self.B[10] = SHA3.rotate(self.S[12] ^ dc, 43)
-        self.B[11] = SHA3.rotate(self.S[2] ^ da, 3)
-        self.B[12] = SHA3.rotate(self.S[17] ^ dd, 25)
-        self.B[13] = SHA3.rotate(self.S[7] ^ db, 10)
-        self.B[14] = SHA3.rotate(self.S[22] ^ de, 39)
+        self.B[10] = self.rotate(self.S[12] ^ dc, 43)
+        self.B[11] = self.rotate(self.S[2] ^ da, 3)
+        self.B[12] = self.rotate(self.S[17] ^ dd, 25)
+        self.B[13] = self.rotate(self.S[7] ^ db, 10)
+        self.B[14] = self.rotate(self.S[22] ^ de, 39)
         
-        self.B[15] = SHA3.rotate(self.S[18] ^ dd, 21)
-        self.B[16] = SHA3.rotate(self.S[8] ^ db, 45)
-        self.B[17] = SHA3.rotate(self.S[23] ^ de, 8)
-        self.B[18] = SHA3.rotate(self.S[13] ^ dc, 15)
-        self.B[19] = SHA3.rotate(self.S[3] ^ da, 41)
+        self.B[15] = self.rotate(self.S[18] ^ dd, 21)
+        self.B[16] = self.rotate(self.S[8] ^ db, 45)
+        self.B[17] = self.rotate(self.S[23] ^ de, 8)
+        self.B[18] = self.rotate(self.S[13] ^ dc, 15)
+        self.B[19] = self.rotate(self.S[3] ^ da, 41)
         
-        self.B[20] = SHA3.rotate(self.S[24] ^ de, 14)
-        self.B[21] = SHA3.rotate(self.S[14] ^ dc, 61)
-        self.B[22] = SHA3.rotate(self.S[4] ^ da, 18)
-        self.B[23] = SHA3.rotate(self.S[19] ^ dd, 56)
-        self.B[24] = SHA3.rotate(self.S[9] ^ db, 2)
+        self.B[20] = self.rotate(self.S[24] ^ de, 14)
+        self.B[21] = self.rotate(self.S[14] ^ dc, 61)
+        self.B[22] = self.rotate(self.S[4] ^ da, 18)
+        self.B[23] = self.rotate(self.S[19] ^ dd, 56)
+        self.B[24] = self.rotate(self.S[9] ^ db, 2)
         
         # ξ step
         self.S[0] = self.B[0] ^ ((~(self.B[5])) & self.B[10])
@@ -170,8 +169,7 @@ class SHA3:
         self.keccak_f_round(0x8000000080008008)
     
     
-    @staticmethod
-    def to_lane(message, off):
+    def to_lane(self, message, off):
         '''
         Convert a chunk of char:s to a 64-bit word
         
@@ -184,8 +182,7 @@ class SHA3:
         return ((message[off + 7] << 56) if (off + 7 < n) else 0) | ((message[off + 6] << 48) if (off + 6 < n) else 0) | ((message[off + 5] << 40) if (off + 5 < n) else 0) | ((message[off + 4] << 32) if (off + 4 < n) else 0) | ((message[off + 3] << 24) if (off + 3 < n) else 0) | ((message[off + 2] << 16) if (off + 2 < n) else 0) | ((message[off + 1] <<  8) if (off + 1 < n) else 0) | ((message[off]) if (off < n) else 0)
     
     
-    @staticmethod
-    def pad_10star1(msg):
+    def pad_10star1(self, msg):
         '''
         pad 10*1
         
@@ -236,31 +233,31 @@ class SHA3:
         
         # Absorbing phase
         for i in range(0, nnn, 128):
-            self.S[ 0] ^= SHA3.to_lane(message, 0)
-            self.S[ 5] ^= SHA3.to_lane(message, 8)
-            self.S[10] ^= SHA3.to_lane(message, 16)
-            self.S[15] ^= SHA3.to_lane(message, 24)
-            self.S[20] ^= SHA3.to_lane(message, 32)
-            self.S[ 1] ^= SHA3.to_lane(message, 40)
-            self.S[ 6] ^= SHA3.to_lane(message, 48)
-            self.S[11] ^= SHA3.to_lane(message, 56)
-            self.S[16] ^= SHA3.to_lane(message, 64)
-            self.S[21] ^= SHA3.to_lane(message, 72)
-            self.S[ 2] ^= SHA3.to_lane(message, 80)
-            self.S[ 7] ^= SHA3.to_lane(message, 88)
-            self.S[12] ^= SHA3.to_lane(message, 96)
-            self.S[17] ^= SHA3.to_lane(message, 104)
-            self.S[22] ^= SHA3.to_lane(message, 112)
-            self.S[ 3] ^= SHA3.to_lane(message, 120)
-            self.S[ 8] ^= SHA3.to_lane(message, 128)
-            self.S[13] ^= SHA3.to_lane(message, 136)
-            self.S[18] ^= SHA3.to_lane(message, 144)
-            self.S[23] ^= SHA3.to_lane(message, 152)
-            self.S[ 4] ^= SHA3.to_lane(message, 160)
-            self.S[ 9] ^= SHA3.to_lane(message, 168)
-            self.S[14] ^= SHA3.to_lane(message, 176)
-            self.S[19] ^= SHA3.to_lane(message, 184)
-            self.S[24] ^= SHA3.to_lane(message, 192)
+            self.S[ 0] ^= self.to_lane(message, 0)
+            self.S[ 5] ^= self.to_lane(message, 8)
+            self.S[10] ^= self.to_lane(message, 16)
+            self.S[15] ^= self.to_lane(message, 24)
+            self.S[20] ^= self.to_lane(message, 32)
+            self.S[ 1] ^= self.to_lane(message, 40)
+            self.S[ 6] ^= self.to_lane(message, 48)
+            self.S[11] ^= self.to_lane(message, 56)
+            self.S[16] ^= self.to_lane(message, 64)
+            self.S[21] ^= self.to_lane(message, 72)
+            self.S[ 2] ^= self.to_lane(message, 80)
+            self.S[ 7] ^= self.to_lane(message, 88)
+            self.S[12] ^= self.to_lane(message, 96)
+            self.S[17] ^= self.to_lane(message, 104)
+            self.S[22] ^= self.to_lane(message, 112)
+            self.S[ 3] ^= self.to_lane(message, 120)
+            self.S[ 8] ^= self.to_lane(message, 128)
+            self.S[13] ^= self.to_lane(message, 136)
+            self.S[18] ^= self.to_lane(message, 144)
+            self.S[23] ^= self.to_lane(message, 152)
+            self.S[ 4] ^= self.to_lane(message, 160)
+            self.S[ 9] ^= self.to_lane(message, 168)
+            self.S[14] ^= self.to_lane(message, 176)
+            self.S[19] ^= self.to_lane(message, 184)
+            self.S[24] ^= self.to_lane(message, 192)
             self.keccak_f()
             message = message[128:]
     
@@ -273,38 +270,38 @@ class SHA3:
         '''
         if msg is None:
             msg = bytes([])
-        message = SHA3.pad_10star1(self.M + msg)
+        message = self.pad_10star1(self.M + msg)
         self.M = None
         nnn = len(message)
         rc = [0] * 72
         
         # Absorbing phase
         for i in range(0, nnn, 128):
-            self.S[ 0] ^= SHA3.to_lane(message, 0)
-            self.S[ 5] ^= SHA3.to_lane(message, 8)
-            self.S[10] ^= SHA3.to_lane(message, 16)
-            self.S[15] ^= SHA3.to_lane(message, 24)
-            self.S[20] ^= SHA3.to_lane(message, 32)
-            self.S[ 1] ^= SHA3.to_lane(message, 40)
-            self.S[ 6] ^= SHA3.to_lane(message, 48)
-            self.S[11] ^= SHA3.to_lane(message, 56)
-            self.S[16] ^= SHA3.to_lane(message, 64)
-            self.S[21] ^= SHA3.to_lane(message, 72)
-            self.S[ 2] ^= SHA3.to_lane(message, 80)
-            self.S[ 7] ^= SHA3.to_lane(message, 88)
-            self.S[12] ^= SHA3.to_lane(message, 96)
-            self.S[17] ^= SHA3.to_lane(message, 104)
-            self.S[22] ^= SHA3.to_lane(message, 112)
-            self.S[ 3] ^= SHA3.to_lane(message, 120)
-            self.S[ 8] ^= SHA3.to_lane(message, 128)
-            self.S[13] ^= SHA3.to_lane(message, 136)
-            self.S[18] ^= SHA3.to_lane(message, 144)
-            self.S[23] ^= SHA3.to_lane(message, 152)
-            self.S[ 4] ^= SHA3.to_lane(message, 160)
-            self.S[ 9] ^= SHA3.to_lane(message, 168)
-            self.S[14] ^= SHA3.to_lane(message, 176)
-            self.S[19] ^= SHA3.to_lane(message, 184)
-            self.S[24] ^= SHA3.to_lane(message, 192)
+            self.S[ 0] ^= self.to_lane(message, 0)
+            self.S[ 5] ^= self.to_lane(message, 8)
+            self.S[10] ^= self.to_lane(message, 16)
+            self.S[15] ^= self.to_lane(message, 24)
+            self.S[20] ^= self.to_lane(message, 32)
+            self.S[ 1] ^= self.to_lane(message, 40)
+            self.S[ 6] ^= self.to_lane(message, 48)
+            self.S[11] ^= self.to_lane(message, 56)
+            self.S[16] ^= self.to_lane(message, 64)
+            self.S[21] ^= self.to_lane(message, 72)
+            self.S[ 2] ^= self.to_lane(message, 80)
+            self.S[ 7] ^= self.to_lane(message, 88)
+            self.S[12] ^= self.to_lane(message, 96)
+            self.S[17] ^= self.to_lane(message, 104)
+            self.S[22] ^= self.to_lane(message, 112)
+            self.S[ 3] ^= self.to_lane(message, 120)
+            self.S[ 8] ^= self.to_lane(message, 128)
+            self.S[13] ^= self.to_lane(message, 136)
+            self.S[18] ^= self.to_lane(message, 144)
+            self.S[23] ^= self.to_lane(message, 152)
+            self.S[ 4] ^= self.to_lane(message, 160)
+            self.S[ 9] ^= self.to_lane(message, 168)
+            self.S[14] ^= self.to_lane(message, 176)
+            self.S[19] ^= self.to_lane(message, 184)
+            self.S[24] ^= self.to_lane(message, 192)
             self.keccak_f()
             message = message[128:]
         
