@@ -169,16 +169,15 @@ class SHA3:
         self.keccak_f_round(0x8000000080008008)
     
     
-    def to_lane(self, message, off):
+    def to_lane(self, message, n, off):
         '''
         Convert a chunk of char:s to a 64-bit word
         
         @param   message:bytes  The message
+        @param         n:int    `min(len(message), 128)`
         @param       off:int    The offset in the message
         @return         :int    Lane
         '''
-        n = min(len(message), 128)
-        
         return ((message[off + 7] << 56) if (off + 7 < n) else 0) | ((message[off + 6] << 48) if (off + 6 < n) else 0) | ((message[off + 5] << 40) if (off + 5 < n) else 0) | ((message[off + 4] << 32) if (off + 4 < n) else 0) | ((message[off + 3] << 24) if (off + 3 < n) else 0) | ((message[off + 2] << 16) if (off + 2 < n) else 0) | ((message[off + 1] <<  8) if (off + 1 < n) else 0) | ((message[off]) if (off < n) else 0)
     
     
@@ -233,31 +232,32 @@ class SHA3:
         
         # Absorbing phase
         for i in range(0, nnn, 128):
-            self.S[ 0] ^= self.to_lane(message, 0)
-            self.S[ 5] ^= self.to_lane(message, 8)
-            self.S[10] ^= self.to_lane(message, 16)
-            self.S[15] ^= self.to_lane(message, 24)
-            self.S[20] ^= self.to_lane(message, 32)
-            self.S[ 1] ^= self.to_lane(message, 40)
-            self.S[ 6] ^= self.to_lane(message, 48)
-            self.S[11] ^= self.to_lane(message, 56)
-            self.S[16] ^= self.to_lane(message, 64)
-            self.S[21] ^= self.to_lane(message, 72)
-            self.S[ 2] ^= self.to_lane(message, 80)
-            self.S[ 7] ^= self.to_lane(message, 88)
-            self.S[12] ^= self.to_lane(message, 96)
-            self.S[17] ^= self.to_lane(message, 104)
-            self.S[22] ^= self.to_lane(message, 112)
-            self.S[ 3] ^= self.to_lane(message, 120)
-            self.S[ 8] ^= self.to_lane(message, 128)
-            self.S[13] ^= self.to_lane(message, 136)
-            self.S[18] ^= self.to_lane(message, 144)
-            self.S[23] ^= self.to_lane(message, 152)
-            self.S[ 4] ^= self.to_lane(message, 160)
-            self.S[ 9] ^= self.to_lane(message, 168)
-            self.S[14] ^= self.to_lane(message, 176)
-            self.S[19] ^= self.to_lane(message, 184)
-            self.S[24] ^= self.to_lane(message, 192)
+            n = min(len(message), 128)
+            self.S[ 0] ^= self.to_lane(message, n, 0)
+            self.S[ 5] ^= self.to_lane(message, n, 8)
+            self.S[10] ^= self.to_lane(message, n, 16)
+            self.S[15] ^= self.to_lane(message, n, 24)
+            self.S[20] ^= self.to_lane(message, n, 32)
+            self.S[ 1] ^= self.to_lane(message, n, 40)
+            self.S[ 6] ^= self.to_lane(message, n, 48)
+            self.S[11] ^= self.to_lane(message, n, 56)
+            self.S[16] ^= self.to_lane(message, n, 64)
+            self.S[21] ^= self.to_lane(message, n, 72)
+            self.S[ 2] ^= self.to_lane(message, n, 80)
+            self.S[ 7] ^= self.to_lane(message, n, 88)
+            self.S[12] ^= self.to_lane(message, n, 96)
+            self.S[17] ^= self.to_lane(message, n, 104)
+            self.S[22] ^= self.to_lane(message, n, 112)
+            self.S[ 3] ^= self.to_lane(message, n, 120)
+            self.S[ 8] ^= self.to_lane(message, n, 128)
+            self.S[13] ^= self.to_lane(message, n, 136)
+            self.S[18] ^= self.to_lane(message, n, 144)
+            self.S[23] ^= self.to_lane(message, n, 152)
+            self.S[ 4] ^= self.to_lane(message, n, 160)
+            self.S[ 9] ^= self.to_lane(message, n, 168)
+            self.S[14] ^= self.to_lane(message, n, 176)
+            self.S[19] ^= self.to_lane(message, n, 184)
+            self.S[24] ^= self.to_lane(message, n, 192)
             self.keccak_f()
             message = message[128:]
     
@@ -277,31 +277,32 @@ class SHA3:
         
         # Absorbing phase
         for i in range(0, nnn, 128):
-            self.S[ 0] ^= self.to_lane(message, 0)
-            self.S[ 5] ^= self.to_lane(message, 8)
-            self.S[10] ^= self.to_lane(message, 16)
-            self.S[15] ^= self.to_lane(message, 24)
-            self.S[20] ^= self.to_lane(message, 32)
-            self.S[ 1] ^= self.to_lane(message, 40)
-            self.S[ 6] ^= self.to_lane(message, 48)
-            self.S[11] ^= self.to_lane(message, 56)
-            self.S[16] ^= self.to_lane(message, 64)
-            self.S[21] ^= self.to_lane(message, 72)
-            self.S[ 2] ^= self.to_lane(message, 80)
-            self.S[ 7] ^= self.to_lane(message, 88)
-            self.S[12] ^= self.to_lane(message, 96)
-            self.S[17] ^= self.to_lane(message, 104)
-            self.S[22] ^= self.to_lane(message, 112)
-            self.S[ 3] ^= self.to_lane(message, 120)
-            self.S[ 8] ^= self.to_lane(message, 128)
-            self.S[13] ^= self.to_lane(message, 136)
-            self.S[18] ^= self.to_lane(message, 144)
-            self.S[23] ^= self.to_lane(message, 152)
-            self.S[ 4] ^= self.to_lane(message, 160)
-            self.S[ 9] ^= self.to_lane(message, 168)
-            self.S[14] ^= self.to_lane(message, 176)
-            self.S[19] ^= self.to_lane(message, 184)
-            self.S[24] ^= self.to_lane(message, 192)
+            n = min(len(message), 128)
+            self.S[ 0] ^= self.to_lane(message, n, 0)
+            self.S[ 5] ^= self.to_lane(message, n, 8)
+            self.S[10] ^= self.to_lane(message, n, 16)
+            self.S[15] ^= self.to_lane(message, n, 24)
+            self.S[20] ^= self.to_lane(message, n, 32)
+            self.S[ 1] ^= self.to_lane(message, n, 40)
+            self.S[ 6] ^= self.to_lane(message, n, 48)
+            self.S[11] ^= self.to_lane(message, n, 56)
+            self.S[16] ^= self.to_lane(message, n, 64)
+            self.S[21] ^= self.to_lane(message, n, 72)
+            self.S[ 2] ^= self.to_lane(message, n, 80)
+            self.S[ 7] ^= self.to_lane(message, n, 88)
+            self.S[12] ^= self.to_lane(message, n, 96)
+            self.S[17] ^= self.to_lane(message, n, 104)
+            self.S[22] ^= self.to_lane(message, n, 112)
+            self.S[ 3] ^= self.to_lane(message, n, 120)
+            self.S[ 8] ^= self.to_lane(message, n, 128)
+            self.S[13] ^= self.to_lane(message, n, 136)
+            self.S[18] ^= self.to_lane(message, n, 144)
+            self.S[23] ^= self.to_lane(message, n, 152)
+            self.S[ 4] ^= self.to_lane(message, n, 160)
+            self.S[ 9] ^= self.to_lane(message, n, 168)
+            self.S[14] ^= self.to_lane(message, n, 176)
+            self.S[19] ^= self.to_lane(message, n, 184)
+            self.S[24] ^= self.to_lane(message, n, 192)
             self.keccak_f()
             message = message[128:]
         
