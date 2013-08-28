@@ -65,3 +65,8 @@ it but with two prepending underscores.
 Some classes have variables that should be reached from outside the class, in those cases a @variable is
 specified for each of those variables in the documentation for class. @variable is formated like @param.
 
+If an element type for an parameter changes during the a fuction, the change indicate by a left arrow (→).
+For example:
+
+        @param  map:dict<str, str→int>  The values are strings at call but integers at exit
+
