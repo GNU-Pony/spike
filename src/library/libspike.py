@@ -213,10 +213,8 @@ class LibSpike(LibSpikeHelper):
         found = set()
         owners = {}
         error = OwnerFinder.get_file_pony_mapping(files, dirs, found, owners, lambda file, scroll : aggregator(origfiles[file], scroll))
-        if error != 0:
-            return error
         
-        if len(dirs.keys()) > 0:
+        if (error != 0) and (len(dirs.keys()) > 0):
             # Rekey superpaths to use ID rather then filename and discard unfound superpath
             error = OwnerFinder.use_id(DB, dirs)
             if error != 0:
