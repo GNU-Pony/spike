@@ -30,6 +30,7 @@ class OwnerFinder():
     Module for libspike for finding file owners
     '''
     
+    @staticmethod
     def get_file_pony_mapping(files, dirs, found, aggregator):
         '''
         Fetch filename to pony mapping
@@ -55,4 +56,30 @@ class OwnerFinder():
                     dir = (os.sep + os.sep.join(parts[:i + 1])) if has_root else os.sep.join(parts[:i + 1])
                     dict_append(dirs, dir, file)
         return LibSpikeHelper.joined_lookup(agg, files, [DB_FILE_NAME(-1), DB_FILE_ID, DB_PONY_ID, DB_PONY_NAME])
+    
+    
+    @staticmethod
+    def use_id(DB, dirs):
+        '''
+        Rekey superpaths to use ID rather then filename and discard unfound superpath
+        
+        @param  DB:DBCtrl                Database controller
+        @param  dirs:dict<str→int, str>  The superpaths for remaining files
+        '''
+        # Fetch file ID for filenames
+        sink = fetch(DB, DB_FILE_NAME, DB_FILE_ID, [], dirs.keys())
+        
+        # Rekey superpaths to use ID rather then filename and discard unfound superpath
+        nones = set()
+        for (dirname, dirid) in sink:
+            if dirid is None:
+                if dirname not in nones:
+                    nones.add(dirname)
+                    continue
+            else:
+                dirid = DBCtrl.value_convert(dirid, CONVERT_INT)
+                if dirid in dirs:
+                    return 27
+                dirs[dirid] = dirs[dirname]
+            del dirs[dirname]
 

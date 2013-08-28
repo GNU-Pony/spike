@@ -215,22 +215,8 @@ class LibSpike(LibSpikeHelper):
             return error
         
         if len(dirs.keys()) > 0:
-            # Fetch file id for filenames
-            sink = fetch(DB, DB_FILE_NAME, DB_FILE_ID, [], dirs.keys())
-            
-            # Rekey superpaths to use id rather then filename and discard unfound superpath
-            nones = set()
-            for (dirname, dirid) in sink:
-                if dirid is None:
-                    if dirname not in nones:
-                        nones.add(dirname)
-                        continue
-                else:
-                    dirid = DBCtrl.value_convert(dirid, CONVERT_INT)
-                    if dirid in dirs:
-                        return 27
-                    dirs[dirid] = dirs[dirname]
-                del dirs[dirname]
+            # Rekey superpaths to use ID rather then filename and discard unfound superpath
+            OwnerFinder.use_id(DB, dirs)
             
             # Determine if superpaths are --entire claimed and store information
             not_found = set()
