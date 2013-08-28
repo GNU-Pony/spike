@@ -25,6 +25,7 @@ import inspect
 from scales.installer import *
 from scales.bootstrapper import *
 from scales.scrollfinder import *
+from scales.ownerfinder import *
 from database.spikedb import *
 from database.dbctrl import *
 from algorithmic.algospike import *
@@ -207,23 +208,9 @@ class LibSpike(LibSpikeHelper):
         DB = DBCtrl(SPIKE_PATH)
         
         # Fetch filename to pony mapping
-        has_root = (len(files) > 0) and files[0].startswith(os.sep)
         dirs = {}
         found = set()
-        def agg(file, scroll):
-            if scroll is not None:
-                # Send and store found file
-                aggregator(file, scroll)
-                found.add(file)
-            else:
-                # List all superpaths to files without found scroll
-                parts = (file[1:] if has_root else file).split(os.sep)
-                if has_root:
-                    dict_append(dirs, os.dep, file)
-                for i in range(len(parts) - 1):
-                    dir = (os.sep + os.sep.join(parts[:i + 1])) if has_root else os.sep.join(parts[:i + 1])
-                    dict_append(dirs, dir, file)
-        error = joined_lookup(agg, files, [DB_FILE_NAME(-1), DB_FILE_ID, DB_PONY_ID, DB_PONY_NAME])
+        error = OwnerFinder.get_file_pony_mapping(files, dirs, found, aggregator)
         if error != 0:
             return error
         
