@@ -1446,7 +1446,7 @@ class LibSpike(LibSpikeHelper):
                                 raise Exception('Source file in field \'source\' may not be empty')
                             element = element[1]
                         if element:
-                            raise Exception('destination file in field \'source\' may not be empty')
+                            raise Exception('Destination file in field \'source\' may not be empty')
                         if element in elements:
                             raise Exception('Duplicate destination file \'%s\' in field \'source\'', element)
                         else:
