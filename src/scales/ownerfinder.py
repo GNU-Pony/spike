@@ -49,15 +49,16 @@ class OwnerFinder():
                 aggregator(file, scroll)
                 found.add(file)
                 dict_add(owners, file, scroll)
-            else:
-                # List all superpaths to files without found scroll, so we can check the directories if they are recursive
-                has_root = file.startswith(os.sep)
-                parts = (file[1:] if has_root else file).split(os.sep)
-                if has_root:
-                    dict_append(dirs, os.sep, file)
-                for i in range(len(parts) - 1):
-                    dir = (os.sep + os.sep.join(parts[:i + 1])) if has_root else os.sep.join(parts[:i + 1])
-                    dict_append(dirs, dir, file)
+                
+            # List all superpaths to files, so we can check the directories if they are recursive
+            has_root = file.startswith(os.sep)
+            parts = (file[1:] if has_root else file).split(os.sep)
+            if has_root:
+                dict_append(dirs, os.sep, file)
+            for i in range(len(parts) - 1):
+                dir = (os.sep + os.sep.join(parts[:i + 1])) if has_root else os.sep.join(parts[:i + 1])
+                dict_append(dirs, dir, file)
+        
         return LibSpikeHelper.joined_lookup(agg, files, [DB_FILE_NAME(-1), DB_FILE_ID, DB_PONY_ID, DB_PONY_NAME])
     
     
