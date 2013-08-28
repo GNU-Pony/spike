@@ -122,4 +122,28 @@ class OwnerFinder():
         for file in files:
             if file not in found:
                 aggregator(file)
+    
+    
+    @staticmethod
+    def report_entire(did_found, owners, dirs, aggregator):
+        '''
+        Determine owner of found directories and send ownership
+        
+        @param   did_find:set<int>           Superpath ID:s with found owner
+        @param   owners:dict<str, set<str>>  Mapping from files to owners
+        @param   dirs:dict<str, str>         Mapping from superdirectories to files without found scroll
+        @param   aggregator:(str, str)→void  Feed a file–scroll pair when an ownership has been identified
+        @return  :byte                       Error code, 0 if none
+        '''
+        error = 0
+        def agg(dirid, scroll):
+            if scroll is None:
+                error = 27
+            else:
+                for file in dirs[dirid]:
+                    if (file not in owners) or (scroll not in owners[file]):
+                        aggregator(file, scroll)
+                        dict_add(owners, file, scroll)
+        _error = LibSpikeHelper.joined_lookup(agg, list(did_find), [DB_FILE_ID, DB_PONY_ID, DB_PONY_NAME])
+        return max(error, _error)
 

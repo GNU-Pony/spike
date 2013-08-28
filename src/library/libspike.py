@@ -228,16 +228,7 @@ class LibSpike(LibSpikeHelper):
             OwnerFinder.report_nonfound(files, found, lambda file : aggregator(origfiles[file], None))
             
             # Determine owner of found directories and send ownership
-            def agg(dirid, scroll):
-                if scroll is None:
-                    error = 27
-                else:
-                    for file in dirs[dirid]:
-                        if (file not in owners) or (scroll not in owners[file]):
-                            aggregator(file, scroll)
-                            dict_add(owners, file, scroll)
-            _error = LibSpikeHelper.joined_lookup(agg, list(did_find), [DB_FILE_ID, DB_PONY_ID, DB_PONY_NAME])
-            error = max(error, _error)
+            error = OwnerFinder.report_entire(did_found, owners, dirs, lambda file, scroll : aggregator(origfiles[file], scroll
         
         return error
     
