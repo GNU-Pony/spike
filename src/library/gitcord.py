@@ -64,7 +64,7 @@ class Gitcord():
         @param   needed:*int  The needed version
         @return  :bool        Whether the installed version is at least as new as the specified version
         '''
-        installed = version() + [-1];
+        installed = Gitcord.version() + [-1];
         for i in range(len(needed)):
             (need, have) = (needed[i], installed[i])
             if need != have:
@@ -100,7 +100,7 @@ class Gitcord():
         @return  :bool        Whether the spell casting was successful
         '''
         args = ['git', 'pull']
-        if verify and check_version(1, 8, 2, 4):
+        if verify and Gitcord.check_version(1, 8, 2, 4):
             args.append('--verify-signatures')
         return 0 == self.__exec(args)
     
