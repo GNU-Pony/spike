@@ -204,30 +204,30 @@ class LibSpike(LibSpikeHelper):
         @return  :byte            Exit value, see description of `LibSpike`, the possible ones are: 0, 27
         '''
         LibSpike.lock(False)
+        origfiles = make_dictionary([(os.path.abspath(file), file) for file in files])
         files = [os.path.abspath(file) for file in files]
         DB = DBCtrl(SPIKE_PATH)
         
         # Fetch filename to pony mapping
         dirs = {}
         found = set()
-        error = OwnerFinder.get_file_pony_mapping(files, dirs, found, aggregator)
+        owners = {}
+        error = OwnerFinder.get_file_pony_mapping(files, dirs, found, owners, lambda file, scroll : aggregator(origfiles[file], scroll))
         if error != 0:
             return error
         
         if len(dirs.keys()) > 0:
             # Rekey superpaths to use ID rather then filename and discard unfound superpath
-            OwnerFinder.use_id(DB, dirs)
+            error = OwnerFinder.use_id(DB, dirs)
+            if error != 0:
+                return error
             
             # Determine if superpaths are --entire claimed and store information
-            not_found = set()
             did_find = set()
-            OwnerFinder.filter_entire_claimed(DB, dirs, not_found, did_find, found)
+            OwnerFinder.filter_entire_claimed(DB, dirs, did_find, found)
             
             # Report all non-found files
-            for dir in not_found:
-                for file in not_found[dir]:
-                    if file not in found:
-                        aggregator(file, None)
+            OwnerFinder.report_nonfound(files, found, lambda file : aggregator(origfiles[file], None))
             
             # Determine owner of found directories and send ownership
             def agg(dirid, scroll):
@@ -235,8 +235,11 @@ class LibSpike(LibSpikeHelper):
                     error = 27
                 else:
                     for file in dirs[dirid]:
-                        aggregator(file, scroll)
-            error = joined_lookup(agg, list(did_find), [DB_FILE_ID, DB_PONY_ID, DB_PONY_NAME])
+                        if (file not in owners) or (scroll not in owners[file]):
+                            aggregator(file, scroll)
+                            dict_add(owners, file, scroll)
+            _error = LibSpikeHelper.joined_lookup(agg, list(did_find), [DB_FILE_ID, DB_PONY_ID, DB_PONY_NAME])
+            error = max(error, _error)
         
         return error
     

@@ -27,18 +27,45 @@ produce cleaner code
 '''
 
 
+
+def make_dictionary(pairs):
+    '''
+    Creates a dictionary from key–value pairs
+    
+    @param  pairs:itr<(¿K?, ¿V?)>  Key–value pairs
+    '''
+    rc = {}
+    for (key, value) in pairs:
+        rc[key] = value
+    return rc
+
+
 def dict_append(dictionary, key, value):
     '''
-    Appends a value to a list of value for a key in a dictionary and creates the list is necessary
+    Appends a value to a list of value for a key in a dictionary and creates the list if necessary
     
-    @param  dictionary:dict<¿K?, ¿V?>  The dictionary
-    @param  key:¿K?                    The key
-    @param  value:¿V?                  The value
+    @param  dictionary:dict<¿K?, list<¿V?>>  The dictionary
+    @param  key:¿K?                          The key
+    @param  value:¿V?                        The value
     '''
     if key not in dictionary:
         dictionary[key] = [value]
     else:
         dictionary[key].append(value)
+
+
+def dict_add(dictionary, key, value):
+    '''
+    Adds a value to a set of value for a key in a dictionary and creates the set if necessary
+    
+    @param  dictionary:dict<¿K?, set<¿V?>>  The dictionary
+    @param  key:¿K?                         The key
+    @param  value:¿V?                       The value
+    '''
+    if key not in dictionary:
+        dictionary[key] = set([value])
+    else:
+        dictionary[key].add(value)
 
 
 def list_split(values, list_lambda, ignore_lambda = None):
