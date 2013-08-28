@@ -116,8 +116,9 @@ class OwnerFinder():
         '''
         Report all non-found files
         
+        @param  files:itr<str>         The files whose owners are seeked
         @param  found:set<str>         Files whose owners has been found
-        @parma  aggregator:(str)→void  Feed a file when it is determined what it has no identifiable owner
+        @param  aggregator:(str)→void  Feed a file when it is determined what it has no identifiable owner
         '''
         for file in files:
             if file not in found:
@@ -146,4 +147,33 @@ class OwnerFinder():
                         dict_add(owners, file, scroll)
         _error = LibSpikeHelper.joined_lookup(agg, list(did_find), [DB_FILE_ID, DB_PONY_ID, DB_PONY_NAME])
         return max(error, _error)
+    
+    
+    @staticmethod
+    def find_with_entire(DB, dirs, found, owners, files, aggregator):
+        '''
+        Find file owners by --entire claimed directories
+        
+        @param   DB:DBCtrl                    Database controller
+        @param   dirs:dict<str, str>          Mapping from superdirectories to files without found scroll
+        @param   found:set<str>               Files whose owners has been found
+        @param   owners:dict<str, set<str>>   Mapping from files to owners
+        @param   files:itr<str>               The files whose owners are seeked
+        @param   aggregator:(str, str?)→void  Feed a file–scroll pair when an ownership has been identified, `None` scroll if there is none
+        @return  :byte                        Error code, 0 if none
+        '''
+        # Rekey superpaths to use ID rather then filename and discard unfound superpath
+        error = OwnerFinder.use_id(DB, dirs)
+        if error != 0:
+            return error
+        
+        # Determine if superpaths are --entire claimed and store information
+        did_find = set()
+        OwnerFinder.filter_entire_claimed(DB, dirs, did_find, found)
+        
+        # Report all non-found files
+        OwnerFinder.report_nonfound(files, found, lambda file : aggregator(file, None))
+        
+        # Determine owner of found directories and send ownership
+        return OwnerFinder.report_entire(did_find, owners, dirs, aggregator)
 

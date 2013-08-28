@@ -204,31 +204,19 @@ class LibSpike(LibSpikeHelper):
         @return  :byte            Exit value, see description of `LibSpike`, the possible ones are: 0, 27
         '''
         LibSpike.lock(False)
+        
         origfiles = make_dictionary([(os.path.abspath(file), file) for file in files])
         files = [os.path.abspath(file) for file in files]
         DB = DBCtrl(SPIKE_PATH)
+        agg = lambda file, scroll : aggregator(origfiles[file], scroll)
         
-        # Fetch filename to pony mapping
         dirs = {}
         found = set()
         owners = {}
-        error = OwnerFinder.get_file_pony_mapping(files, dirs, found, owners, lambda file, scroll : aggregator(origfiles[file], scroll))
         
+        error = OwnerFinder.get_file_pony_mapping(files, dirs, found, owners, agg)
         if (error != 0) and (len(dirs.keys()) > 0):
-            # Rekey superpaths to use ID rather then filename and discard unfound superpath
-            error = OwnerFinder.use_id(DB, dirs)
-            if error != 0:
-                return error
-            
-            # Determine if superpaths are --entire claimed and store information
-            did_find = set()
-            OwnerFinder.filter_entire_claimed(DB, dirs, did_find, found)
-            
-            # Report all non-found files
-            OwnerFinder.report_nonfound(files, found, lambda file : aggregator(origfiles[file], None))
-            
-            # Determine owner of found directories and send ownership
-            error = OwnerFinder.report_entire(did_found, owners, dirs, lambda file, scroll : aggregator(origfiles[file], scroll
+            error = OwnerFinder.find_with_entire(DB, dirs, found, owners, files, agg)
         
         return error
     
