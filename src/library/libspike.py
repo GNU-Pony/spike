@@ -221,21 +221,7 @@ class LibSpike(LibSpikeHelper):
             # Determine if superpaths are --entire claimed and store information
             not_found = set()
             did_find = set()
-            class Sink():
-                def __init__(self):
-                    pass
-                def append(self, dir_entire):
-                    (dir, entire) = dir_entire
-                    if entire is None:
-                        if dir not in did_find:
-                            not_found.add(dir)
-                    else:
-                        did_find.add(dir)
-                        if dir in not_found:
-                            del not_found[dir]
-                        for file in dirs[dir]:
-                            found.add(file)
-            fetch(DB, DB_FILE_ID, DB_FILE_ENTIRE, Sink(), dirs.keys())
+            OwnerFinder.filter_entire_claimed(DB, dirs, not_found, did_find, found)
             
             # Report all non-found files
             for dir in not_found:

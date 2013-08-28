@@ -22,6 +22,7 @@ import os
 
 from database.dbctrl import *
 from library.libspikehelper import *
+from auxiliary.auxfunctions import *
 
 
 
@@ -64,7 +65,7 @@ class OwnerFinder():
         Rekey superpaths to use ID rather then filename and discard unfound superpath
         
         @param  DB:DBCtrl                Database controller
-        @param  dirs:dict<str→int, str>  The superpaths for remaining files
+        @param  dirs:dict<str⇒int, str>  The superpaths for remaining files
         '''
         # Fetch file ID for filenames
         sink = fetch(DB, DB_FILE_NAME, DB_FILE_ID, [], dirs.keys())
@@ -82,4 +83,32 @@ class OwnerFinder():
                     return 27
                 dirs[dirid] = dirs[dirname]
             del dirs[dirname]
+    
+    
+    @staticmethod
+    def filter_entire_claimed(DB, dirs, not_found, did_find, found):
+        '''
+        Determine if superpaths are --entire claimed and store information
+        
+        @param  DB:DBCtrl            Database control
+        @param  dirs:dict<int, str>  Superpath ID to file mapping
+        @param  not_found:set<str>   Superpaths without found owner, will be filled with dictionaries
+        @param  did_find:set<str>    Superpaths with found owner, will be filled with dictionaries
+        @param  found:set<str>       Files with found owner, will be filled with addition files
+        '''
+        class Sink():
+            def __init__(self):
+                pass
+            def append(self, dir_entire):
+                (dir, entire) = dir_entire
+                if entire is None:
+                    if dir not in did_find:
+                        not_found.add(dir)
+                else:
+                    did_find.add(dir)
+                    if dir in not_found:
+                        del not_found[dir]
+                    for file in dirs[dir]:
+                        found.add(file)
+        fetch(DB, DB_FILE_ID, DB_FILE_ENTIRE, Sink(), dirs.keys())
 
