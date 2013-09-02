@@ -46,6 +46,16 @@ class LibSpikeHelper():
     Helper for LibSpike
     '''
     
+    @staticmethod
+    def get_lockfile(spike_path):
+        '''
+        Gets the file name of the concurrent database access lock file
+        
+        @param   spike_path:str  Spike's location
+        @return  :str            The lock file's file name
+        '''
+        return '/run/lock/spike'
+    
     
     @staticmethod
     def lock(exclusive):
@@ -55,19 +65,20 @@ class LibSpikeHelper():
         @param  exclusive:bool  Whether the lock should be exclusive, that is, you are about to do modifications
         '''
         import fcntl ## We are importing here so non-Unix systems do not run into problems and can use a plug-in to implement file locking
+        lockfile = LibSpikeHelper.get_lockfile(SPIKE_PATH)
         if LibSpikeHelper.lock_file is None:
-            LibSpikeHelper.lock_file = open('/run/lock/spike', 'a') ## TODO you should be able to change this
+            LibSpikeHelper.lock_file = open(lockfile, 'a')
             LibSpikeHelper.lock_file.flush()
         locktype = fcntl.LOCK_EX if exclusive else fcntl.LOCK_SH
         try:
             fcntl.fcntl(LibSpikeHelper.lock_file.fileno(), locktype | fcntl.LOCK_NB)
         except:
             if exclusive:
-                print('/run/lock/spike is currently locked.')
+                print('%s is currently locked.' % lockfile)
             else:
-                print('/run/lock/spike is currently locked for modifications.')
+                print('%s is currently locked for modifications.' % lockfile)
             ## You can leave a message to users that are trying to access with incompatible lock by filling /run/lock/spike with the message
-            with open('/run/lock/spike', 'rb') as file:
+            with open(lockfile, 'rb') as file:
                 msg = file.read().decode('utf-8', 'replace')
                 if msg != '':
                     print('\A message has been left for you:\n    ')
