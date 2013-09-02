@@ -49,11 +49,12 @@ class Claimer():
     
     
     @staticmethod
-    def check_entire_conflicts(files, DB):
+    def check_entire_conflicts(files, private, DB):
         '''
         Checks that the files are not owned by a recursively owned directory
         
         @param   files:list<str>  The file to claim
+        @param   private:bool     Whether the pony is user private rather the user shared
         @param   DB:DBCtrl        Database controller
         @return  :list<int>       Conflicting file ID:s
         '''
@@ -67,6 +68,8 @@ class Claimer():
         dirs = unique(dirs)
         if has_root:
             dirs = [os.sep] + [os.sep + dir for dir in dirs]
+        db = DB.open_db(private, DB_FILE_NAME(-1), DB_FILE_ID)
+        ids = db.fetch([], dirs)
         db = DB.open_db(private, DB_FILE_ID, DB_FILE_ENTIRE)
-        return DBCtrl.get_existing([], db.fetch([], dirs))
+        return DBCtrl.get_existing([], db.fetch([], ids))
 

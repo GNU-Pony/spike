@@ -976,7 +976,7 @@ class LibSpike(LibSpikeHelper):
         
         
         # Check that the files are not owned by a recursively owned directory
-        fileids = Claimer.check_entire_conflicts()
+        fileids = Claimer.check_entire_conflicts(files, private, DB)
         if len(fileids) > 0:
             error = 10
         
@@ -1024,7 +1024,7 @@ class LibSpike(LibSpikeHelper):
                     for (scroll_id, scroll_name) in id_scroll:
                         scrolls[scroll_id] = scroll_name.replace('\0', '')
                 aggregator(file, scrolls[DBCtrl.raw_int(scroll)])
-        DB.open_db(agg, files, [DB_FILE_NAME(-1), DB_FILE_ID, DB_PONY_ID], private)
+        DB.joined_fetch(agg, files, [DB_FILE_NAME(-1), DB_FILE_ID, DB_PONY_ID], private)
         error = error[0]
         if (not force) and (error == 11):
             return error
