@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
 import os
 
+from database.dbctrl import *
 from dragonsuite import *
 
 
@@ -32,6 +33,8 @@ class Claimer():
     @staticmethod
     def get_files(files, recursive):
         '''
+        Gets all files to be claimed with asbolute paths
+        
         @param   files:list<str>  Files, may or may not be absolute paths
         @param   recursive:bool   Whether the files are to be recursively claimed
         @return  :list<str>?      All files to be claimed with asbolute paths, `None` on error code 12
@@ -43,4 +46,27 @@ class Claimer():
         if recursive:
             files = find(files)
         return files
+    
+    
+    @staticmethod
+    def check_entire_conflicts(files, DB):
+        '''
+        Checks that the files are not owned by a recursively owned directory
+        
+        @param   files:list<str>  The file to claim
+        @param   DB:DBCtrl        Database controller
+        @return  :list<int>       Conflicting file ID:s
+        '''
+        dirs = []
+        has_root = len(filter(lambda file : file.startswith(os.sep), files)) == len(files)
+        for file in files:
+            parts = (file[1:] if has_root else file).split(os.sep)
+            for i in range(len(parts) - 1):
+                dirs.append(os.sep.join(parts[:i + 1]))
+        dirs.sort()
+        dirs = unique(dirs)
+        if has_root:
+            dirs = [os.sep] + [os.sep + dir for dir in dirs]
+        db = DB.open_db(private, DB_FILE_ID, DB_FILE_ENTIRE)
+        return DBCtrl.get_existing([], db.fetch([], dirs))
 

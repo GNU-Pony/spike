@@ -974,20 +974,9 @@ class LibSpike(LibSpikeHelper):
         if len(pony.encode('utf-8')) > DB_SIZE_SCROLL:
             return 255
         
+        
         # Check that the files are not owned by a recursively owned directory
-        dirs = []
-        has_root = (len(files) > 0) and files[0].startswith(os.sep)
-        for file in files:
-            parts = (file[1:] if has_root else file).split(os.sep)
-            for i in range(len(parts) - 1):
-                dirs.append(os.sep.join(parts[:i + 1]))
-        dirs.sort()
-        dirs = unique(dirs)
-        if has_root:
-            dirs = [os.sep + dir for dir in dirs]
-            dirs = [os.sep] + dirs
-        db = DB.open_db(private, DB_FILE_ID, DB_FILE_ENTIRE)
-        fileids = DBCtrl.get_existing([], db.fetch([], dirs))
+        fileids = Claimer.check_entire_conflicts()
         if len(fileids) > 0:
             error = 10
         
