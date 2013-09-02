@@ -23,6 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 Test for this directory
 '''
 from algospike import *
+from sha3sum import *
 
 
 error_ = False
@@ -132,6 +133,13 @@ if got and len(lostrc) == 0 and len(rc) == 7:
             order_ok = False
             break
     error('algospike.tsort, sortable, does not work', cycles == 1 and xy and order_ok)
+
+
+
+sha3 = SHA3()
+got = sha3.digest_file('../../LICENSE')
+ref = '827821773FDCE6F142E8C0446530DA596369AB63D5230E2A7D786AEAC0BDC406F1A50D8550F718A70384526980FEEADBF43348ADDBC50A13478B1A958C0E9218DC172DA2CB7591ED'
+error('sha3sum does not work', got == ref)
 
 
 
