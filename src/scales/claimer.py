@@ -60,7 +60,7 @@ class Claimer():
         @return  :list<str>       Conflicting files
         '''
         dirs = []
-        has_root = len(filter(lambda file : file.startswith(os.sep), files)) == len(files)
+        has_root = len(list(filter(lambda file : file.startswith(os.sep), files))) == len(files)
         for file in filter(lambda f : not os.path.isdir(f), files):
             parts = (file[1:] if has_root else file).split(os.sep)
             for i in range(len(parts) - 1):
