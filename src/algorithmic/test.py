@@ -92,6 +92,49 @@ error('algospike.lb128 does not work', got == [64, 64, 69, 70, 100, 127, 127])
 
 
 
+__ = lambda x : [] if x == '' else x.split(' ')
+def _(p, deps, reqs):
+    data[p] = (set(__(deps)), __(reqs))
+rc, lostrc, data = [], [], {}
+_('a', 'b', '')
+_('b', 'c d', '')
+_('d', 'c e', '')
+_('e', 'x', 'x')
+_('x', 'y', '')
+_('y', 'x', 'x')
+_('c', '', '')
+got = tsort([], [], data)
+error('algospike.tsort, unsortable, does not work', got == False)
+
+data = {}
+_('a', 'b', '')
+_('b', 'c d', '')
+_('d', 'c e', '')
+_('e', 'x', 'x')
+_('x', 'y', '')
+_('y', 'x', '')
+_('c', '', '')
+got = tsort(rc, lostrc, data)
+error('algospike.tsort, sortable, does not work', got and len(lostrc) == 0 and len(rc) == 7)
+if got and len(lostrc) == 0 and len(rc) == 7:
+    cycles = len(list(filter(lambda x : x[1] is not None, rc)))
+    data = {}
+    for (p, c) in rc:
+        data[p] = c
+    order = ''
+    for (p, _) in rc:
+        order += p
+    xy = (data['x'] == ['y']) if order.find('x') < order.find('y') else (data['y'] == ['x'])
+    order_ok = True
+    for first_last in 'ba db cb cd ed xe ye'.split(' '):
+        first, last = first_last[0], first_last[1]
+        if order.find(first) > order.find(last):
+            order_ok = False
+            break
+    error('algospike.tsort, sortable, does not work', cycles == 1 and xy and order_ok)
+
+
+
 
 if error_ == 0:
     print('\033[32m%s\033[00m' % 'Everyting seems to be working')
