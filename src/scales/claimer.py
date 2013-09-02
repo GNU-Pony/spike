@@ -91,4 +91,37 @@ class Claimer():
                     aggregator(filename, scroll)
             return LibSpikeHelper.joined_lookup(agg, conflicts, [DB_FILE_NAME(-1), DB_FILE_ID, DB_PONY_ID, DB_PONY_NAME])
         return 0
+    
+    
+    @staticmethod
+    def get_id(pony, private, DB):
+        '''
+        Get the ID of the pony
+        
+        @param   pony:str       The name of the pony
+        @param   private:bool   Whether the pony is user private rather the user shared
+        @param   DB:DBCtrl      Database control
+        @return  :(int, bytes)  The ID as an integer and in raw format
+        '''
+        db = DB.open_db(private, DB_PONY_NAME, DB_PONY_ID)
+        sink = db.fetch([], [pony])
+        if len(sink) != 1:
+            return 27
+        new = sink[0][1] is None
+        if new:
+            sink = db.list([])
+        sink = [DBCtrl.raw_int(item[1]) for item in sink]
+        sink.sort()
+        id = sink[-1]
+        if new:
+            id += 1
+            # If the highest ID is used, find the first unused
+            if id >> ((DB_SIZE_ID << 3) - (0 if private else 1)) > 0:
+                last = ((1 << ((DB_SIZE_ID << 3) - 1)) if private else 0) - 1
+                for id in sink:
+                    if id > last + 1:
+                        id = last + 1
+                        continue
+                    last = id
+        return (DBCtrl.int_bytes(id, DB_SIZE_ID), id)
 

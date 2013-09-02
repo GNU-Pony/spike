@@ -967,6 +967,7 @@ class LibSpike(LibSpikeHelper):
         @return  :byte              Exit value, see description of `LibSpike`, the possible ones are: 0, 10, 11, 12, 27, 255
         '''
         LibSpike.lock(True)
+        
         DB = DBCtrl(SPIKE_PATH)
         files = Claimer.get_files(files, recursiveness == 1)
         if files is None:
@@ -978,33 +979,13 @@ class LibSpike(LibSpikeHelper):
         conflicts = Claimer.check_entire_conflicts(files, private, DB)
         if len(conflicts) > 0:
             # Report already claimed files
-            error = max(10, report_conflicts(aggregator, conflicts))
+            error = max(10, Claimer.report_conflicts(aggregator, conflicts))
             if (not force) and (error != 0):
                 return error
             error = 0
         
         # Get the ID of the pony
-        db = DB.open_db(private, DB_PONY_NAME, DB_PONY_ID)
-        sink = db.fetch([], [pony])
-        if len(sink) != 1:
-            return 27
-        new = sink[0][1] is None
-        if new:
-            sink = db.list([])
-        sink = [DBCtrl.raw_int(item[1]) for item in sink]
-        sink.sort()
-        id = sink[-1]
-        if new:
-            id += 1
-            # If the highest ID is used, find the first unused
-            if id >> ((DB_SIZE_ID << 3) - (0 if private else 1)) > 0:
-                last = ((1 << ((DB_SIZE_ID << 3) - 1)) if private else 0) - 1
-                for id in sink:
-                    if id > last + 1:
-                        id = last + 1
-                        continue
-                    last = id
-        _id = DBCtrl.int_bytes(id, DB_SIZE_ID)
+        (_id, id) = Claimer.get_id(pony, private, DB)
         
         # Identify unclaimable files and report them with their owners
         (scrolls, error) = ({}, [0])
