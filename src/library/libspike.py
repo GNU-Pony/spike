@@ -982,7 +982,6 @@ class LibSpike(LibSpikeHelper):
             error = max(10, Claimer.report_conflicts(aggregator, conflicts))
             if (not force) and (error != 0):
                 return error
-            error = 0
         
         # Get the ID of the pony
         (_id, id) = Claimer.get_id(pony, private, DB)
@@ -1007,10 +1006,9 @@ class LibSpike(LibSpikeHelper):
         # Store scroll name → scroll id and scroll id → scroll name if the pony is not installed
         if new:
             DB.open_db(private, DB_PONY_NAME, DB_PONY_ID).insert([(pony, _id)])
-        id = DBCtrl.int_raw(id)
         if new:
             _pony = (pony + '\0' * DB_SIZE_SCROLL)[DB_SIZE_SCROLL:]
-            DB.open_db(private, DB_PONY_ID, DB_PONY_NAME).insert([(id, _pony)])
+            DB.open_db(private, DB_PONY_ID, DB_PONY_NAME).insert([(_id, _pony)])
         
         # Fetch file name → file ID and identify files without an assigned ID
         sink = DB.open_db(private, DB_FILE_NAME(-1), DB_FILE_ID).fetch([], files)
@@ -1074,7 +1072,7 @@ class LibSpike(LibSpikeHelper):
         
         # Store scroll ID → file name ID
         db = DB.open_db(private, DB_PONY_ID, DB_FILE_ID)
-        db.insert([(id, DBCtrl.int_bytes(fileid, DB_SIZE_FILEID)) for (file, fileid) in file_id])
+        db.insert([(_id, DBCtrl.int_bytes(fileid, DB_SIZE_FILEID)) for (file, fileid) in file_id])
         
         # Store --entire information
         if recursiveness == 3:
