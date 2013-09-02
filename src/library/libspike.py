@@ -26,6 +26,7 @@ from scales.installer import *
 from scales.bootstrapper import *
 from scales.scrollfinder import *
 from scales.ownerfinder import *
+from scales.claimer import *
 from database.spikedb import *
 from database.dbctrl import *
 from algorithmic.algospike import *
@@ -967,12 +968,9 @@ class LibSpike(LibSpikeHelper):
         '''
         LibSpike.lock(True)
         DB = DBCtrl(SPIKE_PATH)
-        files = [os.path.abspath(file) for file in files]
-        for file in files:
-            if not os.path.lexists(file):
-                return 12
-        if recursiveness == 1:
-            files = find(files)
+        files = Claimer.get_files(files, recursiveness == 1)
+        if files is None:
+            return 12
         if len(pony.encode('utf-8')) > DB_SIZE_SCROLL:
             return 255
         
