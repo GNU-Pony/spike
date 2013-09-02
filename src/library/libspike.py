@@ -974,20 +974,14 @@ class LibSpike(LibSpikeHelper):
         if len(pony.encode('utf-8')) > DB_SIZE_SCROLL:
             return 255
         
-        
         # Check that the files are not owned by a recursively owned directory
-        fileids = Claimer.check_entire_conflicts(files, private, DB)
-        if len(fileids) > 0:
-            error = 10
-        
-        # Fetch and send already claimed files
-        if len(fileids) > 0:
-            def agg(fileid, scroll):
-                if scroll is not None:
-                    aggregator(fileid, scroll)
-            error = max(error, joined_lookup(agg, fileids, [DB_FILE_ID, DB_PONY_ID, DB_PONY_NAME]))
-        if error != 0:
-            return error
+        conflicts = Claimer.check_entire_conflicts(files, private, DB)
+        if len(conflicts) > 0:
+            # Report already claimed files
+            error = max(10, report_conflicts(aggregator, conflicts))
+            if (not force) and (error != 0):
+                return error
+            error = 0
         
         # Get the ID of the pony
         db = DB.open_db(private, DB_PONY_NAME, DB_PONY_ID)

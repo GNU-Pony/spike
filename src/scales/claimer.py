@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
 import os
 
+from library.libspikehelper import *
 from database.dbctrl import *
 from dragonsuite import *
 
@@ -56,7 +57,7 @@ class Claimer():
         @param   files:list<str>  The file to claim
         @param   private:bool     Whether the pony is user private rather the user shared
         @param   DB:DBCtrl        Database controller
-        @return  :list<int>       Conflicting file ID:s
+        @return  :list<str>       Conflicting files
         '''
         dirs = []
         has_root = len(filter(lambda file : file.startswith(os.sep), files)) == len(files)
@@ -68,8 +69,26 @@ class Claimer():
         dirs = unique(dirs)
         if has_root:
             dirs = [os.sep] + [os.sep + dir for dir in dirs]
-        db = DB.open_db(private, DB_FILE_NAME(-1), DB_FILE_ID)
-        ids = db.fetch([], dirs)
-        db = DB.open_db(private, DB_FILE_ID, DB_FILE_ENTIRE)
-        return DBCtrl.get_existing([], db.fetch([], ids))
+        name_entire = []
+        def agg(name, entire):
+            name_entire.append(name, entire)
+        DB.joined_fetch(agg, dirs, [DB_FILE_NAME(-1), DB_FILE_ID, DB_FILE_ENTIRE]. private)
+        return DBCtrl.get_existing([], name_entire)
+    
+    
+    @staticmethod
+    def report_conflicts(aggregator, conflicts):
+        '''
+        Report already claimed files
+        
+        @param   aggregator:(str, str)→void  Feed file names paired with owners
+        @param   conflicts:list<str>         Already claimed files
+        @return  :byte                       Error code
+        '''
+        if len(conflicts) > 0:
+            def agg(filename, scroll):
+                if scroll is not None:
+                    aggregator(filename, scroll)
+            return LibSpikeHelper.joined_lookup(agg, conflicts, [DB_FILE_NAME(-1), DB_FILE_ID, DB_PONY_ID, DB_PONY_NAME])
+        return 0
 
