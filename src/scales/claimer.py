@@ -61,7 +61,7 @@ class Claimer():
         '''
         dirs = []
         has_root = len(filter(lambda file : file.startswith(os.sep), files)) == len(files)
-        for file in files:
+        for file in filter(lambda f : not os.path.isdir(f), files):
             parts = (file[1:] if has_root else file).split(os.sep)
             for i in range(len(parts) - 1):
                 dirs.append(os.sep.join(parts[:i + 1]))
