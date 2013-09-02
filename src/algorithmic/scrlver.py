@@ -53,7 +53,7 @@ class ScrollVersion():
         if len(parts) == 1:
             self.name = parts[0]
         elif len(parts) == 3:
-            if part[1] not in ('<', '<=', '>', '>=', '=', '<>'):
+            if parts[1] not in ('<', '<=', '>', '>=', '=', '<>'):
                 return
             self.name = parts[0]
             ver = ScrollVersion.Version(parts[2], '=' not in parts[1])
