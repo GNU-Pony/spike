@@ -92,10 +92,10 @@ class ScrollVersion():
             self.release = -1
             if ':' in version:
                 self.epoch = int(version[:version.find(':')])
-                version[version.find(':') + 1:]
+                version = version[version.find(':') + 1:]
             if '-' in version:
                 self.release = int(version[version.find('-') + 1:])
-                version[:version.find('-')]
+                version = version[:version.find('-')]
             self.parts = version.split('.')
             self.open = open
         
