@@ -69,7 +69,6 @@ error('algospike.multibin_search, searching for non-existing, does not work',
 
 
 items = [0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 16, 100, 1000, 10000, 1 << 10, (1 << 20) + 4, (1 << 20) - 4, (1 << 32) - 1]
-print(items)
 got = [lb32(item) for item in items]
 error('algospike.lb32 does not work', got == [0, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 4, 6, 9, 13, 10, 20, 19, 31])
 got = [lb64(item) for item in items]
