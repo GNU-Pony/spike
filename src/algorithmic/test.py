@@ -20,7 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
 
 '''
-Test for the directory
+Test for this directory
 '''
 from algospike import *
 
