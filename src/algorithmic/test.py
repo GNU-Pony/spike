@@ -127,7 +127,7 @@ if got and len(lostrc) == 0 and len(rc) == 7:
         order += p
     xy = (data['x'] == ['y']) if order.find('x') < order.find('y') else (data['y'] == ['x'])
     order_ok = True
-    for first_last in 'ba db cb cd ed xe ye'.split(' '):
+    for first_last in 'ba db cb cd ed xe'.split(' '):
         first, last = first_last[0], first_last[1]
         if order.find(first) > order.find(last):
             order_ok = False
