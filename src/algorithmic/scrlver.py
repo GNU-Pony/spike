@@ -101,6 +101,12 @@ class ScrollVersion():
         
         
         def as_closed(self, closed = True):
+            '''
+            Return a version that is closed, or open if you prefer
+            
+            @param   closed:bool  Whether the new version should be close
+            @return               An identical version except possibility when another openness
+            '''
             return ScrollVersion.Version(self.version, not closed)
         
         
@@ -247,7 +253,8 @@ class ScrollVersion():
         elif other.complement:     return ( c(self.lower) !=  c(self.upper)) or (c(self.lower) != c(other.lower))
         elif  self.complement:     return (c(other.lower) != c(other.upper)) or (c(self.lower) != c(other.lower))
         else:
-            return (self.lower <= other.lower <= self.upper) or (self.lower <= other.upper <= self.upper)
+            return ( self.lower <= other.lower <=  self.upper) or ( self.lower <= other.upper <=  self.upper) or \
+            	   (other.lower <=  self.lower <= other.upper) or (other.lower <=  self.upper <= other.upper)
     
     
     def __eq__(self, other):
