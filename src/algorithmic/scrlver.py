@@ -188,6 +188,9 @@ class ScrollVersion():
             '''
             Operator: ==
             '''
+            if (self is None) or (other is None):
+                return (self is None) and (other is None)
+            
             cmp = self.__cmp(other)
             if cmp != 0:
                 return False
