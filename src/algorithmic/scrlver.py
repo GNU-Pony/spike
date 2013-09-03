@@ -279,17 +279,15 @@ class ScrollVersion():
         '''
         Creates a union of two intersecting scroll versions
         
-        @param   other:ScrollVersion  The other scrolls
+        @param   other:ScrollVersion  The other scrolls 
         @return  :ScrollVersion       The union of the two scrolls
         '''
         if self.complement:
             return ScrollVersion(self.name) if other in ScrollVersion(self.full.replace('<>', '=')) else self
         if other.complement:
             return other.union(self)
-        if self.lower == self.upper:
-            return other
-        if other.lower == other.upper:
-            return self
+        if (self.lower == self.upper) or (other.lower == other.upper):
+            return self if self.lower is None else other
         
         name = self.name
         lower = None
@@ -322,10 +320,8 @@ class ScrollVersion():
             return other
         if other.complement:
             return self
-        if self.lower == self.upper:
-            return self
-        if other.lower == other.upper:
-            return other
+        if (self.lower == self.upper) or (other.lower == other.upper):
+            return self if self.lower is not None else other
         
         name = self.name
         lower = None
