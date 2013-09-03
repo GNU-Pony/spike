@@ -262,9 +262,18 @@ class ScrollVersion():
         elif other.lower is None:  return i( self.complement or (other.upper >= self.lower))
         elif other.complement:     return i(( c(self.lower) !=  c(self.upper)) or (c(self.lower) != c(other.lower)))
         elif  self.complement:     return i((c(other.lower) != c(other.upper)) or (c(self.lower) != c(other.lower)))
+        elif  self.lower ==  self.upper:  return other.lower <=  self.lower <= other.upper
+        elif other.lower == other.upper:  return  self.lower <= other.lower <=  self.upper
         else:
-            return i(( self.lower <= other.lower <=  self.upper) or ( self.lower <= other.upper <=  self.upper) or \
-            	     (other.lower <=  self.lower <= other.upper) or (other.lower <=  self.upper <= other.upper))
+            sl, su =  self.lower,  self.upper
+            ol, ou = other.lower, other.upper
+            if (sl <= ol <= su) or (sl <= ou <= su):  return i(True)
+            if (ol <= sl <= ou) or (ol <= su <= ou):  return i(True)
+            if (c(sl) == c(ol)) and (sl < ou): return i(True)
+            if (c(ol) == c(sl)) and (ol < su): return i(True)
+            if (c(su) == c(ou)) and (sl < ou): return i(True)
+            if (c(ou) == c(su)) and (ol < su): return i(True)
+            return False
     
     
     def __eq__(self, other):
@@ -273,7 +282,7 @@ class ScrollVersion():
         
         Implemented as a synomym for `other in self`, checking if they intersect
         '''
-        return other in self
+        return self in other
     
     
     def __str__(self):
@@ -476,12 +485,11 @@ class ScrollVersion():
         
         @param  scroll_set:set<ScrollVersion>  Set of scrolls
         '''
+        print('<  ' + str([str(e) for e in list(scroll_set)]) + ' union ' + str(self))
         self.union_mode = True
         if self in scroll_set:
-            others = list(set([self]).intersection(scroll_set))
-            other = others[0]
-            if (len(others) == 1) and (other.full == self.full):
-                others = list(scroll_set.intersection(set([self])))
+            others = list(filter(lambda element : self in element, list(scroll_set)))
+            print('   ' + str([str(e) for e in others]))
             while self in scroll_set:
                 scroll_set.remove(self)
             others = [self.union(o) for o in others]
@@ -490,6 +498,7 @@ class ScrollVersion():
                 other.union_add(scroll_set)
         else:
             scroll_set.add(self)
+        print(' > ' + str([str(e) for e in list(scroll_set)]))
     
     
     def intersection_add(self, scroll_set):
