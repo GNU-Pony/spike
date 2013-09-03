@@ -245,6 +245,7 @@ class ScrollVersion():
         
         i = lambda rc : rc and ((not self.intersection_mode) or (self.intersection(other) is not None))
         c = lambda version : version.as_closed()
+        
         if ((other.lower is None) and (other.upper is None)) or ((self.lower is None) and (self.upper is None)):
             return i(True)
         elif ((self.lower is None) and (other.lower is None)) or ((self.upper is None) and (other.upper is None)):
