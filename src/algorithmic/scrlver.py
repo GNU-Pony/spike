@@ -303,9 +303,9 @@ class ScrollVersion():
         if (self.lower is None) or (self.upper is None) or (other.lower is None) or (other.upper is None):
             if (self.lower is not None) and (self.upper is None) and (other.lower is None) and (other is not None):
                 return other.joinable_with(self)
-            if (self.lower is None) and (self.upper is not None) and (other.lower not is None) and (other is None):
+            if (self.lower is None) and (self.upper is not None) and (other.lower is not None) and (other is None):
                  if c(self.upper) == c(other.lower):
-                     return xor(self.upper.open, other.lower.open):
+                     return xor(self.upper.open, other.lower.open)
             return False
         
         if self.complement and other.complement:
