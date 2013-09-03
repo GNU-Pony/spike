@@ -281,6 +281,10 @@ def _(_a_op__b, expect):
     elif op == '>':   test = lambda x, y : x >  y
     elif op == '>=':  test = lambda x, y : x >= y
     error('scrlver.ScrollVersion.Version, %s, does not work' % _a_op__b, test(a, b) == expect)
+    
+    if op == '==':  _('%s %s %s' % (_a, '!=', _b), not expect)
+    if op == '<':   _('%s %s %s' % (_b, '>', _a), expect)
+    if op == '<=':  _('%s %s %s' % (_b, '>=', _a), expect)
 
 _('1 == 1', True)
 _('1 == 2', False)
@@ -312,37 +316,6 @@ _('1.1 == 1', False)
 _('1.1 == 1.1*', False)
 _('1:1.2-4 == 1:1.2-4', True)
 _('1:1.2-4 == 1:1.2-4*', False)
-
-_('1 != 1', False)
-_('1 != 2', True)
-_('1 != 1*', True)
-_('1* != 1', True)
-_('1* != 1*', True)
-_('1-1 != 1-1', False)
-_('1-1 != 1-2', True)
-_('1-1 != 1', False)
-_('1-2 != 1', False)
-_('1 != 1-2', False)
-_('1* != 1-2', True)
-_('1* != 1-2*', True)
-_('1 != 1-2*', True)
-_('1 != 0:1', False)
-_('0:1 != 1', False)
-_('1:1 != 1', True)
-_('1 != 1:1', True)
-_('1:1 != 1:1', False)
-_('1:1 != 1:1*', True)
-_('1:1-4 != 1:1-4', False)
-_('1:1-4 != 1:2-4', True)
-_('1:1-4 != 1:1-3', True)
-_('1:1-4 != 2:1-4', True)
-_('1:1-4 != 1:1-4*', True)
-_('1 != 1.1', True)
-_('1.1 != 1.1', False)
-_('1.1 != 1', True)
-_('1.1 != 1.1*', True)
-_('1:1.2-4 != 1:1.2-4', False)
-_('1:1.2-4 != 1:1.2-4*', True)
 
 
 
