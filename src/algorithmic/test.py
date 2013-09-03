@@ -624,6 +624,17 @@ _('>=3', '<>3', '', '>=3')
 _('<=3', '<>3', '', '<=3')
 
 
+union = set()
+ScrollVersion('p=1').union_add(union)
+print([str(e) for e in ScrollVersion.slice(union)])
+ScrollVersion('p>1<=2').union_add(union)
+print([str(e) for e in ScrollVersion.slice(union)])
+ScrollVersion('p>1.1<3').union_add(union)
+print([str(e) for e in ScrollVersion.slice(union)])
+ScrollVersion('p>3').union_add(union)
+print([str(e) for e in ScrollVersion.slice(union)])
+
+
 
 
 if errno == 0:

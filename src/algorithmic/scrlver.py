@@ -50,6 +50,7 @@ class ScrollVersion():
         self.upper = None
         self.complement = False
         self.intersection_mode = False
+        self.union_mode = False
         
         if len(parts) == 1:
             self.name = parts[0]
@@ -240,6 +241,9 @@ class ScrollVersion():
         @param   other:ScrollVersion  The other scroll
         @return  :bool                Whether the two scrolls have the same name and their version ranges intersects
         '''
+        if self.union_mode:
+            if self.joinable_with(other):
+                return true
         if self.name != other.name:
             return False
         
@@ -281,6 +285,76 @@ class ScrollVersion():
         return self.full
     
     
+    def joinable_with(self, other):
+        '''
+        Checks if the scroll version can be joined with another other
+        
+        @param   other:ScrollVersion  The other scroll
+        @return  :bool                Whether a join is possible
+        '''
+        if self.name != other.name:
+            return False
+        if ( self.lower is None) and ( self.upper is None):  return False
+        if (other.lower is None) and (other.upper is None):  return False
+        
+        xor = lambda x, y : x != y
+        c = lambda v : v.as_closed()
+        
+        if (self.lower is None) or (self.upper is None) or (other.lower is None) or (other.upper is None):
+            if (self.lower is not None) and (self.upper is None) and (other.lower is None) and (other is not None):
+                return other.joinable_with(self)
+            if (self.lower is None) and (self.upper is not None) and (other.lower not is None) and (other is None):
+                 if c(self.upper) == c(other.lower):
+                     return xor(self.upper.open, other.lower.open):
+            return False
+        
+        if self.complement and other.complement:
+            return False
+        if other.complement:
+            return other.joinable_with(self)
+        if self.complement:
+            return c(self.lower) == other.lower == other.upper
+        
+        a = c(self.upper) == c(other.lower)
+        b = c(self.lower) == c(other.upper)
+        
+        ao = xor(self.upper.open, other.lower.open)
+        bo = xor(self.lower.open, other.upper.open)
+        
+        return xor(a, b) and (ao, bo)[b]
+    
+    
+    def join(self, other):
+        '''
+        Joins two scroll versions
+        
+        @param   other:ScrollVersion  The other scroll
+        @return  :ScrollVersion       The join of the two scrolls
+        '''
+        if other.complement or self.complement:
+            return ScrollVersion(self.name)
+        
+        c = lambda v : v.as_closed()
+        
+        lower = None
+        upper = none
+        if (self.upper is not None) and (c(self.upper) == c(other.lower)):
+            lower = self.lower
+            upper = other.upper
+        else:
+            lower = other.lower
+            upper = self.upper
+        
+        full = self.name
+        if lower is not None:
+            full += '>' if lower.open else '>='
+            full += lower.version
+        if upper is not None:
+            full += '<' if upper.open else '<='
+            full += upper.version
+        return ScrollVersion(full)
+    
+    
     def union(self, other):
         '''
         Creates a union of two intersecting scroll versions
@@ -288,6 +362,9 @@ class ScrollVersion():
         @param   other:ScrollVersion  The other scrolls 
         @return  :ScrollVersion       The union of the two scrolls
         '''
+        if self.joinable_with(other):
+            return self.join(other)
+        
         if self.complement:
             return ScrollVersion(self.name) if other in ScrollVersion(self.full.replace('<>', '=')) else self
         if other.complement:
@@ -394,10 +471,11 @@ class ScrollVersion():
         
         @param  scroll_set:set<ScrollVersion>  Set of scrolls
         '''
+        self.union_mode = True
         if self in scroll_set:
-            other = set([self]).intersection(scroll_set)
-            if other.full == self.full: # incase the behaviour of intersection changes
-                other = scroll_set.intersection(set([self]))
+            other = list(set([self]).intersection(scroll_set))[0]
+            if other.full == self.full:
+                other = list(scroll_set.intersection(set([self])))[0]
             scroll_set.remove(other)
             scroll_set.add(self.union(other))
         else:
@@ -412,9 +490,9 @@ class ScrollVersion():
         '''
         self.intersection_mode = True
         if self in scroll_set:
-            other = set([self]).intersection(scroll_set)
-            if other.full == self.full: # incase the behaviour of intersection changes
-                other = scroll_set.intersection(set([self]))
+            other = list(set([self]).intersection(scroll_set))[0]
+            if other.full == self.full:
+                other = list(scroll_set.intersection(set([self])))[0]
             scroll_set.remove(other)
             scroll_set.add(self.intersection(other))
         else:
@@ -424,11 +502,15 @@ class ScrollVersion():
     @staticmethod
     def slice(versions):
         '''
-        For a set of ScrollVersion:s, create a list of slices such for all limits in all versions there exists exactly one limit in the returned list
+        For a set of ScrollVersion:s, create a list of slices such that for all limits in all versions there exists exactly one limit in the returned list
         
         @param   versions:itr<ScrollVersion>  The ScrollVersion:s
         @return  :list<ScrollVersion>         The slices
         '''
+        versions = list(versions)
+        if len(versions) <= 1:
+            return versions
+        print('::: ' + str([str(e) for e in versions]))
         name = versions[0].name
         limits = []
         neginf = False
