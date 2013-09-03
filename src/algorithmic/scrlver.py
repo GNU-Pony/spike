@@ -100,6 +100,10 @@ class ScrollVersion():
             self.open = open
         
         
+        def as_closed(self, closed = True):
+            return ScrollVersion.Version(self.version, not closed)
+        
+        
         def __cmp(self, other):
             '''
             Preforms a comparison of two version numbers, does not compare release number
@@ -229,6 +233,7 @@ class ScrollVersion():
         if self.name != other.name:
             return False
         
+        c = lambda version : version.as_closed()
         if ((other.lower is None) and (other.upper is None)) or ((self.lower is None) and (self.upper is None)):
             return True
         elif ((self.lower is None) and (other.lower is None)) or ((self.upper is None) and (other.upper is None)):
@@ -239,8 +244,8 @@ class ScrollVersion():
         elif  self.upper is None:  return other.complement or (other.upper >= self.lower)
         elif other.upper is None:  return  self.complement or (other.lower <= self.upper)
         elif other.lower is None:  return  self.complement or (other.upper >= self.lower)
-        elif other.complement:     return ( self.lower !=  self.upper) or (self.lower != other.lower)
-        elif  self.complement:     return (other.lower != other.upper) or (self.lower != other.lower)
+        elif other.complement:     return ( c(self.lower) !=  c(self.upper)) or (c(self.lower) != c(other.lower))
+        elif  self.complement:     return (c(other.lower) != c(other.upper)) or (c(self.lower) != c(other.lower))
         else:
             return (self.lower <= other.lower <= self.upper) or (self.lower <= other.upper <= self.upper)
     
