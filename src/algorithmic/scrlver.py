@@ -287,24 +287,31 @@ class ScrollVersion():
         if other.complement:
             return other.union(self)
         if (self.lower == self.upper) or (other.lower == other.upper):
-            return self if self.lower is None else other
+            return self if self.lower is None else (self if self.lower.release < 0 else other)
         
         name = self.name
         lower = None
         upper = None
+        rellower = True
+        relupper = True
         
+        print('d')
         if (self.lower is not None) and (other.lower is not None):
             lower = self.lower if self.lower <= other.lower else other.lower
+            if (self.lower.release < 0) or (other.lower.release < 0):
+                rellower = False
         if (self.upper is not None) and (other.upper is not None):
             upper = self.upper if self.upper >= other.upper else other.upper
+            if (self.upper.release < 0) or (other.upper.release < 0):
+                relupper = False
         
         full = name
         if lower is not None:
             full += '>' if lower.open else '>='
-            full += lower.version
+            full += lower.version if rellower else lower.version.split('-')[0]
         if upper is not None:
             full += '<' if upper.open else '<='
-            full += upper.version
+            full += upper.version if relupper else upper.version.split('-')[0]
         
         return ScrollVersion(full)
     
@@ -321,16 +328,22 @@ class ScrollVersion():
         if other.complement:
             return self
         if (self.lower == self.upper) or (other.lower == other.upper):
-            return self if self.lower is not None else other
+            return (other if self.lower.release < 0 else self) if self.lower is not None else other
         
         name = self.name
         lower = None
         upper = None
         
         if (self.lower is not None) and (other.lower is not None):
-            lower = self.lower if self.lower >= other.lower else other.lower
+            if self.lower == other.lower:
+                lower = other.lower if self.lower.release < 0 else self.lower
+            else:
+                lower = self.lower if self.lower >= other.lower else other.lower
         if (self.upper is not None) and (other.upper is not None):
-            upper = self.upper if self.upper <= other.upper else other.upper
+            if self.upper == other.upper:
+                upper = other.upper if self.upper.release < 0 else self.upper
+            else:
+                upper = self.upper if self.upper <= other.upper else other.upper
         
         full = name
         if lower is not None:
