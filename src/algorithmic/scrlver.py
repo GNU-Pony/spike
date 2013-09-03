@@ -502,13 +502,7 @@ class ScrollVersion():
         
         @param  scroll_set:set<ScrollVersion>  Set of scrolls
         '''
-        ## FIXME  the idea of intersection_add is flews, consider:
-        ##            a depends automake=1
-        ##            b depends automake=5
-        ##            c depends automake>=1<=5
-        ##            d depends automake>=2<=3
-        ##        The intersection automake>=2<=3, so c and d is OK, but both a and b will not have their versions
-        ##        However, if the order was reversed, we would get =1, >=2<=3, =5 which is what we want
+        ## FIXME  The most be rewritten, it is not commutative
         
         if self.complement:
             a = ScrollVersion(self.name + '>' + self.lower.version)
