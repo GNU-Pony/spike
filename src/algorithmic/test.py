@@ -27,11 +27,11 @@ from sha3sum import *
 from scrlver import *
 
 
-error_ = False
+errno = 0
 def error(message, ok = False):
-    global error_
+    global errno
     if not ok:
-        error_ = True
+        errno = 1
         print('\033[31m%s\033[00m' % message)
 
 
@@ -372,7 +372,7 @@ __('1.2 < 1', False)
 __('1.2 < 2.1', True)
 
 
-if error_ == 0:
+if errno == 0:
     print('\033[32m%s\033[00m' % 'Everyting seems to be working')
-exit(1 if error_ else 0)
+exit(errno)
 
