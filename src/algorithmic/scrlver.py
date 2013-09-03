@@ -287,7 +287,11 @@ class ScrollVersion():
         if other.complement:
             return other.union(self)
         if (self.lower == self.upper) or (other.lower == other.upper):
-            return self if self.lower is None else (self if self.lower.release < 0 else other)
+            if self.lower is None:
+                return self
+            if other.lower is None:
+                return other
+            return self if self.lower.release < 0 else other
         
         name = self.name
         lower = None
@@ -327,7 +331,9 @@ class ScrollVersion():
         if other.complement:
             return self
         if (self.lower == self.upper) or (other.lower == other.upper):
-            return (other if self.lower.release < 0 else self) if self.lower is not None else other
+            if (self.lower is not None) and (other.lower is not None):
+                return other if self.lower.release < 0 else self
+            return self if self.lower is not None else other
         
         name = self.name
         lower = None
