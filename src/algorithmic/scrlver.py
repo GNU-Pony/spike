@@ -315,6 +315,7 @@ class ScrollVersion():
         if self.complement:
             return c(self.lower) == other.lower == other.upper
         
+        print('x')
         a = c(self.upper) == c(other.lower)
         b = c(self.lower) == c(other.upper)
         
@@ -362,7 +363,7 @@ class ScrollVersion():
         @param   other:ScrollVersion  The other scrolls 
         @return  :ScrollVersion       The union of the two scrolls
         '''
-        if self.joinable_with(other):
+        if self.union_mode and self.joinable_with(other):
             return self.join(other)
         
         if self.complement:
