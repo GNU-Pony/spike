@@ -575,6 +575,7 @@ _('test>=2<=4', 'test>=4<=5', True)
 _('test>=2<=4', 'test>=5<=6', False)
 
 
+
 def _(_a, _b, expect_u, expect_i):
     _a = 'test' + _a
     _b = 'test' + _b
@@ -624,15 +625,35 @@ _('>=3', '<>3', '', '>=3')
 _('<=3', '<>3', '', '<=3')
 
 
-union = set()
-ScrollVersion('p=1').union_add(union)
-print([str(e) for e in ScrollVersion.slice(union)])
-ScrollVersion('p>1<=2').union_add(union)
-print([str(e) for e in ScrollVersion.slice(union)])
-ScrollVersion('p>1.1<3').union_add(union)
-print([str(e) for e in ScrollVersion.slice(union)])
-ScrollVersion('p>3').union_add(union)
-print([str(e) for e in ScrollVersion.slice(union)])
+
+def _(_a, _b, expect):
+    _a = 'test' + _a
+    _b = 'test' + _b
+    expect = None if expect is None else 'test' + expect
+    a = ScrollVersion(_a)
+    b = ScrollVersion(_b)
+    joinable = a.joinable_with(b)
+    joinable_ = b.joinable_with(a)
+    joinable_ = joinable
+    error('scrlver.ScrollVersion.joinable_with, does not work', joinable == (expect is not None))
+    error('scrlver.ScrollVersion.joinable_with, mirror, does not work', joinable == joinable_)
+    if joinable and (expect is not None):
+        join = a.join(b)
+        join_ = b.join(a)
+        error('scrlver.ScrollVersion.join, does not work', join.full == expect)
+        error('scrlver.ScrollVersion.join, mirror, does not work', join.full == join_.full)
+
+_('=1', '=2', None)
+_('=1', '=1', None)
+_('=1', '<>1', '')
+_('=1', '<>2', None)
+_('<>1', '<>2', None)
+_('=1', '>1', '>=1')
+_('=1', '<1', '<=1')
+_('>1<2', '>=2', '>1')
+_('>1<2', '>=2<3', '>1<3')
+_('>=1', '<1', '')
+_('>1', '<=1', '')
 
 
 
