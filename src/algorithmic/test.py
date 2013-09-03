@@ -269,7 +269,7 @@ if scroll.upper is not None:
     error('scrlver.ScrollVersion.Version.__init__, version, does not work', scroll.upper.version == '2')
 
 
-def _(_a_op__b, expect):
+def _(_a_op__b, expect, expect_2 = None):
     (_a, op, _b) = _a_op__b.split(' ')
     a = ScrollVersion.Version(_a.replace('*', ''), '*' in _a)
     b = ScrollVersion.Version(_b.replace('*', ''), '*' in _b)
@@ -286,6 +286,9 @@ def _(_a_op__b, expect):
         if op == '==':  _('%s %s %s' % (_a, '!=', _b), not expect)
         if op == '<':   _('%s %s %s' % (_b, '>', _a), expect)
         if op == '<=':  _('%s %s %s' % (_b, '>=', _a), expect)
+    if expect_2 is not None:
+        if op == '<':   _('%s %s %s' % (_a, '<=', _b), expect_2)
+        if op == '>':   _('%s %s %s' % (_a, '>=', _b), expect_2)
 
 _('1 == 1', True)
 _('1 == 2', False)
@@ -318,7 +321,55 @@ _('1.1 == 1.1*', False)
 _('1:1.2-4 == 1:1.2-4', True)
 _('1:1.2-4 == 1:1.2-4*', False)
 
+def __(test, cc_cce, co_coe = None, oc_oce = None, oo_ooe = None):
+    (A, op, B) = test.split(' ')
+    a = A + '*'
+    b = B + '*'
+    if co_coe is None: co_coe = cc_cce
+    if oc_oce is None: oc_oce = co_coe
+    if oo_ooe is None: oo_ooe = co_coe
+    if isinstance(cc_cce, bool):  cc_cce = (cc_cce, cc_cce)
+    if isinstance(co_coe, bool):  co_coe = (co_coe, co_coe)
+    if isinstance(oc_oce, bool):  oc_oce = (oc_oce, oc_oce)
+    if isinstance(oo_ooe, bool):  oo_ooe = (oo_ooe, oo_ooe)
+    _('%s %s %s' % (A, op, B), cc_cce[0], cc_cce[1])
+    _('%s %s %s' % (A, op, b), co_coe[0], co_coe[1])
+    _('%s %s %s' % (a, op, B), oc_oce[0], oc_oce[1])
+    _('%s %s %s' % (a, op, b), oo_ooe[0], oo_ooe[1])
 
+true = (False, True)
+__('1 < 1', true, False)
+__('1 < 1-1', true, False)
+__('1-1 < 1', true, False)
+__('1-1 < 1-1', true, False)
+__('1 < 0:1', true, False)
+__('0:1 < 1', true, False)
+__('0:1 < 0:1', true, False)
+__('1 < 1:1', True)
+__('1:1 < 1', False)
+__('1:1 < 1:1', true, False)
+__('1:1 < 2:1', True)
+__('2:1 < 1:1', False)
+__('1-1 < 1-2', True)
+__('1-2 < 1-1', False)
+__('1-1 < 3:1-2', True)
+__('1-2 < 3:1-1', True)
+__('3:1-1 < 1-2', False)
+__('3:1-2 < 1-1', False)
+__('3:1-1 < 3:1-2', True)
+__('3:1-2 < 3:1-1', False)
+__('1 < 2', True)
+__('2 < 1', False)
+__('2:1 < 2', False)
+__('2:2 < 1', False)
+__('1 < 2:2', True)
+__('2 < 2:1', True)
+__('1 < 1.2', True)
+__('1.1 < 1.2', True)
+__('1.2 < 1.1', False)
+__('1.2 < 1.2', true, False)
+__('1.2 < 1', False)
+__('1.2 < 2.1', True)
 
 
 if error_ == 0:
