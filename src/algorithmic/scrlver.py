@@ -506,11 +506,13 @@ class ScrollVersion():
         '''
         self.intersection_mode = True
         if self in scroll_set:
-            other = list(set([self]).intersection(scroll_set))[0]
-            if other.full == self.full:
-                other = list(scroll_set.intersection(set([self])))[0]
-            scroll_set.remove(other)
-            scroll_set.add(self.intersection(other))
+            others = list(filter(lambda element : self in element, list(scroll_set)))
+            while self in scroll_set:
+                scroll_set.remove(self)
+            others = [self.intersection(o) for o in others]
+            scroll_set.add(others[0])
+            for other in others[1:]:
+                other.intersection_add(scroll_set)
         else:
             scroll_set.add(self)
     
