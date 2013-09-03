@@ -296,17 +296,16 @@ class ScrollVersion():
             return False
         if ( self.lower is None) and ( self.upper is None):  return False
         if (other.lower is None) and (other.upper is None):  return False
+        if ( self.lower is None) and (other.lower is None):  return False
+        if ( self.upper is None) and (other.upper is None):  return False
         
         xor = lambda x, y : x != y
         c = lambda v : v.as_closed()
         
-        if (self.lower is None) or (self.upper is None) or (other.lower is None) or (other.upper is None):
-            if (self.lower is not None) and (self.upper is None) and (other.lower is None) and (other is not None):
-                return other.joinable_with(self)
-            if (self.lower is None) and (self.upper is not None) and (other.lower is not None) and (other is None):
-                 if c(self.upper) == c(other.lower):
-                     return xor(self.upper.open, other.lower.open)
-            return False
+        if (self.lower is None) or (other.upper is None):
+            return (c(self.upper) == c(other.lower)) and xor(self.upper.open, other.lower.open)
+        if (self.upper is None) or (other.lower is None):
+            return (c(self.lower) == c(other.upper)) and xor(self.lower.open, other.upper.open)
         
         if self.complement and other.complement:
             return False
@@ -337,8 +336,8 @@ class ScrollVersion():
         c = lambda v : v.as_closed()
         
         lower = None
-        upper = none
-        if (self.upper is not None) and (c(self.upper) == c(other.lower)):
+        upper = None
+        if (self.upper is not None) and (other.lower is not None) and (c(self.upper) == c(other.lower)):
             lower = self.lower
             upper = other.upper
         else:
