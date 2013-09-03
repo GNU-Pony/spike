@@ -280,11 +280,12 @@ def _(_a_op__b, expect):
     elif op == '!=':  test = lambda x, y : x != y
     elif op == '>':   test = lambda x, y : x >  y
     elif op == '>=':  test = lambda x, y : x >= y
-    error('scrlver.ScrollVersion.Version, %s, does not work' % _a_op__b, test(a, b) == expect)
-    
-    if op == '==':  _('%s %s %s' % (_a, '!=', _b), not expect)
-    if op == '<':   _('%s %s %s' % (_b, '>', _a), expect)
-    if op == '<=':  _('%s %s %s' % (_b, '>=', _a), expect)
+    passed = test(a, b) == expect
+    error('scrlver.ScrollVersion.Version, %s, does not work' % _a_op__b, passed)
+    if passed:
+        if op == '==':  _('%s %s %s' % (_a, '!=', _b), not expect)
+        if op == '<':   _('%s %s %s' % (_b, '>', _a), expect)
+        if op == '<=':  _('%s %s %s' % (_b, '>=', _a), expect)
 
 _('1 == 1', True)
 _('1 == 2', False)
