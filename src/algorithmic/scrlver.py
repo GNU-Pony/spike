@@ -49,7 +49,6 @@ class ScrollVersion():
         self.lower = None
         self.upper = None
         self.complement = False
-        self.intersection_mode = False
         self.union_mode = False
         
         if len(parts) == 1:
@@ -247,32 +246,31 @@ class ScrollVersion():
         if self.name != other.name:
             return False
         
-        i = lambda rc : rc and ((not self.intersection_mode) or (self.intersection(other) is not None))
         c = lambda version : version.as_closed()
         
         if ((other.lower is None) and (other.upper is None)) or ((self.lower is None) and (self.upper is None)):
-            return i(True)
+            return True
         elif ((self.lower is None) and (other.lower is None)) or ((self.upper is None) and (other.upper is None)):
-            return i(True)
+            return True
         elif self.complement and other.complement:
-            return i(True)
-        elif  self.lower is None:  return i(other.complement or (other.lower <= self.upper))
-        elif  self.upper is None:  return i(other.complement or (other.upper >= self.lower))
-        elif other.upper is None:  return i( self.complement or (other.lower <= self.upper))
-        elif other.lower is None:  return i( self.complement or (other.upper >= self.lower))
-        elif other.complement:     return i(( c(self.lower) !=  c(self.upper)) or (c(self.lower) != c(other.lower)))
-        elif  self.complement:     return i((c(other.lower) != c(other.upper)) or (c(self.lower) != c(other.lower)))
+            return True
+        elif  self.lower is None:  return other.complement or (other.lower <= self.upper)
+        elif  self.upper is None:  return other.complement or (other.upper >= self.lower)
+        elif other.upper is None:  return  self.complement or (other.lower <= self.upper)
+        elif other.lower is None:  return  self.complement or (other.upper >= self.lower)
+        elif other.complement:     return ( c(self.lower) !=  c(self.upper)) or (c(self.lower) != c(other.lower))
+        elif  self.complement:     return (c(other.lower) != c(other.upper)) or (c(self.lower) != c(other.lower))
         elif  self.lower ==  self.upper:  return other.lower <=  self.lower <= other.upper
         elif other.lower == other.upper:  return  self.lower <= other.lower <=  self.upper
         else:
             sl, su =  self.lower,  self.upper
             ol, ou = other.lower, other.upper
-            if (sl <= ol <= su) or (sl <= ou <= su):  return i(True)
-            if (ol <= sl <= ou) or (ol <= su <= ou):  return i(True)
-            if (c(sl) == c(ol)) and (sl < ou): return i(True)
-            if (c(ol) == c(sl)) and (ol < su): return i(True)
-            if (c(su) == c(ou)) and (sl < ou): return i(True)
-            if (c(ou) == c(su)) and (ol < su): return i(True)
+            if (sl <= ol <= su) or (sl <= ou <= su):  return True
+            if (ol <= sl <= ou) or (ol <= su <= ou):  return True
+            if (c(sl) == c(ol)) and (sl < ou): return True
+            if (c(ol) == c(sl)) and (ol < su): return True
+            if (c(su) == c(ou)) and (sl < ou): return True
+            if (c(ou) == c(su)) and (ol < su): return True
             return False
     
     
@@ -504,8 +502,26 @@ class ScrollVersion():
         
         @param  scroll_set:set<ScrollVersion>  Set of scrolls
         '''
-        self.intersection_mode = True
-        if self in scroll_set:
+        ## FIXME  the idea of intersection_add is flews, consider:
+        ##            a depends automake=1
+        ##            b depends automake=5
+        ##            c depends automake>=1<=5
+        ##            d depends automake>=2<=3
+        ##        The intersection automake>=2<=3, so c and d is OK, but both a and b will not have their versions
+        ##        However, if the order was reversed, we would get =1, >=2<=3, =5 which is what we want
+        
+        if self.complement:
+            a = ScrollVersion(self.name + '>' + self.lower.version)
+            b = ScrollVersion(self.name + '<' + self.lower.version)
+            _a = a in scroll_set
+            _b = b in scroll_set
+            if _a or _b:
+                if _a: a.intersection_add(scroll_set)
+                if _b: b.intersection_add(scroll_set)
+            else:
+                a.intersection_add(scroll_set)
+                b.intersection_add(scroll_set)
+        elif self in scroll_set:
             others = list(filter(lambda element : self in element, list(scroll_set)))
             while self in scroll_set:
                 scroll_set.remove(self)

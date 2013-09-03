@@ -736,24 +736,6 @@ error('scrlver.ScrollVersion.union_add, does not work', got == "['>=1<1:1']")
 
 
 
-intersection = set()
-ScrollVersion('').intersection_add(intersection)
-got = str([str(e) for e in list(intersection)])
-error('scrlver.ScrollVersion.intersection_add, does not work', got == "['']")
-ScrollVersion('>1<2').intersection_add(intersection)
-got = str([str(e) for e in list(intersection)])
-error('scrlver.ScrollVersion.intersection_add, does not work', got == "['>1<2']")
-ScrollVersion('>1.1<3').intersection_add(intersection)
-got = str([str(e) for e in list(intersection)])
-error('scrlver.ScrollVersion.intersection_add, does not work', got == "['>1.1<2']")
-ScrollVersion('>3<4').intersection_add(intersection)
-got = str([str(e) for e in list(intersection)])
-error('scrlver.ScrollVersion.intersection_add, does not work', got == "['>1.1<2', '>3<4']" or got == "['>3<4', '>1.1<2']")
-ScrollVersion('>=1.2<=3.2').intersection_add(intersection)
-got = str([str(e) for e in list(intersection)])
-error('scrlver.ScrollVersion.intersection_add, does not work', got == "['>=1.2<2', '>3<=3.2']" or got == "['>3<=3.2', '>=1.2<2']")
-
-
 
 if errno == 0:
     print('\033[32m%s\033[00m' % 'Everyting seems to be working')
