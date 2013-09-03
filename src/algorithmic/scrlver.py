@@ -243,7 +243,7 @@ class ScrollVersion():
         '''
         if self.union_mode:
             if self.joinable_with(other):
-                return true
+                return True
         if self.name != other.name:
             return False
         
@@ -301,18 +301,24 @@ class ScrollVersion():
         
         xor = lambda x, y : x != y
         c = lambda v : v.as_closed()
-        
-        if (self.lower is None) or (other.upper is None):
-            return (c(self.upper) == c(other.lower)) and xor(self.upper.open, other.lower.open)
-        if (self.upper is None) or (other.lower is None):
-            return (c(self.lower) == c(other.upper)) and xor(self.lower.open, other.upper.open)
-        
         if self.complement and other.complement:
             return False
         if other.complement:
             return other.joinable_with(self)
         if self.complement:
             return c(self.lower) == other.lower == other.upper
+        
+        if (self.lower is None) or (other.upper is None):
+            return (c(self.upper) == c(other.lower)) and xor(self.upper.open, other.lower.open)
+        if (self.upper is None) or (other.lower is None):
+            return (c(self.lower) == c(other.upper)) and xor(self.lower.open, other.upper.open)
+        
+        if other.lower == other.upper:
+            return (self.lower != self.upper) and other.joinable_with(self)
+        if self.lower == self.upper:
+            a = (self.lower == c(other.lower)) and other.lower.open
+            b = (self.lower == c(other.upper)) and other.upper.open
+            return a or b
         
         a = c(self.upper) == c(other.lower)
         b = c(self.lower) == c(other.upper)
@@ -472,11 +478,16 @@ class ScrollVersion():
         '''
         self.union_mode = True
         if self in scroll_set:
-            other = list(set([self]).intersection(scroll_set))[0]
-            if other.full == self.full:
-                other = list(scroll_set.intersection(set([self])))[0]
-            scroll_set.remove(other)
-            scroll_set.add(self.union(other))
+            others = list(set([self]).intersection(scroll_set))
+            other = others[0]
+            if (len(others) == 1) and (other.full == self.full):
+                others = list(scroll_set.intersection(set([self])))
+            while self in scroll_set:
+                scroll_set.remove(self)
+            others = [self.union(o) for o in others]
+            scroll_set.add(others[0])
+            for other in others[1:]:
+                other.union_add(scroll_set)
         else:
             scroll_set.add(self)
     
