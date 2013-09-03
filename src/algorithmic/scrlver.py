@@ -358,12 +358,17 @@ class ScrollVersion():
                 lower_open = self.lower.open or other.lower.open
             else:
                 lower = self.lower if self.lower >= other.lower else other.lower
+        elif (self.lower is not None) != (other.lower is not None):
+            lower = self.lower if self.lower is not None else other.lower
+        
         if (self.upper is not None) and (other.upper is not None):
             if self.upper == other.upper:
                 upper = other.upper if self.upper.release < 0 else self.upper
                 upper_open = self.upper.open or other.upper.open
             else:
                 upper = self.upper if self.upper <= other.upper else other.upper
+        elif (self.upper is not None) != (other.upper is not None):
+            upper = self.upper if self.upper is not None else other.upper
         
         full = name
         if lower is not None:
