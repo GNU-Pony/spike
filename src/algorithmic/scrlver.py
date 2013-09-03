@@ -295,7 +295,6 @@ class ScrollVersion():
         rellower = True
         relupper = True
         
-        print('d')
         if (self.lower is not None) and (other.lower is not None):
             lower = self.lower if self.lower <= other.lower else other.lower
             if (self.lower.release < 0) or (other.lower.release < 0):
