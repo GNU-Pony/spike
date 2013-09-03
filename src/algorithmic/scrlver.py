@@ -335,8 +335,10 @@ class ScrollVersion():
         Creates a intersection of two intersecting scroll versions
         
         @param   other:ScrollVersion  The other scrolls
-        @return  :ScrollVersion       The union of the two scrolls
+        @return  :ScrollVersion?      The union of the two scrolls, `None` if there is no sole intersection
         '''
+        if (self.complement and other.complement) and (self.lower.as_closed() != other.lower.as_closed()):
+            return None
         if self.complement:
             return other
         if other.complement:

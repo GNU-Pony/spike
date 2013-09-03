@@ -582,10 +582,12 @@ def _(_a, _b, expect_u, expect_i):
     expect_i = None if expect_i is None else 'test' + expect_i
     a = ScrollVersion(_a)
     b = ScrollVersion(_b)
-    got_u = None if expect_u is None else a.union(b).full
-    got_i = None if expect_i is None else a.intersection(b).full
-    got_u_ = None if expect_u is None else b.union(a).full
-    got_i_ = None if expect_i is None else b.intersection(a).full
+    got_u = a.union(b).full
+    got_i = a.intersection(b)
+    got_u_ = b.union(a).full
+    got_i_ = b.intersection(a)
+    got_i = got_i if got_i is None else got_i.full
+    got_i_ = got_i_ if got_i_ is None else got_i_.full
     union = '%s union %s == %s' % (_a, _b, expect_u)
     intersection = '%s intersection %s == %s' % (_a, _b, expect_i)
     error('scrlver.ScrollVersion.union, %s, does not work' % union, got_u == expect_u)
@@ -596,8 +598,6 @@ def _(_a, _b, expect_u, expect_i):
     error('scrlver.ScrollVersion.intersection, mirror of %s, does not work' % intersection, got_i_ == got_i)
     if not got_i_ == got_i:
         print('  \033[33mGot %s but for %s in mirror\033[00m' % (got_i, got_i_))
-    print(got_i)
-    print(got_i_)
 
 _('', '=1', '', '=1')
 _('=1-1', '=1', '=1', '=1-1')
