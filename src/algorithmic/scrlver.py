@@ -485,11 +485,9 @@ class ScrollVersion():
         
         @param  scroll_set:set<ScrollVersion>  Set of scrolls
         '''
-        print('<  ' + str([str(e) for e in list(scroll_set)]) + ' union ' + str(self))
         self.union_mode = True
         if self in scroll_set:
             others = list(filter(lambda element : self in element, list(scroll_set)))
-            print('   ' + str([str(e) for e in others]))
             while self in scroll_set:
                 scroll_set.remove(self)
             others = [self.union(o) for o in others]
@@ -498,7 +496,6 @@ class ScrollVersion():
                 other.union_add(scroll_set)
         else:
             scroll_set.add(self)
-        print(' > ' + str([str(e) for e in list(scroll_set)]))
     
     
     def intersection_add(self, scroll_set):
