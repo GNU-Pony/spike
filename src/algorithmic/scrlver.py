@@ -315,7 +315,6 @@ class ScrollVersion():
         if self.complement:
             return c(self.lower) == other.lower == other.upper
         
-        print('x')
         a = c(self.upper) == c(other.lower)
         b = c(self.lower) == c(other.upper)
         
@@ -511,7 +510,6 @@ class ScrollVersion():
         versions = list(versions)
         if len(versions) <= 1:
             return versions
-        print('::: ' + str([str(e) for e in versions]))
         name = versions[0].name
         limits = []
         neginf = False
