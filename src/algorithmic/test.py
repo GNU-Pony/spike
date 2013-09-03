@@ -24,6 +24,7 @@ Test for this directory
 '''
 from algospike import *
 from sha3sum import *
+from scrlver import *
 
 
 error_ = False
@@ -140,6 +141,132 @@ sha3 = SHA3()
 got = sha3.digest_file('../../LICENSE')
 ref = '827821773FDCE6F142E8C0446530DA596369AB63D5230E2A7D786AEAC0BDC406F1A50D8550F718A70384526980FEEADBF43348ADDBC50A13478B1A958C0E9218DC172DA2CB7591ED'
 error('sha3sum does not work', got == ref)
+
+
+
+scroll = ScrollVersion('test=1')
+error('scrlver.ScrollVersion.__init__, full, does not work', scroll.full == 'test=1')
+error('scrlver.ScrollVersion.__init__, name, does not work', scroll.name == 'test')
+error('scrlver.ScrollVersion.__str__, does not work', str(scroll) == scroll.full)
+error('scrlver.ScrollVersion.__init__, lower, does not work', scroll.lower is not None)
+error('scrlver.ScrollVersion.__init__, upper, does not work', scroll.upper == scroll.lower)
+error('scrlver.ScrollVersion.__init__, complement, does not work', scroll.complement == False)
+if scroll.lower is not None:
+    error('scrlver.ScrollVersion.__init__, version open, does not work', scroll.lower.open == False)
+    error('scrlver.ScrollVersion.Version.__init__, version, does not work', scroll.lower.version == '1')
+    error('scrlver.ScrollVersion.Version.__init__, epoch, does not work', scroll.lower.epoch == 0)
+    error('scrlver.ScrollVersion.Version.__init__, release, does not work', scroll.lower.release == -1)
+    error('scrlver.ScrollVersion.Version.__init__, parts, does not work', scroll.lower.parts == ['1'])
+
+
+scroll = ScrollVersion('test<>4:1.2-3')
+error('scrlver.ScrollVersion.__init__, full, does not work', scroll.full == 'test<>4:1.2-3')
+error('scrlver.ScrollVersion.__init__, name, does not work', scroll.name == 'test')
+error('scrlver.ScrollVersion.__str__, does not work', str(scroll) == scroll.full)
+error('scrlver.ScrollVersion.__init__, lower, does not work', scroll.lower is not None)
+error('scrlver.ScrollVersion.__init__, upper, does not work', scroll.upper is not None)
+if scroll.upper is not None:
+    error('scrlver.ScrollVersion.__init__, upper, does not work', scroll.upper.version == scroll.lower.version)
+    error('scrlver.ScrollVersion.__init__, upper, does not work', scroll.upper.open == scroll.lower.open)
+error('scrlver.ScrollVersion.__init__, complement, does not work', scroll.complement == True)
+if scroll.lower is not None:
+    error('scrlver.ScrollVersion.__init__, version open, does not work', scroll.lower.open == True)
+    error('scrlver.ScrollVersion.Version.__init__, version, does not work', scroll.lower.version == '4:1.2-3')
+    error('scrlver.ScrollVersion.Version.__init__, epoch, does not work', scroll.lower.epoch == 4)
+    error('scrlver.ScrollVersion.Version.__init__, release, does not work', scroll.lower.release == 3)
+    error('scrlver.ScrollVersion.Version.__init__, parts, does not work', scroll.lower.parts == ['1', '2'])
+
+
+scroll = ScrollVersion('test>2')
+error('scrlver.ScrollVersion.__init__, name, does not work', scroll.name == 'test')
+error('scrlver.ScrollVersion.__init__, lower, does not work', scroll.lower is not None)
+error('scrlver.ScrollVersion.__init__, uper, does not work', scroll.upper is None)
+error('scrlver.ScrollVersion.__init__, complement, does not work', scroll.complement == False)
+if scroll.lower is not None:
+    error('scrlver.ScrollVersion.__init__, version open, does not work', scroll.lower.open == True)
+    error('scrlver.ScrollVersion.Version.__init__, version, does not work', scroll.lower.version == '2')
+
+
+scroll = ScrollVersion('test>=2')
+error('scrlver.ScrollVersion.__init__, name, does not work', scroll.name == 'test')
+error('scrlver.ScrollVersion.__init__, lower, does not work', scroll.lower is not None)
+error('scrlver.ScrollVersion.__init__, uper, does not work', scroll.upper is None)
+error('scrlver.ScrollVersion.__init__, complement, does not work', scroll.complement == False)
+if scroll.lower is not None:
+    error('scrlver.ScrollVersion.__init__, version open, does not work', scroll.lower.open == False)
+    error('scrlver.ScrollVersion.Version.__init__, version, does not work', scroll.lower.version == '2')
+
+
+scroll = ScrollVersion('test<2')
+error('scrlver.ScrollVersion.__init__, name, does not work', scroll.name == 'test')
+error('scrlver.ScrollVersion.__init__, lower, does not work', scroll.lower is None)
+error('scrlver.ScrollVersion.__init__, uper, does not work', scroll.upper is not None)
+error('scrlver.ScrollVersion.__init__, complement, does not work', scroll.complement == False)
+if scroll.upper is not None:
+    error('scrlver.ScrollVersion.__init__, version open, does not work', scroll.upper.open == True)
+    error('scrlver.ScrollVersion.Version.__init__, version, does not work', scroll.upper.version == '2')
+
+
+scroll = ScrollVersion('test<=2')
+error('scrlver.ScrollVersion.__init__, name, does not work', scroll.name == 'test')
+error('scrlver.ScrollVersion.__init__, lower, does not work', scroll.lower is None)
+error('scrlver.ScrollVersion.__init__, uper, does not work', scroll.upper is not None)
+error('scrlver.ScrollVersion.__init__, complement, does not work', scroll.complement == False)
+if scroll.upper is not None:
+    error('scrlver.ScrollVersion.__init__, version open, does not work', scroll.upper.open == False)
+    error('scrlver.ScrollVersion.Version.__init__, version, does not work', scroll.upper.version == '2')
+
+
+scroll = ScrollVersion('test>1<2')
+error('scrlver.ScrollVersion.__init__, name, does not work', scroll.name == 'test')
+error('scrlver.ScrollVersion.__init__, lower, does not work', scroll.lower is not None)
+error('scrlver.ScrollVersion.__init__, uper, does not work', scroll.upper is not None)
+error('scrlver.ScrollVersion.__init__, complement, does not work', scroll.complement == False)
+if scroll.lower is not None:
+    error('scrlver.ScrollVersion.__init__, version open, does not work', scroll.lower.open == True)
+    error('scrlver.ScrollVersion.Version.__init__, version, does not work', scroll.lower.version == '1')
+if scroll.upper is not None:
+    error('scrlver.ScrollVersion.__init__, version open, does not work', scroll.lower.open == True)
+    error('scrlver.ScrollVersion.Version.__init__, version, does not work', scroll.upper.version == '2')
+
+
+scroll = ScrollVersion('test>1<=2')
+error('scrlver.ScrollVersion.__init__, name, does not work', scroll.name == 'test')
+error('scrlver.ScrollVersion.__init__, lower, does not work', scroll.lower is not None)
+error('scrlver.ScrollVersion.__init__, uper, does not work', scroll.upper is not None)
+error('scrlver.ScrollVersion.__init__, complement, does not work', scroll.complement == False)
+if scroll.lower is not None:
+    error('scrlver.ScrollVersion.__init__, version open, does not work', scroll.lower.open == True)
+    error('scrlver.ScrollVersion.Version.__init__, version, does not work', scroll.lower.version == '1')
+if scroll.upper is not None:
+    error('scrlver.ScrollVersion.__init__, version open, does not work', scroll.upper.open == False)
+    error('scrlver.ScrollVersion.Version.__init__, version, does not work', scroll.upper.version == '2')
+
+
+scroll = ScrollVersion('test>=1<2')
+error('scrlver.ScrollVersion.__init__, name, does not work', scroll.name == 'test')
+error('scrlver.ScrollVersion.__init__, lower, does not work', scroll.lower is not None)
+error('scrlver.ScrollVersion.__init__, uper, does not work', scroll.upper is not None)
+error('scrlver.ScrollVersion.__init__, complement, does not work', scroll.complement == False)
+if scroll.lower is not None:
+    error('scrlver.ScrollVersion.__init__, version open, does not work', scroll.lower.open == False)
+    error('scrlver.ScrollVersion.Version.__init__, version, does not work', scroll.lower.version == '1')
+if scroll.upper is not None:
+    error('scrlver.ScrollVersion.__init__, version open, does not work', scroll.upper.open == True)
+    error('scrlver.ScrollVersion.Version.__init__, version, does not work', scroll.upper.version == '2')
+
+
+scroll = ScrollVersion('test>=1<=2')
+error('scrlver.ScrollVersion.__init__, name, does not work', scroll.name == 'test')
+error('scrlver.ScrollVersion.__init__, lower, does not work', scroll.lower is not None)
+error('scrlver.ScrollVersion.__init__, uper, does not work', scroll.upper is not None)
+error('scrlver.ScrollVersion.__init__, complement, does not work', scroll.complement == False)
+if scroll.lower is not None:
+    error('scrlver.ScrollVersion.__init__, version open, does not work', scroll.lower.open == False)
+    error('scrlver.ScrollVersion.Version.__init__, version, does not work', scroll.lower.version == '1')
+if scroll.upper is not None:
+    error('scrlver.ScrollVersion.__init__, version open, does not work', scroll.upper.open == False)
+    error('scrlver.ScrollVersion.Version.__init__, version, does not work', scroll.upper.version == '2')
 
 
 
