@@ -299,24 +299,32 @@ class ScrollVersion():
         name = self.name
         lower = None
         upper = None
+        lower_open = None
+        upper_open = None
         rellower = True
         relupper = True
         
         if (self.lower is not None) and (other.lower is not None):
             lower = self.lower if self.lower <= other.lower else other.lower
-            if (self.lower.release < 0) or (other.lower.release < 0):
-                rellower = False
+            if self.lower == other.lower:
+                rellower = (self.lower.release >= 0) and (other.lower.release >= 0)
+            if self.lower.version.split('-')[0] == other.lower.version.split('-')[0]:
+                lower_open = self.lower.open and other.lower.open
         if (self.upper is not None) and (other.upper is not None):
             upper = self.upper if self.upper >= other.upper else other.upper
-            if (self.upper.release < 0) or (other.upper.release < 0):
-                relupper = False
+            if self.upper == other.upper:
+                relupper = (self.upper.release >= 0) and (other.upper.release >= 0)
+            if self.upper.version.split('-')[0] == other.upper.version.split('-')[0]:
+                upper_open = self.upper.open and other.upper.open
         
         full = name
         if lower is not None:
-            full += '>' if lower.open else '>='
+            lower_open = lower_open if lower_open is not None else lower.open
+            full += '>' if lower_open else '>='
             full += lower.version if rellower else lower.version.split('-')[0]
         if upper is not None:
-            full += '<' if upper.open else '<='
+            upper_open = upper_open if upper_open is not None else upper.open
+            full += '<' if upper_open else '<='
             full += upper.version if relupper else upper.version.split('-')[0]
         
         return ScrollVersion(full)
@@ -338,26 +346,33 @@ class ScrollVersion():
                 return other if self.lower.release < 0 else self
             return self if self.lower is not None else other
         
+        print('d')
         name = self.name
         lower = None
         upper = None
+        lower_open = None
+        upper_open = None
         
         if (self.lower is not None) and (other.lower is not None):
             if self.lower == other.lower:
                 lower = other.lower if self.lower.release < 0 else self.lower
+                lower_open = self.lower.open or other.lower.open
             else:
                 lower = self.lower if self.lower >= other.lower else other.lower
         if (self.upper is not None) and (other.upper is not None):
             if self.upper == other.upper:
                 upper = other.upper if self.upper.release < 0 else self.upper
+                upper_open = self.upper.open or other.upper.open
             else:
                 upper = self.upper if self.upper <= other.upper else other.upper
         
         full = name
         if lower is not None:
+            lower_open = lower_open if lower_open is not None else lower.open
             full += '>' if lower.open else '>='
             full += lower.version
         if upper is not None:
+            upper_open = upper_open if upper_open is not None else upper.open
             full += '<' if upper.open else '<='
             full += upper.version
         
