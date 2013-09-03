@@ -346,7 +346,6 @@ class ScrollVersion():
                 return other if self.lower.release < 0 else self
             return self if self.lower is not None else other
         
-        print('d')
         name = self.name
         lower = None
         upper = None
