@@ -49,6 +49,7 @@ class ScrollVersion():
         self.lower = None
         self.upper = None
         self.complement = False
+        self.intersection_mode = False
         
         if len(parts) == 1:
             self.name = parts[0]
@@ -242,22 +243,23 @@ class ScrollVersion():
         if self.name != other.name:
             return False
         
+        i = lambda rc : rc and ((not self.intersection_mode) or (self.intersection(other) is not None))
         c = lambda version : version.as_closed()
         if ((other.lower is None) and (other.upper is None)) or ((self.lower is None) and (self.upper is None)):
-            return True
+            return i(True)
         elif ((self.lower is None) and (other.lower is None)) or ((self.upper is None) and (other.upper is None)):
-            return True
+            return i(True)
         elif self.complement and other.complement:
-            return True
-        elif  self.lower is None:  return other.complement or (other.lower <= self.upper)
-        elif  self.upper is None:  return other.complement or (other.upper >= self.lower)
-        elif other.upper is None:  return  self.complement or (other.lower <= self.upper)
-        elif other.lower is None:  return  self.complement or (other.upper >= self.lower)
-        elif other.complement:     return ( c(self.lower) !=  c(self.upper)) or (c(self.lower) != c(other.lower))
-        elif  self.complement:     return (c(other.lower) != c(other.upper)) or (c(self.lower) != c(other.lower))
+            return i(True)
+        elif  self.lower is None:  return i(other.complement or (other.lower <= self.upper))
+        elif  self.upper is None:  return i(other.complement or (other.upper >= self.lower))
+        elif other.upper is None:  return i( self.complement or (other.lower <= self.upper))
+        elif other.lower is None:  return i( self.complement or (other.upper >= self.lower))
+        elif other.complement:     return i(( c(self.lower) !=  c(self.upper)) or (c(self.lower) != c(other.lower)))
+        elif  self.complement:     return i((c(other.lower) != c(other.upper)) or (c(self.lower) != c(other.lower)))
         else:
-            return ( self.lower <= other.lower <=  self.upper) or ( self.lower <= other.upper <=  self.upper) or \
-            	   (other.lower <=  self.lower <= other.upper) or (other.lower <=  self.upper <= other.upper)
+            return i(( self.lower <= other.lower <=  self.upper) or ( self.lower <= other.upper <=  self.upper) or \
+            	     (other.lower <=  self.lower <= other.upper) or (other.lower <=  self.upper <= other.upper))
     
     
     def __eq__(self, other):
@@ -407,6 +409,7 @@ class ScrollVersion():
         
         @param  scroll_set:set<ScrollVersion>  Set of scrolls
         '''
+        self.intersection_mode = True
         if self in scroll_set:
             other = set([self]).intersection(scroll_set)
             if other.full == self.full: # incase the behaviour of intersection changes
