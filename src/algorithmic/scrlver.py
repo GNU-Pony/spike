@@ -353,7 +353,7 @@ class ScrollVersion():
         upper_open = None
         
         if (self.lower is not None) and (other.lower is not None):
-            if self.lower == other.lower:
+            if self.lower.as_closed() == other.lower.as_closed():
                 lower = other.lower if self.lower.release < 0 else self.lower
                 lower_open = self.lower.open or other.lower.open
             else:
@@ -362,7 +362,7 @@ class ScrollVersion():
             lower = self.lower if self.lower is not None else other.lower
         
         if (self.upper is not None) and (other.upper is not None):
-            if self.upper == other.upper:
+            if self.upper.as_closed() == other.upper.as_closed():
                 upper = other.upper if self.upper.release < 0 else self.upper
                 upper_open = self.upper.open or other.upper.open
             else:
@@ -373,11 +373,11 @@ class ScrollVersion():
         full = name
         if lower is not None:
             lower_open = lower_open if lower_open is not None else lower.open
-            full += '>' if lower.open else '>='
+            full += '>' if lower_open else '>='
             full += lower.version
         if upper is not None:
             upper_open = upper_open if upper_open is not None else upper.open
-            full += '<' if upper.open else '<='
+            full += '<' if upper_open else '<='
             full += upper.version
         
         return ScrollVersion(full)
