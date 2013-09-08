@@ -55,6 +55,8 @@ class LibSpikeHelper():
         @return  :str            The lock file's file name
         '''
         return '/run/lock/spike'
+        ## FIXME private locks must be support non-root a well,
+        ## and non-root must be able to to shared lock on system lock.
     
     
     @staticmethod
