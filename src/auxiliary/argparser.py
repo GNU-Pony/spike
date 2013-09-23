@@ -153,7 +153,7 @@ class ArgParser():
         '''
         for opt in self.opts:
             if (self.opts[opt] is not None) and (opt not in allowed):
-                msg = self.execprog + ': option used out of context: ' + opt
+                msg = execprog + ': option used out of context: ' + opt
                 if opt in longmap:
                     msg += '(' + longmap[opt] + ')'
                 printerr(msg)
@@ -175,11 +175,11 @@ class ArgParser():
         '''
         n = len(self.files)
         rc = min_count <= n
-        msg = self.execprog + ': too few unnamed arguments: %i but %i needed' % (n, min_count)
+        msg = execprog + ': too few unnamed arguments: %i but %i needed' % (n, min_count)
         if rc and (max_count is not None):
             rc = n <= max_count
             if not rc:
-                msg = self.execprog + ': too many unnamed arguments: %i but only %i allowed' % (n, max_count)
+                msg = execprog + ': too many unnamed arguments: %i but only %i allowed' % (n, max_count)
         if do_exit and not rc:
             exit(1)
         return rc
