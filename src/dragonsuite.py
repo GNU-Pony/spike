@@ -1277,9 +1277,8 @@ def post_install_info(rootdir, installedfiles, private, i_use_info):
     @param  i_use_info      Whether to install info manuals
     '''
     if i_use_info:
-        for local in ([None] if private else ['/usr', '/usr/local']):
-            _prefix = rootdir + (path('~/.local') if private else ('/usr/local' if local else '/usr'))
-            _infodir = _prefix + '/share/info/'
+        for _prefix in ([path('~/.local')] if private else ['/usr', '/usr/local']):
+            _infodir = rootdir + _prefix + '/share/info/'
             files = []
             for file in installedfiles:
                 if file.startswith(_infodir) and os.path.lexists(file):
@@ -1318,9 +1317,8 @@ def pre_uninstall_info(rootdir, installedfiles, private):
     @param  private         Whether the install is a private install
     @param  i_use_info      Whether to install info manuals
     '''
-    for local in ([None] if private else ['/usr', '/usr/local']):
-        _prefix = rootdir + (path('~/.local') if private else ('/usr/local' if local else '/usr'))
-        _infodir = _prefix + '/share/info/'
+    for _prefix in ([path('~/.local')] if private else ['/usr', '/usr/local']):
+        _infodir = rootdir + _prefix + '/share/info/'
         files = []
         for file in installedfiles:
             if file.startswith(_infodir) and os.path.lexists(file):
