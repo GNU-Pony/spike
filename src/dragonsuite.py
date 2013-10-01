@@ -859,6 +859,11 @@ def path(exprs, existing = False):
     {1..11}  => (1|2|3|4|5|6|7|8|9|10|11)
     *        => .*
     ?        => .
+    TODO: add other expressions:
+        [abc] => (a|b|c)
+        [a-g] => [ag]
+        [a-zA-Z] => ([az]|[AZ])
+        However they are only expanded if matched to an file
     
     Everything else is matched verbosely and the matching is closed (regex: ^pattern$),
     and \ is used to escape characters do that they are matched verbosely instead of
