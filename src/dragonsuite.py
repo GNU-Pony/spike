@@ -840,7 +840,7 @@ def path_escape(*filename):
     files = [filename] if isinstance(filename, str) else filename
     rc = []
     for file in files:
-        for c in '\\.^+$[]|(){}*?':
+        for c in '\\.^+$[]|(){}*?@':
             file = file.replace(c, '\\' + c)
         rc.append(file)
     if isinstance(filename, str):
@@ -859,10 +859,12 @@ def path(exprs, existing = False):
     {1..11}  => (1|2|3|4|5|6|7|8|9|10|11)
     *        => .*
     ?        => .
-    TODO: add other expressions:
-        [abc] => (a|b|c)
-        [a-g] => [ag]
+    TODO: add other expressions but for alternative function epath:
+        [abc]    => (a|b|c)
+        [a-g]    => [ag]
         [a-zA-Z] => ([az]|[AZ])
+        ?(a)     => (a|)
+        @(a|b|c) => (a|b|c)
         However they are only expanded if matched to an file
     
     Everything else is matched verbosely and the matching is closed (regex: ^pattern$),
