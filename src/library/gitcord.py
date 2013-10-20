@@ -19,6 +19,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
 import os
+import sys
 from subprocess import Popen, PIPE
 
 
@@ -167,12 +168,12 @@ class Gitcord():
         ———————
         Remove a file from all commits the the current branch of a repository
         
-        @param   filename:str|itr<str>  The files to remove
-        @param   shred:list<str>?       Option to used with shred, if secure file remove is needed (probably not as it is probably already in the git tree,) `None` if not needed
-        @param   tag_name_filter:str?   Command used to name the new tags, leave to default to override old tags, and set to None if you do not want to create new tags
-        @return  :bool                  Whether the spell casting was successful
+        @param   filenames:str|itr<str>  The files to remove
+        @param   shred:list<str>?        Option to used with shred, if secure file remove is needed (probably not as it is probably already in the git tree,) `None` if not needed
+        @param   tag_name_filter:str?    Command used to name the new tags, leave to default to override old tags, and set to None if you do not want to create new tags
+        @return  :bool                   Whether the spell casting was successful
         '''
-        files = ' '.join(['\'' + f.replace('\'', '\'\\\'\'') + '\'' for f in filename])
+        files = ' '.join(['\'' + f.replace('\'', '\'\\\'\'') + '\'' for f in filenames])
         index_filter = 'git rm --ignore-unmatch -r --cached -- %s' % files
         if shred is not None:
             shred_opts = shred[:]
@@ -213,8 +214,8 @@ class Gitcord():
         cmd = ['git', 'commit']
         if signoff:
             cmd += ['--signoff']
-        if gpgsign is not None:
-            if len(gpgsign) == 0:
+        if gpg_sign is not None:
+            if len(gpg_sign) == 0:
                 cmd += '--gpg-sign'
             else:
                 cmd += '--gpg-sign=' + gpg_sign
@@ -347,9 +348,9 @@ class Gitcord():
         have = {}
         _rc = []
         for line in reversed(changes):
-            sep = line.find('  ')
+            sep = line.find('\t')
             (old_mode, new_mode, _1, _2, action) = line[:sep].split(' ')
-            filename = line[sep + 2:]
+            filename = line[sep + 1:]
             if '\"' in filename:
                 filename = eval(filename)
             old_mode = None if action == 'A' else int(old_mode)
@@ -362,8 +363,8 @@ class Gitcord():
                 _rc.append(entry)
         rc = []
         for entry in _rc:
-            if entry.old_mode is None:
-                if entry.new_mode is None:
+            if entry[1] is None:
+                if entry[2] is None:
                     continue
             rc.append(entry)
         return rc
