@@ -54,9 +54,9 @@ class LibSpikeHelper():
         @param   spike_path:str  Spike's location
         @return  :str            The lock file's file name
         '''
-        return '/run/lock/spike'
-        ## FIXME private locks must be support non-root a well,
-        ## and non-root must be able to to shared lock on system lock.
+        return '/dev/shm/spike.lock'
+        # /dev/shm/spike.lock is used so all users have access
+        ## FIXME private locks must be supported for non-root
     
     
     @staticmethod
@@ -69,7 +69,7 @@ class LibSpikeHelper():
         import fcntl ## We are importing here so non-Unix systems do not run into problems and can use a plug-in to implement file locking
         lockfile = LibSpikeHelper.get_lockfile(SPIKE_PATH)
         if LibSpikeHelper.lock_file is None:
-            LibSpikeHelper.lock_file = open(lockfile, 'a')
+            LibSpikeHelper.lock_file = open(lockfile, 'r' if os.path.exists(lockfile) else 'a')
             LibSpikeHelper.lock_file.flush()
         locktype = fcntl.LOCK_EX if exclusive else fcntl.LOCK_SH
         try:
@@ -79,7 +79,8 @@ class LibSpikeHelper():
                 print('%s is currently locked.' % lockfile)
             else:
                 print('%s is currently locked for modifications.' % lockfile)
-            ## You can leave a message to users that are trying to access with incompatible lock by filling /run/lock/spike with the message
+            ## You can leave a message to users that are trying to access with
+            ## incompatible lock by filling `lockfile` with the message
             with open(lockfile, 'rb') as file:
                 msg = file.read().decode('utf-8', 'replace')
                 if msg != '':
