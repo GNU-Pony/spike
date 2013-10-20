@@ -22,6 +22,12 @@ spike --find SCROLL... [--owner | --written YES/NO]
 spike --erase SCROLL... [--pinpal ROOT | --private] [--shred]
 --> uninstall package
 
+spike --demote SCROLL...
+--> demote package to a dependency
+
+spike --promote SCROLL...
+--> premote package to an explicitly installed package
+
 spike --claim FILE... [--recursive | --entire] [--force] [--private] SCROLL
 --> make FILE a part of SCROLL, and all subfiles if --recursive
 --> if --entire is on, --recursive is emulated at lookup
@@ -73,6 +79,8 @@ spike --example-shot [--viewer VIEWER] [--all-at-once] SCROLL...
 -F  --find
 -E  --erase
     --pinpal
+    --demote
+    --promote
 -C  --claim
     --recursive
     --entire

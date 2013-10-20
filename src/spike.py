@@ -152,6 +152,10 @@ class Spike():
                                                              'slaves: [--pinpal=] [--ignore=]... [--private] [--shred]')
         opts.add_argumentless(['-E', '--erase'],                      help = 'Uninstall a pony\n'
                                                              'slaves: [--pinpal= | --private] [--shred]')
+        opts.add_argumentless([      '--demote'],                     help = 'Demote pony to a dependency\n'
+                                                             'slaves: [--private]')
+        opts.add_argumentless([      '--promote'],                    help = 'Promote pony to explicitly installed\n'
+                                                             'slaves: [--private]')
         opts.add_argumented(  ['-X', '--ride'],      arg = 'SCROLL',  help = 'Execute a scroll after best effort\n'
                                                              'slaves: [--private]')
         opts.add_argumentless(['-R', '--read'],                       help = 'Get scroll information\n'
@@ -235,6 +239,8 @@ class Spike():
         for opt in 'vhcBFWUEXRCDANPSI3':
             exclusives.add('-' + opt)
         exclusives.add('--restore-archive')
+        exclusives.add('--demote')
+        exclusives.add('--promote')
         opts.test_exclusiveness(self.execprog, exclusives, longmap, True)
         
         for opt in opts.opts:
@@ -366,6 +372,22 @@ class Spike():
                 LibSpike.initialise()
                 exit_value = self.ride(opt.files[0],
                                        private = opts.opts['-u'] is not None)
+                
+            #elif opts.opts['--demote'] is not None: ### TODO: implement demote
+            #    allowed.add('-u')
+            #    opts.test_allowed(self.execprog, allowed, longmap, True)
+            #    opts.test_files(self.execprog, 1, None, True)
+            #    LibSpike.initialise()
+            #    exit_value = self.demote(opt.files,
+            #                             private = opts.opts['-u'] is not None)
+                
+            #elif opts.opts['--promote'] is not None: ### TODO: implement promote
+            #    allowed.add('-u')
+            #    opts.test_allowed(self.execprog, allowed, longmap, True)
+            #    opts.test_files(self.execprog, 1, None, True)
+            #    LibSpike.initialise()
+            #    exit_value = self.promote(opt.files,
+            #                              private = opts.opts['-u'] is not None)
                 
             elif opts.opts['-R'] is not None:
                 exclusives.add('-l')
