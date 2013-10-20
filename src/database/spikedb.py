@@ -191,31 +191,6 @@ class SpikeDB():
                 SpikeDB.__make(filename, 1 << lblen, buckets[lblen])
     
     
-    def override(self, pairs):
-        '''
-        Insert, but override even possible, values in a database
-        
-        @param-  db:str                    The database file
-        @param-  maxlen:int                The length of keys
-        @param   pairs:list<(str, bytes)>  Key–value-pairs, all values must be of same length
-        '''
-        buckets = {}
-        for pair in pairs:
-            lblen = lb32(len(pair[0]))
-            if (1 << lblen) < len(pair[0]):
-                lblen += 1
-            if lblen not in buckets:
-                buckets[lblen] = [pair]
-            else:
-                buckets[lblen].append(pair)
-        for lblen in buckets:
-            filename = self.file_pattern % lblen
-            if os.path.exists(filename):
-                SpikeDB.__override(filename, 1 << lblen, self.value_len, buckets[lblen])
-            else:
-                SpikeDB.__make(filename, 1 << lblen, buckets[lblen])
-    
-    
     def make(self, pairs):
         '''
         Build a database from the ground
@@ -562,95 +537,6 @@ class SpikeDB():
                     key = key + '\0' * (maxlen - len(key.encode('utf8')))
                     data.append(key.encode('utf8'))
                     data.append(val)
-        with open(db, 'wb') as file:
-            for d in data:
-                file.write(d)
-    
-    
-    @staticmethod
-    def __override(db, maxlen, valuelen, pairs):
-        ## FIXME: do not increase count when successfully overriding
-        '''
-        Insert, but override even possible, values in a database
-        
-        @param  db:str                    The database file
-        @param  maxlen:int                The length of keys
-        @param  valuelen:int              The length of values
-        @param  pairs:list<(str, bytes)>  Key–value-pairs, all values must be of same length
-        '''
-        buckets = SpikeDB.__make_pair_buckets(pairs)
-        devblocksize = SpikeDB.__lb_blocksize(db)
-        insertlist = []
-        initialscache = {}
-        masterseek = None
-        masterseeklen = 3 * (1 << (INITIALS_LEN << 2))
-        data = []
-        with open(db, 'rb') as file:
-            offset = 0
-            position = 0
-            amount = 0
-            masterseek = list(_file_read(file, masterseeklen))
-            keyvallen = maxlen + valuelen
-            for initials in sorted(buckets.keys()):
-                if position >= initials:
-                    position = 0
-                    offset = 0
-                    amount = 0
-                while position <= initials:
-                    offset += amount
-                    if initials in initialscache:
-                        amount = initialscache[initials]
-                    else:
-                        amount = [int(b) for b in masterseek[3 * position : 3 * (position + 1)]]
-                        amount = (amount[0] << 16) | (amount[1] << 8) | amount[2]
-                        initialscache[initials] = amount
-                    position += 1
-                fileoffset = masterseeklen + offset * keyvallen
-                bucket = buckets[initials]
-                bbucket = [(word + '\0' * (maxlen - len(word.encode('utf-8')))).encode('utf-8') for (word, _) in bucket]
-                blist = Blocklist(file, devblocksize, fileoffset, keyvallen, maxlen, amount)
-                class Agg():
-                    def __init__(self, sink, key_map, pos_calc, initials):
-                        self.sink = sink
-                        self.key_map = key_map
-                        self.pos_calc = pos_calc
-                        self.initials = initials
-                    def append(self, item):
-                        pos = item[1]
-                        (pos, inits) = (~pos, -1) if pos < 0 else (pos, self.initials)
-                        (key, val) = self.key_map[item[0]]
-                        self.sink.append((key, val, self.pos_calc(pos), inits))
-                multibin_search(Agg(insertlist, bucket, lambda x : fileoffset + x * keyvallen, initials), blist, bbucket)
-            insertlist.sort(key = lambda x : x[2])
-            end = 0
-            pos = 0
-            while pos < masterseeklen:
-                amount = [int(b) for b in masterseek[pos : pos + 3]]
-                end += (amount[0] << 16) | (amount[1] << 8) | amount[2]
-                pos += 3
-            end = masterseeklen + end * keyvallen
-            initialscache[-1] = 0
-            for (_k, _v, _p, initials) in insertlist:
-                initialscache[initials] += 1
-            for initials in initialscache:
-                if initials >= 0:
-                    count = initialscache[initials]
-                    count = [b & 255 for b in [count >> 16, count >> 8, count]]
-                    masterseek[3 * initials : 3 * (initials + 1)] = count
-            masterseek = bytes(masterseek)
-            data.append(masterseek)
-            last = masterseeklen
-            file.seek(last, 0) # 0 means from the start of the stream
-            for (key, val, pos, initials) in insertlist + [(None, None, end, None)]:
-                if pos > last:
-                    data.append(_file_read(file, pos - last))
-                    last = pos
-                if key is not None:
-                    key = key + '\0' * (maxlen - len(key.encode('utf8')))
-                    data.append(key.encode('utf8'))
-                    data.append(val)
-                    if initials >= 0:
-                        last += keyvallen
         with open(db, 'wb') as file:
             for d in data:
                 file.write(d)
