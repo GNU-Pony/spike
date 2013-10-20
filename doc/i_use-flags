@@ -5,15 +5,44 @@ the scrolls. Booleanic flags are interpreted as
 set to true if the value starts with a ‘y’ or ‘Y’.
 The following I_USE-flags are used:
 
-I_USE_INFO      Whether you want info manuals installed.
-I_USE_PDF_INFO  Whether you want PDF compilations of info manuals installed.
-I_USE_MAN       Whether you want man manuals installed.
+I_USE_INFO      Whether you want info manuals installed
+I_USE_PDF_INFO  Whether you want PDF compilations of info manuals installed
+I_USE_MAN       Whether you want man manuals installed
 I_USE_MAN_*     Whether you want man manuals if the language code *
 I_USE_BOOTDIR   ‘normal’ for a seperate /boot directory, ‘flat’ for
-                /boot linking to /, and ‘none’ for no /boot.
-I_USE_SKEL      Whether you want user skeleton files installed.
-I_USE_BASH      Whether you want autocompletion for bash installed.
-I_USE_ZSH       Whether you want autocompletion for zsh installed.
-I_USE_FISH      Whether you want autocompletion for fish installed.
-I_USE_TTY       Whether you TTY only program resources installed.
+                /boot linking to /, and ‘none’ for no /boot
+I_USE_SKEL      Whether you want user skeleton files installed
+I_USE_SH        The POSIX shell provider you use, for example bash or dash,
+		‘a:b’ means the command ‘b’ that is provided by ‘a’, ‘c’ is shorthand for ‘c:c’
+I_USE_BASH      Whether you want autocompletion for bash installed
+I_USE_ZSH       Whether you want autocompletion for zsh installed
+I_USE_FISH      Whether you want autocompletion for fish installed
+I_USE_TTY       Whether you want TTY only program resources installed
+I_USE_LOCALE    Comma (,) separated list of locates to install
+I_USE_GETTY     Name of the getty program use, such as util-linux:agetty or gates-of-tartaros:got,
+		‘a:b’ means the command ‘b’ that is provided by ‘a’, ‘c’ is shorthand for ‘c:c’
+I_USE_TOOLKIT   Ordered comma separated list of prefered toolkits, for example gtk2,qt5,gtk3
+I_USE_DISPLAY   Ordered comma separated list of prefered display servers, for example wayland,xorg,mir
+
+
+Some features are best added by patch or extension
+scrolls. But if that is not possible, these I_USE-flags
+can also be used, you may want to configure them
+just in case.
+
+I_USE_INFRARED          Whether you use infrared
+I_USE_BLUETOOTH         Whether you use bluetooth
+I_USE_WIFI              Whether you use WiFi
+I_USE_INTERNET          Whether you are connected to the Internet at all,
+                        perhaps you only use the computer where you do not
+                        have Internet connections or use the the computer
+                        as an appliance that do not need Internet.
+I_USE_NETWORK           Just like I_USE_INTERNET, but a network instread of the Internet
+I_USE_BACKLIGHT         Whether you use monitors with backlighting, CRT does not
+I_USE_AUDIO             Whether you use audio playback, you probably do not if it is a server
+I_USE_CLOSE_AS_ICONIFY  Whether you prefer that applications save their state when closed
+I_USE_CD                Comma separated list of CD features you want, - for none: read,write,rewrite,clone,play,rip
+I_USE_DVD               Comma separated list of DVD features you want, - for none: read,write,rewrite,clone,play,rip
+I_USE_HDDVD             Comma separated list of HDDVD features you want, - for none: read,write,rewrite,clone,play,rip
+I_USE_BLURAY            Comma separated list of Blu-ray features you want, - for none: read,write,rewrite,clone,play,rip
 
