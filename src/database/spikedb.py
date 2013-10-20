@@ -63,7 +63,7 @@ class SpikeDB():
         Remove the entire database
         '''
         # Using DragonSuite.rm because it shred:s files if the user has enabled shred:ing
-        from dragonsuite import DragonSuite
+        import dragonsuite as DragonSuite
         for lblen in range(64):
             db = self.file_pattern % lblen
             if os.path.exists(db):
@@ -83,7 +83,7 @@ class SpikeDB():
             if os.path.exists(db):
                 devblocksize = SpikeDB.__lb_blocksize(db)
                 with open(db, 'rb') as file:
-                    keyvallen = 1 << lblen + vallen
+                    keyvallen = (1 << lblen) + self.value_len
                     amount = os.stat(os.path.realpath(db)).st_size
                     amount = (amount - masterseeklen) // keyvallen
                     list = Blocklist(file, devblocksize, masterseeklen, keyvallen, 1 << lblen, amount)
@@ -122,7 +122,7 @@ class SpikeDB():
             lblen = lb32(len(key))
             if (1 << lblen) < len(key):
                 lblen += 1
-            if lblen in buckets:
+            if lblen not in buckets:
                 buckets[lblen] = [key]
             else:
                 buckets[lblen].append(key)
@@ -152,7 +152,7 @@ class SpikeDB():
             lblen = lb32(len(key))
             if (1 << lblen) < len(key):
                 lblen += 1
-            if lblen in buckets:
+            if lblen not in buckets:
                 buckets[lblen] = [key]
             else:
                 buckets[lblen].append(key)
@@ -179,7 +179,7 @@ class SpikeDB():
             lblen = lb32(len(pair[0]))
             if (1 << lblen) < len(pair[0]):
                 lblen += 1
-            if lblen in buckets:
+            if lblen not in buckets:
                 buckets[lblen] = [pair]
             else:
                 buckets[lblen].append(pair)
@@ -204,7 +204,7 @@ class SpikeDB():
             lblen = lb32(len(pair[0]))
             if (1 << lblen) < len(pair[0]):
                 lblen += 1
-            if lblen in buckets:
+            if lblen not in buckets:
                 buckets[lblen] = [pair]
             else:
                 buckets[lblen].append(pair)
@@ -229,7 +229,7 @@ class SpikeDB():
             lblen = lb32(len(pair[0]))
             if (1 << lblen) < len(pair[0]):
                 lblen += 1
-            if lblen in buckets:
+            if lblen not in buckets:
                 buckets[lblen] = [pair]
             else:
                 buckets[lblen].append(pair)
@@ -303,7 +303,7 @@ class SpikeDB():
                 initials += key[pos]
             while len(initials) < INITIALS_LEN:
                 pos += 1
-                if pos == len(initials):
+                if pos == len(key):
                     break
                 initials += key[pos]
             if len(initials) > INITIALS_LEN:
@@ -337,7 +337,7 @@ class SpikeDB():
             position = 0
             amount = 0
             masterseeklen = 3 * (1 << (INITIALS_LEN << 2))
-            masterseek = __file_read(file, masterseeklen)
+            masterseek = _file_read(file, masterseeklen)
             keyvallen = maxlen + valuelen
             for initials in sorted(buckets.keys()):
                 if position >= initials:
@@ -404,7 +404,7 @@ class SpikeDB():
             position = 0
             amount = 0
             masterseeklen = 3 * (1 << (INITIALS_LEN << 2))
-            masterseek = list(__file_read(file, masterseeklen))
+            masterseek = list(_file_read(file, masterseeklen))
             keyvallen = maxlen + valuelen
             for initials in sorted(buckets.keys()):
                 if position >= initials:
@@ -470,8 +470,8 @@ class SpikeDB():
             for indices in (removelist, [end]):
                 for index in indices:
                     if pos != index:
-                        file.seek(offset = masterseeklen + pos * keyvallen, whence = 0) # 0 means from the start of the stream
-                        wdata.append(__file_read(file, (index - pos) * keyvallen))
+                        file.seek(masterseeklen + pos * keyvallen, 0) # 0 means from the start of the stream
+                        wdata.append(_file_read(file, (index - pos) * keyvallen))
                     pos = index + 1
         with open(db, 'wb') as file:
             for data in wdata:
@@ -499,7 +499,7 @@ class SpikeDB():
             offset = 0
             position = 0
             amount = 0
-            masterseek = list(__file_read(file, masterseeklen))
+            masterseek = list(_file_read(file, masterseeklen))
             keyvallen = maxlen + valuelen
             for initials in sorted(buckets.keys()):
                 if position >= initials:
@@ -518,7 +518,7 @@ class SpikeDB():
                 fileoffset = masterseeklen + offset * keyvallen
                 bucket = buckets[initials]
                 bbucket = [(word + '\0' * (maxlen - len(word.encode('utf-8')))).encode('utf-8') for word in bucket]
-                list = Blocklist(file, devblocksize, fileoffset, keyvallen, maxlen, amount)
+                blist = Blocklist(file, devblocksize, fileoffset, keyvallen, maxlen, amount)
                 class Agg():
                     def __init__(self, sink, key_map, pos_calc, initials):
                         self.sink = sink
@@ -530,7 +530,7 @@ class SpikeDB():
                         pos = ~pos if pos < 0 else pos
                         (key, val) = self.key_map[item[0]]
                         self.sink.append((key, val, self.pos_calc(pos), self.initials))
-                multibin_search(Agg(insertlist, bucket, lambda x : fileoffset + x * keyvallen, initials), list, bbucket)
+                multibin_search(Agg(insertlist, bucket, lambda x : fileoffset + x * keyvallen, initials), blist, bbucket)
             insertlist.sort(key = lambda x : x[2])
             end = 0
             pos = 0
@@ -548,10 +548,10 @@ class SpikeDB():
             masterseek = bytes(masterseek)
             data.append(masterseek)
             last = masterseeklen
-            file.seek(offset = last, whence = 0) # 0 means from the start of the stream
+            file.seek(last, 0) # 0 means from the start of the stream
             for (key, val, pos, _) in insertlist + [(None, None, end, None)]:
                 if pos > last:
-                    data.append(__file_read(file, pos - last))
+                    data.append(_file_read(file, pos - last))
                     last = pos
                 if key is not None:
                     key = key + '\0' * (maxlen - len(key.encode('utf8')))
@@ -583,7 +583,7 @@ class SpikeDB():
             offset = 0
             position = 0
             amount = 0
-            masterseek = list(__file_read(file, masterseeklen))
+            masterseek = list(_file_read(file, masterseeklen))
             keyvallen = maxlen + valuelen
             for initials in sorted(buckets.keys()):
                 if position >= initials:
@@ -602,7 +602,7 @@ class SpikeDB():
                 fileoffset = masterseeklen + offset * keyvallen
                 bucket = buckets[initials]
                 bbucket = [(word + '\0' * (maxlen - len(word.encode('utf-8')))).encode('utf-8') for word in bucket]
-                list = Blocklist(file, devblocksize, fileoffset, keyvallen, maxlen, amount)
+                blist = Blocklist(file, devblocksize, fileoffset, keyvallen, maxlen, amount)
                 class Agg():
                     def __init__(self, sink, key_map, pos_calc, initials):
                         self.sink = sink
@@ -614,7 +614,7 @@ class SpikeDB():
                         (pos, inits) = (~pos, -1) if pos < 0 else (pos, self.initials)
                         (key, val) = self.key_map[item[0]]
                         self.sink.append((key, val, self.pos_calc(pos), inits))
-                multibin_search(Agg(insertlist, bucket, lambda x : fileoffset + x * keyvallen, initials), list, bbucket)
+                multibin_search(Agg(insertlist, bucket, lambda x : fileoffset + x * keyvallen, initials), blist, bbucket)
             insertlist.sort(key = lambda x : x[2])
             end = 0
             pos = 0
@@ -634,10 +634,10 @@ class SpikeDB():
             masterseek = bytes(masterseek)
             data.append(masterseek)
             last = masterseeklen
-            file.seek(offset = last, whence = 0) # 0 means from the start of the stream
+            file.seek(last, 0) # 0 means from the start of the stream
             for (key, val, pos, initials) in insertlist + [(None, None, end, None)]:
                 if pos > last:
-                    data.append(__file_read(file, pos - last))
+                    data.append(_file_read(file, pos - last))
                     last = pos
                 if key is not None:
                     key = key + '\0' * (maxlen - len(key.encode('utf8')))
@@ -678,7 +678,7 @@ class SpikeDB():
                 counts.append((initials, len(bucket)))
             file.flush()
             for (initials, count) in counts:
-                file.seek(offset = 3 * initials, whence = 0) # 0 means from the start of the stream
+                file.seek(3 * initials, 0) # 0 means from the start of the stream
                 wbuf = bytes([b & 255 for b in [count >> 16, count >> 8, count]])
                 file.write(wbuf)
             file.flush()
@@ -720,9 +720,9 @@ class Blocklist():
         pos = index * self.blocksize + self.offset
         if self.position != pos >> self.lb_devblock:
             self.position = pos >> self.lb_devblock
-            self.buffer = __file_read(self.file, self.devblock)
+            self.buffer = _file_read(self.file, self.devblock)
         pos &= self.devblock - 1
-        return self.buffer[pos : pos + itemsize]
+        return self.buffer[pos : pos + self.itemsize]
     
     def get_value(self, index):
         '''
@@ -734,9 +734,9 @@ class Blocklist():
         pos = index * self.blocksize + self.offset
         if self.position != pos >> self.lb_devblock:
             self.position = pos >> self.lb_devblock
-            self.buffer = __file_read(self.file, self.devblock)
+            self.buffer = _file_read(self.file, self.devblock)
         pos &= self.devblock - 1
-        return self.buffer[pos + itemsize : pos + blocksize]
+        return self.buffer[pos + self.itemsize : pos + self.blocksize]
     
     def get_key_binary(self, index):
         '''
@@ -748,9 +748,9 @@ class Blocklist():
         pos = index * self.blocksize + self.offset
         if self.position != pos >> self.lb_devblock:
             self.position = pos >> self.lb_devblock
-            self.buffer = __file_read(self.file, self.devblock)
+            self.buffer = _file_read(self.file, self.devblock)
         pos &= self.devblock - 1
-        return self.buffer[pos : pos + itemsize]
+        return self.buffer[pos : pos + self.itemsize]
     
     def get_key(self, index):
         '''
@@ -762,11 +762,15 @@ class Blocklist():
         pos = index * self.blocksize + self.offset
         if self.position != pos >> self.lb_devblock:
             self.position = pos >> self.lb_devblock
-            self.buffer = __file_read(self.file, self.devblock)
+            self.buffer = _file_read(self.file, self.devblock)
         pos &= self.devblock - 1
-        key = self.buffer[pos : pos + itemsize]
-        key = key[:key.find(0)]
-        return key.decode('utf-8', 'replace')
+        key = self.buffer[pos : pos + self.itemsize]
+        i = 0
+        for i in range(len(key)):
+            if key[i] == 0:
+                break
+        key = key[:i]
+        return bytes(key).decode('utf-8', 'replace')
     
     def __len__(self):
         '''
@@ -778,8 +782,8 @@ class Blocklist():
 
 
 
-@staticmethod
-def __file_read(stream, n):
+
+def _file_read(stream, n):
     '''
     Read an exact amount of bytes from a file stream independent on how the native stream
     actually works (it should to the same thing for regular files, but we need to be on
@@ -800,5 +804,5 @@ def __file_read(stream, n):
         rcc = []
         for c in rc:
             rcc += list(c)
-        return bytes(rrc)
+        return bytes(rcc)
 
