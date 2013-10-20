@@ -94,15 +94,15 @@ def iterator_remove(iter, remove_lambda):
     '''
     Remove items from an iteratable
     
-    @param  iter:itr<¿E?>                  The iteratable
-    @param  remove_lambda:(item:¿E?)→bool  Function that gets whether to remove an item
+    @param  iter:itr<¿E?>;remove(index:int)→void  The iteratable
+    @param  remove_lambda:(item:¿E?)→bool         Function that gets whether to remove an item
     '''
     remove = []
     for value in iter:
         if remove_lambda(value):
             remove.append(value)
     for value in remove:
-        del iter[dels]
+        iter.remove(value)
 
 
 def fetch(dbctrl, from_type, to_type, sink, keys):
