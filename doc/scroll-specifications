@@ -1,7 +1,8 @@
 pkgname:str
 	The name of the packages, must only contain lower case
 	letter, digits, plus signs, underscores, dots and hyphens.
-	The name may not start with a hyphen or a dot.
+	The name may not start with a hyphen or a dot. The length
+	of the name must not exceed 64 characters.
 
 	Default prefixes:
 		lib32-		i?86 library for 64-bits
