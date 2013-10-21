@@ -195,7 +195,7 @@ class LibSpikeHelper():
             home = home.replace('//', '/')
         for file in [SPIKE_PATH + superrepo] + get_confs(superrepo):
             if private is not None:
-                if file.startswith(home) != private:
+                if file.startswith(home) ^ private:
                     continue
             if os.path.isdir(file):
                 for repo in os.listdir(file):
@@ -239,7 +239,7 @@ class LibSpikeHelper():
             home = home.replace('//', '/')
         for file in [SPIKE_PATH + superrepo] + get_confs(superrepo):
             if private is not None:
-                if file.startswith(home) != private:
+                if file.startswith(home) ^ private:
                     continue
             if os.path.isdir(file):
                 for repo in os.listdir(file):
