@@ -152,6 +152,14 @@ class DBCtrl():
             transpositions.append({})
         
         # Fetch and transpose information for all tables except the last one
+        def unprefix(data):
+            for i in range(len(data)):
+                if data[i] != 0:
+                    return data[i:]
+            return bytes([0])
+        def unsuffix(data):
+            last = data.find(0)
+            return data if last < 0 else data[:last]
         class Agg():
             def __init__(self, table_index):
                 self.nones = {}
@@ -162,50 +170,37 @@ class DBCtrl():
                 else:
                     self.nones[item] = 1
                 if self.index == 0:
-                    if self.nones[item] == len(pres):
+                    if self.nones[item] == len(privs):
                         aggregator(item, None)
                 else:
                     error[0] = True
-        for i in range(len(tables) - 1):
+        for i in range(len(tables)):
             sink = []
             for table in tables[i]:
                 table.fetch(sink, input if i == 0 else transpositions[i - 1].keys())
+            value_format = types[i + 1][2]
+            if value_format == CONVERT_INT:
+                sink = [(key, None if value is None else unprefix(value)) for (key, value) in sink]
+            elif value_format == CONVERT_STR:
+                sink = [(key, None if value is None else unsuffix(value)) for (key, value) in sink]
             DBCtrl.transpose(transpositions[i], sink, types[i], Agg(i), False)
         
         # Join transposed tables
-        n = len(transpositions) - 2
-        last_input = transpositions[-2].keys()
-        last_table = transpositions[-2]
-        for i in range(n + 1):
-            table = tables[n - i]
-            for key in last_input.keys():
-                values = []
-                for value in last_table[key]:
-                    values.expand(table[value])
-                last_table[key] = values
+        last_table = transpositions[0]
+        for i in range(1, len(transpositions)):
+            cur_table = {}
+            table = transpositions[i]
+            for key in table.keys():
+                if key not in cur_table:
+                    cur_table[key] = []
+                for item in table[key]:
+                    cur_table[key] += last_table[item]
+            last_table = cur_table
         
-        # Fetch information from last table and send (input, output)
-        class Sink():
-            def __init__(self, error_at, last, table):
-                self.nones = {}
-                self.err = error_at
-                self.value_type = last
-                self.end_start = table
-            def append(self, key_value):
-                (key, value) = key_value
-                if value is None:
-                    if key in self.nones:
-                        self.nones[key] += 1
-                    else:
-                        self.nones[key] = 1
-                        if self.nones[key] == self.err:
-                            error[0] = True
-                    return
-                value = DBCtrl.value_convert(value, self.value_type)
-                for start in end_start[key]:
-                    aggregator(start, value)
-        for table in tables[-1]:
-            table.fetch(Sink(len(privs), types[-1]), last_input, last_table)
+        # Send transposition of joined table
+        for value in last_table.keys():
+            for key in last_table[value]:
+                aggregator(key, value)
         
         return not error[0]
     
@@ -260,7 +255,7 @@ class DBCtrl():
         if rc is None:
             rc = {}
         if none_aggregator is None:
-            for (key, value) in sink:
+            for (key, value) in pairs:
                 if value is not None:
                     value = DBCtrl.value_convert(value, conv)
                     if value in rc:
@@ -268,7 +263,7 @@ class DBCtrl():
                     else:
                         rc[value] = [key]
         elif aggregate_none:
-            for (key, value) in sink:
+            for (key, value) in pairs:
                 if value is None:
                     none_aggregator(key, None)
                 else:
@@ -278,7 +273,7 @@ class DBCtrl():
                     else:
                         rc[value] = [key]
         else:
-            for (key, value) in sink:
+            for (key, value) in pairs:
                 if value is None:
                     none_aggregator(key)
                 else:
@@ -306,7 +301,7 @@ class DBCtrl():
         if rc is None:
             rc = {}
         if none_aggregator is None:
-            for (key, value) in sink:
+            for (key, value) in pairs:
                 if value is not None:
                     value = DBCtrl.value_convert(value, conv)
                     if key in rc:
@@ -314,7 +309,7 @@ class DBCtrl():
                     else:
                         rc[key] = [value]
         elif aggregate_none:
-            for (key, value) in sink:
+            for (key, value) in pairs:
                 if value is None:
                     none_aggregator(key, None)
                 else:
@@ -324,7 +319,7 @@ class DBCtrl():
                     else:
                         rc[key] = [value]
         else:
-            for (key, value) in sink:
+            for (key, value) in pairs:
                 if value is None:
                     none_aggregator(key)
                 else:

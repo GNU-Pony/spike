@@ -338,7 +338,7 @@ class SpikeDB():
                         (key_index, val_index) = item
                         val = None if val_index < 0 else self.value_map.get_value(val_index)
                         key = self.key_map[key_index]
-                        _key = self.value_map.get_key(key_index)
+                        _key = self.value_map.get_key(val_index)
                         self.sink.append((key, val))
                         _val_index = val_index
                         val_index += 1
