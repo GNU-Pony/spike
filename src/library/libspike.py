@@ -1275,7 +1275,7 @@ class LibSpike(LibSpikeHelper):
                     return False
             if x.startswith('.') or x.startswith('-'):
                 return False
-            return len(x) > 0
+            return 0 < len(x) <= 64
         
         def isscroll(x):
             s = ScrollVersion(x if ': ' not in x else x[:x.find(': ')])
