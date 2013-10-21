@@ -190,10 +190,10 @@ class LibSpikeHelper():
         # Get repository paths
         repositories = set()
         superrepo = 'installed' if installed else 'repositories'
-        home = os.environ[HOME].replace(os.sep, '/') + '/'
+        home = os.environ['HOME'].replace(os.sep, '/') + '/'
         while '//' in home:
             home = home.replace('//', '/')
-        for file in [SPIKE_PATH + superrepo] + get_confs(superrepo):
+        for file in [SPIKE_PATH + superrepo] + LibSpikeHelper.get_confs(superrepo):
             if private is not None:
                 if file.startswith(home) ^ private:
                     continue
@@ -234,10 +234,10 @@ class LibSpikeHelper():
         # Get repository names and paths
         repositories = {}
         superrepo = 'installed' if installed else 'repositories'
-        home = os.environ[HOME].replace(os.sep, '/') + '/'
+        home = os.environ['HOME'].replace(os.sep, '/') + '/'
         while '//' in home:
             home = home.replace('//', '/')
-        for file in [SPIKE_PATH + superrepo] + get_confs(superrepo):
+        for file in [SPIKE_PATH + superrepo] + LibSpikeHelper.get_confs(superrepo):
             if private is not None:
                 if file.startswith(home) ^ private:
                     continue
