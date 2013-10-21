@@ -2,10 +2,10 @@ Spike is an awesome package manager, that uses git.
 
 Because it uses git anypony can simply setup their own repositories, and
 every user will have local copies of the repositories in case the upstream
-gets corrupted or is offline. Additionally you users can ge back in time
-in the package installations and package repositories, and local changes
-can be done to the repositories that will be preserved even when that part
-of the repository is updated.
+gets corrupted or is offline. Additionally users can go back in time in
+the package installations and package repositories, and local changes can
+be done to the repositories that will be preserved even when that part of
+the repository is updated.
 
 Spike inheritally has integrity control, this however does not mean that
 a packages does not need signing, but git does support GPG-signing and
@@ -19,7 +19,7 @@ Spikes security features includes secure removal of files, using the
 program shred (opt-in, shredding takes time), and uses git for integrity
 with GPG-signatures checked by git for trust.
 
-Spike supports state archiving to so system administrators can make one
+Spike supports state archiving so system administrators can make one
 installation and deploy it on multiple computers, as well as providing a
 simple way to roll back incase a system update breaks the system.
 
