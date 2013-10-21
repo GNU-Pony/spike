@@ -66,15 +66,15 @@ class LibSpikeHelper():
         
         @param  exclusive:bool  Whether the lock should be exclusive, that is, you are about to do modifications
         '''
-        import fcntl ## We are importing here so non-Unix systems do not run into problems and can use a plug-in to implement file locking
+        import fcntl ## We are importing here so other systems do not run into problems and can use a plug-in to implement file locking
         lockfile = LibSpikeHelper.get_lockfile(SPIKE_PATH)
         if LibSpikeHelper.lock_file is None:
             LibSpikeHelper.lock_file = open(lockfile, 'r' if os.path.exists(lockfile) else 'a')
             LibSpikeHelper.lock_file.flush()
         locktype = fcntl.LOCK_EX if exclusive else fcntl.LOCK_SH
         try:
-            fcntl.fcntl(LibSpikeHelper.lock_file.fileno(), locktype | fcntl.LOCK_NB)
-        except:
+            fcntl.flock(LibSpikeHelper.lock_file.fileno(), locktype | fcntl.LOCK_NB)
+        except BlockingIOError:
             if exclusive:
                 print('%s is currently locked.' % lockfile)
             else:
@@ -87,7 +87,7 @@ class LibSpikeHelper():
                     print('\nA message has been left for you:\n')
                     print('    \n'.join(msg.split('\n')))
             print('\nWaiting until all incompatible locks have been relased...')
-        fcntl.fcntl(LibSpikeHelper.lock_file.fileno(), locktype)
+        fcntl.flock(LibSpikeHelper.lock_file.fileno(), locktype)
     
     
     @staticmethod
@@ -95,9 +95,9 @@ class LibSpikeHelper():
         '''
         Unlock concurrent database access lock file
         '''
-        import fcntl ## We are importing here so non-Unix systems do not run into problems and can use a plug-in to implement file locking
+        import fcntl ## We are importing here so other systems do not run into problems and can use a plug-in to implement file locking
         if LibSpikeHelper.lock_file is not None:
-            fcntl.fcntl(LibSpikeHelper.lock_file.fileno(), fcntl.LOCK_UN)
+            fcntl.flock(LibSpikeHelper.lock_file.fileno(), fcntl.LOCK_UN)
             LibSpikeHelper.lock_file.close()
             LibSpikeHelper.lock_file = None
     
@@ -148,14 +148,14 @@ class LibSpikeHelper():
         @return  :list<str>     File names
         '''
         rc = set()
-        dirs = ['$XDG_CONFIG_HOME/', '$HOME/.config/', '$HOME/.', SPIKE_PATH, '$vardir/', '/var/', '$confdir/']
+        dirs = ['${XDG_CONFIG_HOME}/', '${HOME}/.config/', '${HOME}/.', SPIKE_PATH, '${vardir}/', '/var/', '${confdir}/']
         if 'XDG_CONFIG_DIRS' in os.environ:
             for dir in os.environ['XDG_CONFIG_DIRS'].split(':'):
                 if len(dir) > 0:
                     dirs.append((dir + '/').replace('//', '/'))
         dirs.append('/etc/')
         for dir in dirs:
-            file = __parse_filename(dir + SPIKE_PROGNAME + '/' + conf_file)
+            file = LibSpikeHelper.parse_filename(dir + SPIKE_PROGNAME + '/' + conf_file)
             if (file is not None) and os.path.exists(file):
                 rc.add(os.path.realpath(file))
         return list(rc)
