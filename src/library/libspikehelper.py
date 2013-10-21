@@ -84,7 +84,7 @@ class LibSpikeHelper():
             with open(lockfile, 'rb') as file:
                 msg = file.read().decode('utf-8', 'replace')
                 if msg != '':
-                    print('\A message has been left for you:\n    ')
+                    print('\nA message has been left for you:\n')
                     print('    \n'.join(msg.split('\n')))
             print('\nWaiting until all incompatible locks have been relased...')
         fcntl.fcntl(LibSpikeHelper.lock_file.fileno(), locktype)
