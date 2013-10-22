@@ -730,7 +730,7 @@ class LibSpike(LibSpikeHelper):
                 scroll = locate_scroll(pony, True, private)
                 if scroll is None:
                     return 6
-                ScrollMagick.execute_scroll(scroll)
+                ScrollMagick.execute_scroll(scroll, globals())
                 
                 # Ride pony
                 if ride is None:
@@ -924,7 +924,7 @@ class LibSpike(LibSpikeHelper):
                             if scrollfile == None:
                                 return 6
                             # Fetch fields
-                            ScrollMagick.execute_scroll(scrollfile)
+                            ScrollMagick.execute_scroll(scrollfile, globals())
                             
                             # Prepare for report
                             for field in fields:
@@ -1299,7 +1299,7 @@ class LibSpike(LibSpikeHelper):
                     # Read scroll
                     ScrollMagick.init_fields(globals())
                     ScrollMagick.init_methods()
-                    ScrollMagick.execute_scroll(scrollfile)
+                    ScrollMagick.execute_scroll(scrollfile, globals())
                     
                     # TODO look for autoconflicts
                     # Proofread scroll fields

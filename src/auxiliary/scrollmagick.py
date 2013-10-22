@@ -68,17 +68,18 @@ class ScrollMagick():
     
     
     @staticmethod
-    def execute_scroll(scroll):
+    def execute_scroll(scroll, globals):
         '''
         Opens, compiles and executes a scroll
         
-        @param  scroll:str  The scroll file
+        @param  scroll:str             The scroll file
+        @param  globals:dict<str, ¿?>  Should be `globals()`
         '''
         code = None
         with open(scroll, 'rb') as file:
             code = file.read().decode('utf8', 'replace') + '\n'
             code = compile(code, scroll, 'exec')
-        exec(code, globals())
+        exec(code, globals)
     
     
     @staticmethod
@@ -86,7 +87,7 @@ class ScrollMagick():
         '''
         Initialise or reset scroll fields, they will be set to global variables
         
-        @param  globals  Should be `globals()`
+        @param  globals:dict<str, ¿?>  Should be `globals()`
         '''
         vars = 'pkgname pkgver pkgdesc upstream arch freedom license metalicense private extension variant patch reason source sha3sums'
         for var in vars.split(' '):
