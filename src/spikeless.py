@@ -79,7 +79,7 @@ class Spikeless():
         global _dragonsuite_output
         _dragonsuite_output = sys.stdout.buffer
         
-        ScrollMagick.init_methods()
+        ScrollMagick.init_methods(globals())
         ScrollMagick.init_fields(globals())
         
         scrolldir = os.path.abspath(dirname(scroll))

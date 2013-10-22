@@ -726,7 +726,7 @@ class LibSpike(LibSpikeHelper):
             
             # Open scroll
             try:
-                ScrollMagick.init_methods()
+                ScrollMagick.init_methods(globals())
                 scroll = locate_scroll(pony, True, private)
                 if scroll is None:
                     return 6
@@ -1298,7 +1298,7 @@ class LibSpike(LibSpikeHelper):
                 try:
                     # Read scroll
                     ScrollMagick.init_fields(globals())
-                    ScrollMagick.init_methods()
+                    ScrollMagick.init_methods(globals())
                     ScrollMagick.execute_scroll(scrollfile, globals())
                     
                     # TODO look for autoconflicts
