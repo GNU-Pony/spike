@@ -80,7 +80,7 @@ class Spikeless():
         _dragonsuite_output = sys.stdout.buffer
         
         ScrollMagick.init_methods()
-        ScrollMagick.init_fields()
+        ScrollMagick.init_fields(globals())
         
         scrolldir = os.path.abspath(dirname(scroll))
         cwd = os.getcwd()
@@ -113,7 +113,7 @@ class Spikeless():
         if not os.path.exists(pkgdir):
             os.mkdir(pkgdir)
         
-        ScrollMagick.execute_scroll(scroll)
+        ScrollMagick.execute_scroll(scroll, globals())
         
         def sources(scrolldir):
             global noextract, source, sha3sums
