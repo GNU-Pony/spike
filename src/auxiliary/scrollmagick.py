@@ -19,6 +19,9 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
 
+import os
+
+
 SOFTWARE_SHAREABLE = 1
 SOFTWARE_COMMERCIAL = 2
 SOFTWARE_DERIVATIVE = 4
@@ -79,21 +82,23 @@ class ScrollMagick():
     
     
     @staticmethod
-    def init_fields():
+    def init_fields(globals):
         '''
         Initialise or reset scroll fields, they will be set to global variables
+        
+        @param  globals  Should be `globals()`
         '''
         vars = 'pkgname pkgver pkgdesc upstream arch freedom license metalicense private extension variant patch reason source sha3sums'
         for var in vars.split(' '):
-            globals()[var] = None
+            globals[var] = None
         
         vars = 'conflicts replaces provides patchbefore patchafter groups depends makedepends checkdepends optdepends noextract options'
         for var in vars.split(' '):
-            globals()[var] = []
+            globals[var] = []
         
-        globals()['pkgrel'] = 1
-        globals()['epoch'] = 0
-        globals()['interactive'] = False
+        globals['pkgrel'] = 1
+        globals['epoch'] = 0
+        globals['interactive'] = False
     
     
     @staticmethod

@@ -146,7 +146,8 @@ class LibSpike(LibSpikeHelper):
         Bootstrapper.queue(SPIKE_PATH, repositories, update, aggregator)
         
         # Look for repositories and list, for update, those that are not frozen
-        Bootstrapper.queue_repositores([SPIKE_PATH + 'repositories'] + get_confs('repositories'), repositories, update, aggregator)
+        repos = [SPIKE_PATH + 'repositories'] + LibSpike.get_confs('repositories')
+        Bootstrapper.queue_repositores(repos, repositories, update, aggregator)
         
         # Update Spike and repositories, those that are listed
         for repo in update:
@@ -173,13 +174,13 @@ class LibSpike(LibSpikeHelper):
         '''
         LibSpike.lock(False)
         
-        patterns = ScrollFinder.simplify_pattern(patterns)
+        patterns = [ScrollFinder.simplify_pattern(pattern) for pattern in patterns]
         
         # Get repository names and (path, found):s
         repositories = {}
         for superrepo in ['installed' if installed else None, 'repositories' if notinstalled else None]:
             if superrepo is not None:
-                for file in [SPIKE_PATH + superrepo] + get_confs(superrepo):
+                for file in [SPIKE_PATH + superrepo] + LibSpike.get_confs(superrepo):
                     ScrollFinder.get_repositories(repositories, file)
         
         ScrollFinder.match_repositories(repositories, patterns)
@@ -860,16 +861,18 @@ class LibSpike(LibSpikeHelper):
         LibSpike.lock(False)
         # Fields
         preglobals = set(globals().keys())
-        ScrollMagick.init_fields()
+        ScrollMagick.init_fields(globals())
         postglobals = list(globals().keys())
         allowedfields = set()
         for globalvar in postglobals:
             if globalvar not in preglobals:
                 allowedfields.add(globalvar)
         for var in ('noextract', 'source', 'sha3sums'):
-            allowedfields.remove(var)
+            if var in allowedfields:
+                allowedfields.remove(var)
         for var in ('repository', 'category'):
-            allowedfields.add(var)
+            if var not in allowedfields:
+                allowedfields.add(var)
         
         allfields = field is None
         fields = list(allowedfields) if allfields else ([field] if isinstance(field, str) else field)
@@ -896,8 +899,8 @@ class LibSpike(LibSpikeHelper):
                 ScrollMagick.export_environment()
                 
                 # Locate installed and not installed version of scroll
-                scroll_installed    = None if not    installed else locate_scroll(scroll, True)
-                scroll_notinstalled = None if not notinstalled else locate_scroll(scroll, False)
+                scroll_installed    = None if not    installed else LibSpike.locate_scroll(scroll, True)
+                scroll_notinstalled = None if not notinstalled else LibSpike.locate_scroll(scroll, False)
                 if (scroll_installed is None) and (scroll_notinstalled is None):
                     aggregator(scroll, None, None, installed)
                     error = max(error, 6)
@@ -910,7 +913,7 @@ class LibSpike(LibSpikeHelper):
                             installed = scrollfile is scroll_installed
                             
                             # Initalise or reset fields to their default values
-                            ScrollMagick.init_fields()
+                            ScrollMagick.init_fields(globals())
                             
                             # Scroll location
                             global repository, category
@@ -938,14 +941,14 @@ class LibSpike(LibSpikeHelper):
                                 for v in value:
                                     if field not in report:
                                         report[field] = []
-                                    report.append((v, installed))
+                                    report[field].append((v, installed))
                         except:
                             return 20
                 
                 # Report findings
                 for field in report.keys():
                     for data in report[field]:
-                        aggregator(scroll, field, date[0], date[1])
+                        aggregator(scroll, field, data[0], data[1])
         except:
             error = 255
         return error
@@ -1294,7 +1297,7 @@ class LibSpike(LibSpikeHelper):
             else:
                 try:
                     # Read scroll
-                    ScrollMagick.init_fields()
+                    ScrollMagick.init_fields(globals())
                     ScrollMagick.init_methods()
                     ScrollMagick.execute_scroll(scrollfile)
                     

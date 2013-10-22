@@ -146,7 +146,7 @@ class ScrollFinder():
         @param:in   categories:dict<str, dict<str, (str, list<(str, str, str)>)>>  The category map
         @param:out  categories:dict<str, (str, list<(str, str, str)>)>             Repository–category map
         '''
-        repos = categories.keys()
+        repos = list(categories.keys())
         for repo in repos:
             for cat in categories[repo].keys():
                 cat = '%s/%s' % (repo, cat)
