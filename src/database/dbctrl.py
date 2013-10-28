@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import os
 
 from database.spikedb import *
+import dragonsuite
 
 
 
@@ -112,6 +113,8 @@ class DBCtrl():
         @param  spike_path:str  The path for Spike
         '''
         self.path = (spike_path + os.sep + 'var/').replace('%', '%%')
+        if not os.path.exists(self.path):
+            dragonsuite.mkdir_p(self.path)
     
     
     def open_db(self, private, key, value):

@@ -69,6 +69,9 @@ class LibSpikeHelper():
         import fcntl ## We are importing here so other systems do not run into problems and can use a plug-in to implement file locking
         lockfile = LibSpikeHelper.get_lockfile(SPIKE_PATH)
         if LibSpikeHelper.lock_file is None:
+            lockdir = os.path.dirname(lockfile)
+            if not os.path.exists(lockdir):
+                mkdir_p(lockdir)
             LibSpikeHelper.lock_file = open(lockfile, 'r' if os.path.exists(lockfile) else 'a')
             LibSpikeHelper.lock_file.flush()
         locktype = fcntl.LOCK_EX if exclusive else fcntl.LOCK_SH
