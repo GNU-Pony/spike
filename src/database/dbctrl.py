@@ -112,9 +112,8 @@ class DBCtrl():
         
         @param  spike_path:str  The path for Spike
         '''
-        self.path = (spike_path + os.sep + 'var/').replace('%', '%%')
-        if not os.path.exists(self.path):
-            dragonsuite.mkdir_p(self.path)
+        self.syspath = (spike_path + os.sep + 'var' + os.sep).replace('%', '%%')
+        self.homepath = (os.environ['HOME'] + '/.local/var/spike/var'.replace('/', os.sep)).replace('%', '%%')
     
     
     def open_db(self, private, key, value):
@@ -126,9 +125,12 @@ class DBCtrl():
         @param   value:(str, int, int)  The value type of the database
         @return  :SpikeDB               The database instance
         '''
+        path = self.homepath if private else self.syspath
         pre = '' if not private else 'priv_'
-        db  = '%s%s_%s.%%i' % (pre, key[0], value[0])
-        return SpikeDB(self.path + db, value[1])
+        db  = '%s%s%s_%s.%%i' % (path, pre, key[0], value[0])
+        if not os.path.exists(path):
+            dragonsuite.mkdir_p(path)
+        return SpikeDB(db, value[1])
     
     
     def joined_fetch(self, aggregator, input, types, private = None):
