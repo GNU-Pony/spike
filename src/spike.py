@@ -24,6 +24,7 @@ from subprocess import Popen
 
 from library.libspike import *
 from auxiliary.argparser import *
+from auxiliary.printhacks import *
 
 
 
@@ -33,28 +34,10 @@ This version of spike
 '''
 
 
-
-def print(text = '', end = '\n'):
-    '''
-    Hack to enforce UTF-8 in output (in the future, if you see anypony not using utf-8 in
-    programs by default, report them to Princess Celestia so she can banish them to the moon)
-    
-    @param  text:str  The text to print (empty string is default)
-    @param  end:str   The appendix to the text to print (line breaking is default)
-    '''
-    sys.stdout.buffer.write((str(text) + end).encode('utf-8'))
-    sys.stdout.buffer.flush()
-
-
-def printerr(text = '', end = '\n'):
-    '''
-    stderr equivalent to print()
-    
-    @param  text:str  The text to print (empty string is default)
-    @param  end:str   The appendix to the text to print (line breaking is default)
-    '''
-    sys.stderr.buffer.write((str(text) + end).encode('utf-8'))
-    sys.stderr.buffer.flush()
+SPIKE_DEBUG = os.getenv('SPIKE_DEBUG', '') == 'yes'
+'''
+Whether spike has been started in debug mode
+'''
 
 
 
@@ -515,6 +498,8 @@ class Spike():
         except Exception as err:
             exit_value = 255
             printerr('%s: %s' % (self.execprog, str(err)))
+            if SPIKE_DEBUG:
+                raise err
         
         if exit_value == 27:
             printerr('%s: \033[01;31m%s\033[00m' % (self.execprog, 'corrupt database'))
@@ -605,9 +590,9 @@ class Spike():
             def __init__(self):
                 pass
             def __call__(self, found):
-                print('%s\n' % found)
+                print(found)
         
-        return LibSpike.find_scroll(Agg(), pattern, installed, notinstalled)
+        return LibSpike.find_scroll(Agg(), patterns, installed, notinstalled)
     
     
     def find_owner(self, files):

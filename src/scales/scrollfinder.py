@@ -101,7 +101,7 @@ class ScrollFinder():
         Get categories
         
         @param   repositories:dict<str, (str, list)>    Map of repositories
-        @return  :dict<str, dict<str, (str, list=[])>>  Map to fill with category name → (category directory, empty list)
+        @return  :dict<str, dict<str, (str, list=[])>>  Map to fill with repository name → category name → (category directory, empty list)
         '''
         categories = {}
         for repo in repositories.keys():
@@ -148,9 +148,10 @@ class ScrollFinder():
         '''
         repos = list(categories.keys())
         for repo in repos:
-            for cat in categories[repo].keys():
-                cat = '%s/%s' % (repo, cat)
-                categories[cat] = categories[repo]
+            r = categories[repo]
+            for cat in r.keys():
+                rc = '%s/%s' % (repo, cat)
+                categories[rc] = r[cat]
             del categories[repo]
     
     
@@ -188,7 +189,7 @@ class ScrollFinder():
                 if len(pat) == 0:
                     for scroll in scrolls[cat]:
                         aggregator(scroll[1])
-                else:
+                elif cat in scrolls:
                     p = pat[2]
                     for (scroll, full) in scrolls[cat]:
                         if re.search(p, scroll) is not None:

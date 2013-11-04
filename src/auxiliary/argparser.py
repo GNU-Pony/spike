@@ -20,6 +20,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
 import sys
 
+from auxiliary.printhacks import *
+
 
 
 ARGUMENTLESS = 0
