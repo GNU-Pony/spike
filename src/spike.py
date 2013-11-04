@@ -1045,7 +1045,7 @@ class Spike():
                 pass
             def __call__(self, owner, filename, entire = False):
                 if filename is None:
-                    printerr('%s is not installed')
+                    printerr('%s is not installed' % owner)
                 elif entire:
                     print('%s:recursive: %s' % (owner, filename))
                 else:
@@ -1085,11 +1085,11 @@ class Spike():
                         self.metaerr.add(meta)
                 else:
                     if installed == notinstalled:
-                        print('%s: %s: %s: %s' % (scroll, meta, "installed" if isinstalled else "not installed", info))
+                        print('%s: %s: %s: %s' % (scroll, meta, 'installed' if isinstalled else 'not installed', info))
                     else:
                         print('%s: %s: %s' % (scroll, meta, info))
         
-        return LibSpike.read_info(Agg(), scrolls, field)
+        return LibSpike.read_info(Agg(), scrolls, field, installed, notinstalled)
     
     
     def claim(self, files, pony, recursiveness = 0, private = False, force = False):

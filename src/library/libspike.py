@@ -769,14 +769,13 @@ class LibSpike(LibSpikeHelper):
         
         # Files belonging to specified ponies and map pony → files
         fileid_scrolls = {}
-        def agg(scroll_fileid):
-            (scroll, fileid) = scroll_fileid
+        def agg(scroll, fileid):
             if fileid is None:
                 aggregator(scroll, None)
                 error[0] = 7
             else:
                 dict_append(fileid_scrolls, fileid, scroll)
-        error = max(error[0], joined_lookup(agg, ponies, [DB_PONY_NAME, DB_PONY_ID, DB_FILE_ID]))
+        error = max(error[0], LibSpikeHelper.joined_lookup(agg, ponies, [DB_PONY_NAME, DB_PONY_ID, DB_FILE_ID]))
         
         # Fetch file name lengths for files
         sink = fetch(DB, DB_FILE_ID, DB_FILE_NAME(-1), [], fileid_scrolls.keys())
@@ -817,7 +816,7 @@ class LibSpike(LibSpikeHelper):
         
         # Identify --entire claims and send (pony, file name, entire)
         nones = set()
-        fileid = fileid_scroll_files.keys()
+        fileids = fileid_scroll_files.keys()
         class Sink():
             def __init__(self):
                 pass
