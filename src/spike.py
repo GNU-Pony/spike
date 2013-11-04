@@ -314,7 +314,7 @@ class Spike():
                 opts.test_allowed(self.execprog, allowed, longmap, True)
                 opts.test_files(self.execprog, 1, None, True)
                 LibSpike.initialise(shred = opts.opts['--shred'] is not None)
-                exit_value = self.write(opt.files,
+                exit_value = self.write(opts.files,
                                         root         = opts.opts['--pinpal'][0] if opts.opts['--pinpal'] is not None else '/',
                                         private      = opts.opts['-u'] is not None,
                                         explicitness = 1  if opts.opts['--asexplict'] is not None else
@@ -344,7 +344,7 @@ class Spike():
                 opts.test_allowed(self.execprog, allowed, longmap, True)
                 opts.test_files(self.execprog, 1, None, True)
                 LibSpike.initialise(shred = opts.opts['--shred'] is not None)
-                exit_value = self.erase(opt.files,
+                exit_value = self.erase(opts.files,
                                         root    = opts.opts['--pinpal'][0] if opts.opts['--pinpal'] is not None else '/',
                                         private = opts.opts['-u'] is not None)
                 
@@ -353,7 +353,7 @@ class Spike():
                 opts.test_allowed(self.execprog, allowed, longmap, True)
                 opts.test_files(self.execprog, 1, 1, True)
                 LibSpike.initialise()
-                exit_value = self.ride(opt.files[0],
+                exit_value = self.ride(opts.files[0],
                                        private = opts.opts['-u'] is not None)
                 
             #elif opts.opts['--demote'] is not None: ### TODO: implement demote
@@ -361,7 +361,7 @@ class Spike():
             #    opts.test_allowed(self.execprog, allowed, longmap, True)
             #    opts.test_files(self.execprog, 1, None, True)
             #    LibSpike.initialise()
-            #    exit_value = self.demote(opt.files,
+            #    exit_value = self.demote(opts.files,
             #                             private = opts.opts['-u'] is not None)
                 
             #elif opts.opts['--promote'] is not None: ### TODO: implement promote
@@ -369,7 +369,7 @@ class Spike():
             #    opts.test_allowed(self.execprog, allowed, longmap, True)
             #    opts.test_files(self.execprog, 1, None, True)
             #    LibSpike.initialise()
-            #    exit_value = self.promote(opt.files,
+            #    exit_value = self.promote(opts.files,
             #                              private = opts.opts['-u'] is not None)
                 
             elif opts.opts['-R'] is not None:
@@ -383,19 +383,19 @@ class Spike():
                 opts.test_allowed(self.execprog, allowed, longmap, True)
                 opts.test_files(self.execprog, 1, None, True)
                 if opts.opts['-l'] is not None:
-                    exit_value = self.read_files(opt.files)
+                    exit_value = self.read_files(opts.files)
                 else:
                     if opts.opts['-w'] is not None:
                         if opts.opts['-w'][0] not in ('y', 'yes', 'n', 'no'):
                             printerr(self.execprog + ': only \'yes\',  \'y\', \'no\' and \'n\' are allowed for -w(--written)')
                             exit(4)
                         LibSpike.initialise()
-                        exit_value = self.read_info(opt.files, field = opts.opts['-f'],
+                        exit_value = self.read_info(opts.files, field = opts.opts['-f'],
                                                     installed = opts.opts['-w'][0][0] == 'y',
                                                     notinstalled = opts.opts['-w'][0][0] == 'n')
                     else:
                         LibSpike.initialise()
-                        exit_value = self.read_info(opt.files, field = opts.opts['-f'])
+                        exit_value = self.read_info(opts.files, field = opts.opts['-f'])
                     
             elif opts.opts['-C'] is not None:
                 exclusives.add('--recursive')
@@ -408,7 +408,7 @@ class Spike():
                 opts.test_allowed(self.execprog, allowed, longmap, True)
                 opts.test_files(self.execprog, 2, None, True)
                 LibSpike.initialise()
-                exit_value = self.claim(opt.files[:-1], opt.files[-1],
+                exit_value = self.claim(opts.files[:-1], opts.files[-1],
                                         recursiveness = 1 if opts.opts['--recursive'] is not None else
                                                         2 if opts.opts['--entire']    is not None else 0,
                                         private       = opts.opts['-u'] is not None,
@@ -420,7 +420,7 @@ class Spike():
                 self.test_allowed(opts.opts, allowed, longmap, True)
                 opts.test_files(self.execprog, 2, None, True)
                 LibSpike.initialise()
-                exit_value = self.disclaim(opt.files[:-1], opt.files[-1],
+                exit_value = self.disclaim(opts.files[:-1], opts.files[-1],
                                            recursive = opts.opts['--recursive'] is not None,
                                            private   = opts.opts['-u'] is not None)
                 
@@ -477,7 +477,7 @@ class Spike():
                 env_display = os.environ['DISPLAY']
                 default_viewer = 'xloadimage' if (env_display is not None) and env_display.startsWith(':') else 'jfbview'
                 LibSpike.initialise()
-                exit_value = self.example_shot(opt.files,
+                exit_value = self.example_shot(opts.files,
                                                viewer      = opts.opts['--viewer'][0] if opts.opts['--viewer'] is not None else default_viewer,
                                                all_at_once = opts.opts['-a'] is not None)
                 

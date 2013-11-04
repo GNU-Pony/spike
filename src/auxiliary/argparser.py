@@ -165,7 +165,7 @@ class ArgParser():
         return True
     
     
-    def test_files(self, execprog, files, min_count, max_count, do_exit = False):
+    def test_files(self, execprog, min_count, max_count, do_exit = False):
         '''
         Test the correctness of the number of used non-option arguments
         
