@@ -271,7 +271,7 @@ class Spike():
                 opts.test_allowed(self.execprog, allowed, longmap, True)
                 opts.test_files(self.execprog, 0, 0, True)
                 LibSpike.initialise()
-                exit_value = self.bootstrap(opts.opts['--no-verify'] is not None)
+                exit_value = self.bootstrap(opts.opts['--no-verify'] is None)
             
             elif opts.opts['-F'] is not None:
                 exclusives.add('-o')
@@ -554,21 +554,10 @@ class Spike():
                 Feed a directory path and 2 when a directory bootstrap process has ended.
             '''
             def __init__(self):
-                self.dirs = {}
-                self.next = 0
-                self.pos = 0
+                self.colour_map = (3, 4, 2)
+                self.message_map = ('QUEUED', 'WORKING', 'DONE')
             def __call__(self, directory, state):
-                if directory not in self.dirs:
-                    self.dirs[directory] = self.next
-                    self.next += 1
-                p = self.dirs[directory]
-                if p > self.pos:
-                    print('\033[%iBm', p - self.pos)
-                elif p < self.pos:
-                    print('\033[%iAm', self.pos - p)
-                s = '\033[01;3%im%s' % {0 : (3, 'WAIT'), 1 : (4, 'WORK'), 2 : (2, 'DONE')}[state]
-                print('[%s\033[00m] %s\n' % (s, directory))
-                self.pos = p + 1
+                print('\033[01;3%im%s [%s]\033[00m' % (self.colour_map[state], directory, self.message_map[state]))
         
         return LibSpike.bootstrap(Agg(), verify)
     
@@ -1364,7 +1353,7 @@ class Spike():
 
 tty = ('TERM' in os.environ) and (os.environ['TERM'] in ('linux', 'hurd'))
 
-if __name__ == '__main__': # sic
+if __name__ == '__main__': # sic (`applebloom main`)
     spike = Spike()
     spike.mane(sys.argv)
 
