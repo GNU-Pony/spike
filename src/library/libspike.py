@@ -319,8 +319,8 @@ class LibSpike(LibSpikeHelper):
             aggregator(None, 3)
             
             # Get scroll fields
-            for scroll in new_scrolls.key():
-                scrollfile = locate_scroll(scroll) if scroll[new_scrolls] is None else scroll[new_scrolls]
+            for scroll in new_scrolls.keys():
+                scrollfile = LibSpikeHelper.locate_scroll(scroll) if new_scrolls[scroll] is None else new_scrolls[scroll]
                 if scrollfile is None:
                     if os.getenv('SPIKE_DEBUG', '').lower() == 'yes':
                         import traceback
@@ -1416,7 +1416,7 @@ class LibSpike(LibSpikeHelper):
                     if package is None:
                         raise Exception('Method \'package\' must be default, even if does nothing')
                     
-                    if method in method_specs.keys():
+                    for method in method_specs.keys():
                         if globals()[method] is None:
                             continue
                         (args, varargs, keywords, defaults) = inspect.getargspec(globals()[method])

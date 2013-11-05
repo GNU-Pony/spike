@@ -26,12 +26,12 @@ from auxiliary.auxfunctions import *
 
 
 # Constants
-store_fields = 'pkgname pkgvel pkgrel epoch arch freedom private conflicts replaces'
+store_fields = 'pkgname pkgver pkgrel epoch arch freedom private conflicts replaces'
 store_fields += ' provides extension variant patch patchbefore patchafter groups'
 store_fields += ' depends makedepends checkdepends optdepends'
 store_fields = store_fields.split(' ')
 
-scrl_fields = 'conflicts replaces provides extension patch patchbefore patchafter'
+scrl_fields = 'conflicts replaces provides extension patches patchbefore patchafter'
 scrl_fields += ' depends makedepends checkdepends optdepends'
 scrl_fields = set(scrl_fields.split(' '))
 
@@ -52,29 +52,32 @@ class Installer():
         @variable  scroll:ScrollVersion  The scroll with version
         '''
         
-        def __init__(self, scrollfile):
+        def __init__(self, scrollfile, globals):
             '''
             Constructor
             
-            @param  scrollfile:str  The scroll file
+            @param  scrollfile:str          The scroll file
+            @param  globals:dict<str, any>  Should be `globals()`
             '''
             # Store fields
             self.fields = {}
             for field in store_fields:
-                value = globals()[field]
-                if field in scrl_fields:
+                value = globals[field]
+                if (field in scrl_fields) and (value is not None):
                     if value == '':
                         value = None
-                    else:
+                    elif isinstance(value, str):
                         value = ScrollVersion(value)
-                fields[field] = value
+                    else:
+                        value = [ScrollVersion(val) for val in value]
+                self.fields[field] = value
             
             # Set simple attributes
             self.file = scrollfile
             self.name = self.fields['pkgname']
             self.version = (self.fields['epoch'], self.fields['pkgver'], self.fields['pkgrel'])
             self.version = '%i:%s-%i' % self.version
-            self.scroll = ScrollVersion('%s=%s' % (self.name, self.verions))
+            self.scroll = ScrollVersion('%s=%s' % (self.name, self.version))
         
         
         
@@ -99,10 +102,11 @@ class Installer():
         '''
         ScrollMagick.export_environment()
         
-        ScrollMagick.init_fields()
-        ScrollMagick.execute_scroll(scrollfile)
+        globs = globals()
+        ScrollMagick.init_fields(globs)
+        ScrollMagick.execute_scroll(scrollfile, globs)
         
-        return Scroll(scrollfile)
+        return Installer.Scroll(scrollfile, globs)
     
     
     @staticmethod

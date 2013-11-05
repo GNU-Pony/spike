@@ -118,8 +118,11 @@ class ScrollMagick():
         
         @param  globals:dict<str, any>  Should be `globals()`
         '''
-        vars = 'ride build check package patch_build patch_check patch_package pre_install post_install pre_upgrade post_upgrade'
-        for var in vars.split(' '):
+        vars = 'ride build check package patch_build patch_check patch_package'.split(' ')
+        for master in ['install', 'upgrade', 'uninstall']:
+            vars.append('pre_' + master)
+            vars.append('post_' + master)
+        for var in vars:
             globals[var] = None
     
     
