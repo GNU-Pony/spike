@@ -222,8 +222,8 @@ class ScrollMagick():
         @param  checker:(¿E?)→bool  Value checker
         '''
         for f in [field] if isinstance(field, str) else field:
-            check_type(f, with_none, with_class)
-            check_format(f, checker)
+            ScrollMagick.check_type(f, with_none, with_class)
+            ScrollMagick.check_format(f, checker)
     
     
     @staticmethod
@@ -237,8 +237,8 @@ class ScrollMagick():
         @param  checker:(¿E?)→bool  List element checker
         '''
         for f in [field] if isinstance(field, str) else field:
-            check_is_list(f, with_none, with_class)
-            check_element_format(ff, checker)
+            ScrollMagick.check_is_list(f, with_none, with_class)
+            ScrollMagick.check_element_format(ff, checker)
     
     
     @staticmethod
