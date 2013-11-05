@@ -54,6 +54,15 @@ class ScrollMagick():
     Functions for playing with scrolls
     '''
     
+    def __init__(self, globals):
+        '''
+        Constructor
+        
+        @param  globals:dict<str, any>  Should be `globals()`
+        '''
+        self.globals = globals
+    
+    
     @staticmethod
     def export_environment():
         '''
@@ -72,7 +81,7 @@ class ScrollMagick():
         '''
         Opens, compiles and executes a scroll
         
-        @param  scroll:str             The scroll file
+        @param  scroll:str              The scroll file
         @param  globals:dict<str, any>  Should be `globals()`
         '''
         code = None
@@ -89,7 +98,7 @@ class ScrollMagick():
         
         @param  globals:dict<str, any>  Should be `globals()`
         '''
-        vars = 'pkgname pkgver pkgdesc upstream arch freedom license metalicense private extension variant patch reason source sha3sums'
+        vars = 'pkgname pkgver pkgdesc upstream arch freedom license metalicense private extension variant patches reason source sha3sums'
         for var in vars.split(' '):
             globals[var] = None
         
@@ -114,8 +123,7 @@ class ScrollMagick():
             globals[var] = None
     
     
-    @staticmethod
-    def check_type(field, with_none, *with_classes):
+    def check_type(self, field, with_none, *with_classes):
         '''
         Checks that the value of a field is of a specific class
         
@@ -124,20 +132,21 @@ class ScrollMagick():
         @param  with_classes:*type  The classes of the value
         '''
         for f in [field] if isinstance(field, str) else field:
-            value = globals()[f]
-            if not with_none:
-                if value is None:
+            value = self.globals[f]
+            if value is None:
+                if not with_none:
                     raise Exception('Field \'%s\' may not be `None`' % f)
+                else:
+                    continue
             isclass = type(value)
             if isclass not in set(with_classes):
                 allowed = ', '.join([c.__name__ for c in with_classes])
                 if ', ' in allowed:
                     allowed = allowed[:allowed.rfind(', ')] + ' and ' + allowed[allowed.rfind(', ') + 2:]
-                raise Exception('Field \'%s\' is restricted to %s' % (f, allowed))
+                raise Exception('Field \'%s\' is restricted to %s, is \'%s\' of type \'%s\'' % (f, allowed, str(value), str(type(value).__name__)))
     
     
-    @staticmethod
-    def check_is_list(field, with_none, *with_classes):
+    def check_is_list(self, field, with_none, *with_classes):
         '''
         Checks that the value of a field is a list and that its elements is of a specific class
         
@@ -147,7 +156,7 @@ class ScrollMagick():
         '''
         with_classes = set(with_classes)
         for f in [field] if isinstance(field, str) else field:
-            value = globals()[f]
+            value = self.globals[f]
             if value is None:
                 raise Exception('Field \'%s\' must be a list' % f)
             if not isinstance(value, list):
@@ -164,8 +173,7 @@ class ScrollMagick():
                     raise Exception('Field \'%s\' is restricted to %s elements' % (f, allowed))
     
     
-    @staticmethod
-    def check_elements(field, values):
+    def check_elements(self, field, values):
         '''
         Checks that the value of a field is a list and that its elements is of a specific class
         
@@ -174,14 +182,13 @@ class ScrollMagick():
         '''
         values = set(values)
         for f in [field] if isinstance(field, str) else field:
-            value = globals()[f]
+            value = self.globals[f]
             for elem in value:
                 if elem not in values:
                     raise Exception('Field \'%s\' may not contain the value \'%s\'' % (f, str(elem)))
     
     
-    @staticmethod
-    def check_format(field, checker):
+    def check_format(self, field, checker):
         '''
         Checks that a non-`None` value satisfies a format
         
@@ -189,14 +196,13 @@ class ScrollMagick():
         @param  checker:(¿E?)→bool  Value checker
         '''
         for f in [field] if isinstance(field, str) else field:
-            value = globals()[f]
+            value = self.globals[f]
             if value is not None:
                 if not checker(value):
-                    raise Exception('Field \'%s\' is of badly formated value \'%s\'' % (f, value))
+                    raise Exception('Field \'%s\' is of bady formated value \'%s\'' % (f, value))
     
     
-    @staticmethod
-    def check_element_format(field, checker):
+    def check_element_format(self, field, checker):
         '''
         Checks that non-`None` elements in a list satisfies a format
         
@@ -204,15 +210,14 @@ class ScrollMagick():
         @param  checker:(¿E?)→bool  List element checker
         '''
         for f in [field] if isinstance(field, str) else field:
-            value = globals()[f]
+            value = self.globals[f]
             for elem in value:
                 if elem is not None:
                     if not checker(elem):
                         raise Exception('Field \'%s\' contains badly formated value \'%s\'' % (f, elem))
     
     
-    @staticmethod
-    def check_type_format(field, with_none, with_class, checker):
+    def check_type_format(self, field, with_none, with_class, checker):
         '''
         Checks that the value of a field is of a specific class and that a non-`None` value satisfies a format
         
@@ -222,12 +227,11 @@ class ScrollMagick():
         @param  checker:(¿E?)→bool  Value checker
         '''
         for f in [field] if isinstance(field, str) else field:
-            ScrollMagick.check_type(f, with_none, with_class)
-            ScrollMagick.check_format(f, checker)
+            self.check_type(f, with_none, with_class)
+            self.check_format(f, checker)
     
     
-    @staticmethod
-    def check_is_list_format(field, with_none, with_class, checker):
+    def check_is_list_format(self, field, with_none, with_class, checker):
         '''
         Checks that the value of a field is a list and that its elements is of a specific class and that non-`None` elements in a list satisfies a format
         
@@ -237,12 +241,11 @@ class ScrollMagick():
         @param  checker:(¿E?)→bool  List element checker
         '''
         for f in [field] if isinstance(field, str) else field:
-            ScrollMagick.check_is_list(f, with_none, with_class)
-            ScrollMagick.check_element_format(ff, checker)
+            self.check_is_list(f, with_none, with_class)
+            self.check_element_format(f, checker)
     
     
-    @staticmethod
-    def addon_proofread(scroll, scroll_file):
+    def addon_proofread(self, scroll, scroll_file):
         '''
         Onion this function with addition proofreading if you are an extension.
         The scroll is already loaded. Raise an exception if you find an error.
@@ -253,8 +256,7 @@ class ScrollMagick():
         pass
     
     
-    @staticmethod
-    def field_display_convert(field, value):
+    def field_display_convert(self, field, value):
         '''
         If required, converts the field value to a pony friendly format, otherwise, it performs a identity mapping
         

@@ -1273,7 +1273,7 @@ class LibSpike(LibSpikeHelper):
             for (start, end) in (('0', '9'), ('a', 'z')):
                 for c in range(ord(start), ord(end) + 1):
                     chars.add(chr(c))
-            for i in range(x):
+            for i in range(len(x)):
                 if x[i] not in chars:
                     return False
             if x.startswith('.') or x.startswith('-'):
@@ -1297,16 +1297,18 @@ class LibSpike(LibSpikeHelper):
             else:
                 try:
                     # Read scroll
-                    ScrollMagick.init_fields(globals())
-                    ScrollMagick.init_methods(globals())
-                    ScrollMagick.execute_scroll(scrollfile, globals())
+                    globs = globals()
+                    ScrollMagick.init_fields(globs)
+                    ScrollMagick.init_methods(globs)
+                    ScrollMagick.execute_scroll(scrollfile, globs)
+                    scrollmagick = ScrollMagick(globs)
                     
                     # TODO look for autoconflicts
                     # Proofread scroll fields
-                    ScrollMagick.check_type_format('pkgname', False, str, ispony)
-                    ScrollMagick.check_type_format('pkgver', False, str, lambda x : isscroll('x=' + x))
-                    ScrollMagick.check_type_format('pkgrel', False, int, lambda x : x >= 1)
-                    ScrollMagick.check_type_format('epoch', False, int, lambda x : x >= 0)
+                    scrollmagick.check_type_format('pkgname', False, str, ispony)
+                    scrollmagick.check_type_format('pkgver', False, str, lambda x : isscroll('x=' + x))
+                    scrollmagick.check_type_format('pkgrel', False, int, lambda x : x >= 1)
+                    scrollmagick.check_type_format('epoch', False, int, lambda x : x >= 0)
                     
                     version_a = '%s=%i:%s-%i' % (pkgname, epoch, pkgver, pkgrel)
                     version_b = scrollfile.replace(os.sep, '/').split('/')[-1][:-len('.scroll')]
@@ -1316,24 +1318,24 @@ class LibSpike(LibSpikeHelper):
                     if version_a not in version_b:
                         raise Exception('Version and name fields conflicts with scroll file name')
                     
-                    ScrollMagick.check_type_format(['pkgdesc', 'upstream'], True, str, lambda x : len(x) > 0)
-                    ScrollMagick.check_is_list_format('arch', False, str, lambda x : len(x) > 0)
+                    scrollmagick.check_type_format(['pkgdesc', 'upstream'], True, str, lambda x : len(x) > 0)
+                    scrollmagick.check_is_list_format('arch', False, str, lambda x : len(x) > 0)
                     if len(arch) == 0:
                         raise Exception('Field \'arch\' may not be empty')
                     
-                    ScrollMagick.check_is_list_format('freedom', False, int, lambda x : 0 <= x < (1 << 8))
-                    ScrollMagick.check_is_list_format('license', False, str, lambda x : len(x) > 0)
-                    ScrollMagick.check_is_list_format('private', False, int, lambda x : 0 <= x < 3)
-                    ScrollMagick.check_type('interactive', False, bool)
-                    ScrollMagick.check_is_list_format(['conflicts', 'replaces', 'provides'], False, str, isscroll)
-                    ScrollMagick.check_type_format(['extension', 'variant', 'patch'], True, str, ispony)
-                    ScrollMagick.check_type_format('reason', True, str, lambda x : len(x) > 0)
-                    ScrollMagick.check_is_list_format(['patchbefore', 'patchafter'], False, str, isscroll)
-                    ScrollMagick.check_is_list_format('groups', False, str, ispony)
-                    ScrollMagick.check_is_list_format(['depends', 'makedepends', 'checkdepends', 'optdepends'], False, str, lambda x : len(x) == 0 or isscroll(x))
-                    ScrollMagick.check_is_list('noextract', False, str)
+                    scrollmagick.check_type_format('freedom', False, int, lambda x : 0 <= x < (1 << 8))
+                    scrollmagick.check_is_list_format('license', False, str, lambda x : len(x) > 0)
+                    scrollmagick.check_type_format('private', False, int, lambda x : 0 <= x < 3)
+                    scrollmagick.check_type('interactive', False, bool)
+                    scrollmagick.check_is_list_format(['conflicts', 'replaces', 'provides'], False, str, isscroll)
+                    scrollmagick.check_type_format(['extension', 'variant', 'patches'], True, str, ispony)
+                    scrollmagick.check_type_format('reason', True, str, lambda x : len(x) > 0)
+                    scrollmagick.check_is_list_format(['patchbefore', 'patchafter'], False, str, isscroll)
+                    scrollmagick.check_is_list_format('groups', False, str, ispony)
+                    scrollmagick.check_is_list_format(['depends', 'makedepends', 'checkdepends', 'optdepends'], False, str, lambda x : len(x) == 0 or isscroll(x))
+                    scrollmagick.check_is_list('noextract', False, str)
                     
-                    ScrollMagick.check_is_list('source', False, str, list)
+                    scrollmagick.check_is_list('source', False, str, list)
                     elements = set()
                     for element in source:
                         if isinstance(element, list):
@@ -1354,7 +1356,7 @@ class LibSpike(LibSpikeHelper):
                         else:
                             elements.add(element)
                     
-                    ScrollMagick.check_is_list_format('sha3sums', True, str, lambda x : len(x) == 144 and ishex(x))
+                    scrollmagick.check_is_list_format('sha3sums', True, str, lambda x : len(x) == 144 and ishex(x))
                     if len(sha3sums) != len(source):
                         raise Exception('Fields \'sha3sums\' and \'source\' must be of same size')
                     
@@ -1368,7 +1370,7 @@ class LibSpike(LibSpikeHelper):
                                 raise Exception('Field \'%s\' contains duplicate file \'%s\'', (field, element))
                             have.add(element)
                     
-                    ScrollMagick.check_is_list_elements('options', False, str, allowed_options)
+                    scrollmagick.check_is_list_elements('options', False, str, allowed_options)
                     
                     # Proofread scroll methods
                     if ride is None:
@@ -1389,10 +1391,13 @@ class LibSpike(LibSpikeHelper):
                             raise Exception('Method \'%s\' should have the parameters %s with those exact names', (method, params_str))
                     
                     # Proofread using extensions
-                    ScrollMagick.addon_proofread(scroll, scrollfile)
+                    scrollmagick.addon_proofread(scroll, scrollfile)
                     
                 except Exception as err:
                     error = max(error, 22)
+                    if os.getenv('SPIKE_DEBUG', '').lower() == 'yes':
+                        import traceback
+                        traceback.print_exc()
                     aggregator(scroll, 1, str(err))
         return error
     
