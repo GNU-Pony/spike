@@ -317,8 +317,8 @@ class Spike():
                 exit_value = self.write(opts.files,
                                         root         = opts.opts['--pinpal'][0] if opts.opts['--pinpal'] is not None else '/',
                                         private      = opts.opts['-u'] is not None,
-                                        explicitness = 1  if opts.opts['--asexplict'] is not None else
-                                                       -1 if opts.opts['--asdep']     is not None else 0,
+                                        explicitness = 1  if opts.opts['--asexplicit'] is not None else
+                                                       -1 if opts.opts['--asdep']      is not None else 0,
                                         nodep        = opts.opts['--nodep'] is not None,
                                         force        = opts.opts['--force'] is not None)
                 
