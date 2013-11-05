@@ -115,7 +115,7 @@ class Installer():
         Fill a map with field → value → scroll data
         
         @param  scroll:Scroll                           Scroll information
-        @param  map:dict<str, dist<¿E?, list<Scroll>>>  Map to fill with field → value → scroll mapping
+        @param  map:dict<str, dict<¿E?, list<Scroll>>>  Map to fill with field → value → scroll mapping
         '''
         for field in store_fields:
             value = scroll[field]
@@ -125,32 +125,33 @@ class Installer():
             if value is not None:
                 for val in value if isinstance(value, list) else [value]:
                     if val is not None:
-                        dict_append(map, value, scroll)
+                        dict_append(map, val, scroll)
     
     
     @staticmethod
-    def check_conflicts(scroll_infos):
+    def check_conflicts(scroll_infos, installed, provided):
         '''
         Check for conflicts
         
         @param   scroll_infos:itr<dict<ScrollVersion, Scroll>>  Scrolls to check
+        @param   installed:set<ScrollVersion>                   Set to fill with installed packages
+        @param   provided:set<ScrollVersion>                    Set to fill with provided packages
         @return  :bool                                          Whether there are not conflicts
         '''
         checked = set()
         conflicts = set()
-        installed = set()
-        provided = set()
         for scroll_info in scroll_infos:
             for scroll in scroll_info:
-                scroll = scroll_info[scroll].scroll
-                if scroll.name in checked:
+                scroll = scroll_info[scroll]
+                vscroll = scroll.scroll
+                if vscroll.name in checked:
                     continue
-                checked.add(scroll.name)
-                if scroll in installed:
+                checked.add(vscroll.name)
+                if vscroll in installed:
                     continue
-                if scroll in conflicts:
+                if vscroll in conflicts:
                     return False
-                scroll.union_add(installed)
+                vscroll.union_add(installed)
                 for provides in scroll['provides']:
                     provides.union_add(provided)
                 for conflict in scroll['conflicts']:
@@ -161,14 +162,14 @@ class Installer():
     
     
     @staticmethod
-    def find_dependencies(scroll_info, needed, requirer):
+    def find_dependencies(scroll_info, needed, requirer, installed, provided, empty_dep_evaluator):
         '''
         Identify missing dependencies
         
         @param   scroll_info:dict<ScrollVersion, Scroll>  The scrolls
         @param   needed:set<ScrollVersion>                Missing dependencies, will be filled
         @param   requirer:dict<str, list<ScrollVersion>>  Mapping from scroll name to scrolls that requires the scroll, will be filled
-        @param   empty_dep_evaluator:(Scroll)→bool        Function that evaluates if the empty dependency is exists (a package manager with the same name)
+        @param   empty_dep_evaluator:(Scroll)→bool        Function that evaluates if the empty dependency exists (a package manager with the same name)
         @return  :int                                     Value for indentified error, zero if none
         '''
         for scroll in scroll_info:
@@ -176,7 +177,7 @@ class Installer():
             makedepends = scroll['makedepends']
             depends     = scroll['depends']
             for deps in makedepends + depends:
-                if dep is None:
+                if deps is None:
                     if not empty_dep_evaluator(scroll):
                         return 9
                 else:

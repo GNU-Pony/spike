@@ -306,6 +306,7 @@ class LibSpike(LibSpikeHelper):
                     traceback.print_exc()
                 return 255 # So how did we install it...
         
+        empty_dep_test = lambda scroll : (scroll.name == 'spike') and os.path.exists(SPIKE_PATH) and os.path.isdir(SPIKE_PATH)
         while True:
             # Proofread scrolls
             def agg(scroll, state, *_):
@@ -338,20 +339,22 @@ class LibSpike(LibSpikeHelper):
                         return 255 # but, the proofreader did not have any problem...
             
             # Identify scrolls that may not be installed at the same time
-            if not Installer.check_conflicts([scroll_info, installed_info]):
+            installed = set()
+            provided = set()
+            if not Installer.check_conflicts([scroll_info, installed_info], installed, provided):
                 return 8
             
             # Look for missing dependencies
             needed = set()
             requirer = {}
-            error = find_dependencies(scroll_info, needed, requirer, lambda scroll : (scroll.name == 'spike') and os.path.exists(SPIKE_PATH) and os.path.isdir(SPIKE_PATH))
+            error = Installer.find_dependencies(scroll_info, needed, requirer, installed, provided, empty_dep_test)
             if error != 0:
                 return error
             
             # Locate the missing dependencies
             new_scrolls = {}
             for scroll in needed:
-                path = locate_scroll(scroll.name, False)
+                path = LibSpikeHelper.locate_scroll(scroll.name, False)
                 if path is None:
                     not_found.add(scroll)
                 else:
@@ -497,6 +500,7 @@ class LibSpike(LibSpikeHelper):
         @param   private:bool       Whether to update user private packages
         @return  :byte              Exit value, see description of `LibSpike`, the possible ones are: 0 (TODO)
         '''
+        global SPIKE_PATH
         LibSpike.lock(True)
         # Set root
         if root is not None:
@@ -523,6 +527,7 @@ class LibSpike(LibSpikeHelper):
         '''
         # TODO also remove dependencies, but verify
         
+        global SPIKE_PATH
         LibSpike.lock(True)
         error = 0
         try:
@@ -533,10 +538,11 @@ class LibSpike(LibSpikeHelper):
                 SPIKE_PATH = root + SPIKE_PATH
             
             # Get scroll ID:s and map the transposition
+            DB = DBCtrl(SPIKE_PATH)
             sink = DB.open_db(private, DB_PONY_NAME, DB_PONY_ID).fetch([], ponies)
             def noneagg(pony):
                 error = 7
-            id_scroll = transpose({}, sink, DB_PONY_ID, noneagg, False)
+            id_scroll = DB.transpose({}, sink, DB_PONY_ID, noneagg, False)
             if error != 0:
                 return error
             
@@ -565,7 +571,7 @@ class LibSpike(LibSpikeHelper):
                     error = 6
                 if value is not None:
                     backup.add(value)
-            error = max(error, read_info(agg, ponies, field = 'backup', installed = True, notinstalled = False))
+            error = max(error, LibSpike.read_info(agg, ponies, field = 'backup', installed = True, notinstalled = False))
             if error != 0:
                 return error
             
@@ -738,6 +744,7 @@ class LibSpike(LibSpikeHelper):
         '''
         LibSpike.lock(False)
         # Verify that the scroll has been installed
+        DB = DBCtrl(SPIKE_PATH)
         sink = DB.open_db(private, DB_PONY_NAME, DB_PONY_ID).fetch([], [pony])
         if len(sink) != 1:
             return 27
@@ -796,6 +803,7 @@ class LibSpike(LibSpikeHelper):
         @param   ponies:list<str>  Installed ponies for which to list claimed files
         @return  :byte             Exit value, see description of `LibSpike`, the possible ones are: 0, 7, 27
         '''
+        global SPIKE_PATH
         LibSpike.lock(False)
         DB = DBCtrl(SPIKE_PATH)
         error = [0]
@@ -1007,6 +1015,7 @@ class LibSpike(LibSpikeHelper):
         @param   force:bool         Whether to extend current file claim
         @return  :byte              Exit value, see description of `LibSpike`, the possible ones are: 0, 10, 11, 12, 27, 255
         '''
+        global SPIKE_PATH
         LibSpike.lock(True)
         
         DB = DBCtrl(SPIKE_PATH)
@@ -1146,6 +1155,7 @@ class LibSpike(LibSpikeHelper):
         @param   private:bool       Whether the pony is user private rather the user shared
         @return  :byte              Exit value, see description of `LibSpike`, the possible ones are: 0, 27
         '''
+        global SPIKE_PATH
         LibSpike.lock(True)
         files = [os.path.abspath(file) for file in files]
         DB = DBCtrl(SPIKE_PATH)
@@ -1452,6 +1462,7 @@ class LibSpike(LibSpikeHelper):
         @param   private:bool  Whether to uninstall user private ponies rather than user shared ponies
         @return  :byte         Exit value, see description of `LibSpike`, the possible ones are: 0, 6, 7, 14(internal bug), 20, 23, 27, 28, 255
         '''
+        global SPIKE_PATH
         LibSpike.lock(True)
         # TODO do not clean optionally required packages
         
