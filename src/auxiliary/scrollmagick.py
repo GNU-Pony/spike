@@ -192,7 +192,7 @@ class ScrollMagick():
             value = globals()[f]
             if value is not None:
                 if not checker(value):
-                    raise Exception('Field \'%s\' is of bady formated value \'%s\'' % (f, value))
+                    raise Exception('Field \'%s\' is of badly formated value \'%s\'' % (f, value))
     
     
     @staticmethod
