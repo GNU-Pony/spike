@@ -262,6 +262,7 @@ class LibSpike(LibSpikeHelper):
         @param   force:bool         Whether to ignore file claims
         @return  :byte              Exit value, see description of `LibSpike`, the possible ones are: 0, 6, 8, 9, 22, 29, 254, 255 (TODO)
         '''
+        global SPIKE_PATH
         ## TODO checkdepends
         LibSpike.lock(True)
         # Set root
@@ -291,7 +292,7 @@ class LibSpike(LibSpikeHelper):
         # Load information about already installed scrolls
         # TODO this should be better using spikedb
         aggregator(scroll, 0)
-        for scrollfile in locate_all_scrolls(True, None if private else False):
+        for scrollfile in LibSpikeHelper.locate_all_scrolls(True, None if private else False):
             try:
                 scrollinfo = Installer.load_information(scrollfile)
                 Installer.transpose_fields(scrollinfo, field_installed)
@@ -305,7 +306,7 @@ class LibSpike(LibSpikeHelper):
             def agg(scroll, state, *_):
                 if state == 0:
                     aggregator(scroll, 1)
-            error = proofread(agg, new_scrolls)
+            error = LibSpike.proofread(agg, list(new_scrolls.keys()))
             if error != 0:
                 return error
             
@@ -1244,7 +1245,7 @@ class LibSpike(LibSpikeHelper):
         # TODO proofread `metalicense` and check for conflicts in `freedom`
         LibSpike.lock(False)
         (error, n) = (0, len(scrolls))
-        scrollfiles = [(scrolls[i], locate_scroll(scrolls[i]), i) for i in range(n)]
+        scrollfiles = [(scrolls[i], LibSpikeHelper.locate_scroll(scrolls[i]), i) for i in range(n)]
         
         allowed_options = 'strip docs info man licenses changelogs libtool docs= docs=gz docs=xz info= info=gz info=xz man= man=gz man=xz upx'.split(' ')
         method_specs = {'ride'           : 'private',
