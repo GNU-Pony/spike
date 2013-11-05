@@ -102,7 +102,7 @@ class ScrollMagick():
         for var in vars.split(' '):
             globals[var] = None
         
-        vars = 'conflicts replaces provides patchbefore patchafter groups depends makedepends checkdepends optdepends noextract options'
+        vars = 'conflicts replaces provides patchbefore patchafter groups depends makedepends checkdepends optdepends noextract options backup'
         for var in vars.split(' '):
             globals[var] = []
         
@@ -245,6 +245,21 @@ class ScrollMagick():
             self.check_element_format(f, checker)
     
     
+    def check_is_list_elements(self, field, with_none, with_class, values):
+        '''
+        Checks that the value of a field is a list and that its elements is confined to a specific set of values
+        
+        @param  field:str|itr<str>    The name of the field
+        @param  with_none:bool        Whether the elements may be `None`
+        @param  with_class:type<¿E?>  The class of the elements
+        @param  values:itr<¿E??>      The allowed elements
+        '''
+        values = (list(values) + [None]) if with_none else values
+        for f in [field] if isinstance(field, str) else field:
+            self.check_is_list(f, with_none, with_class)
+            self.check_element(f, values)
+    
+    
     def addon_proofread(self, scroll, scroll_file):
         '''
         Onion this function with addition proofreading if you are an extension.
@@ -256,16 +271,17 @@ class ScrollMagick():
         pass
     
     
-    def field_display_convert(self, field, value):
+    @staticmethod
+    def field_display_convert(field, value):
         '''
         If required, converts the field value to a pony friendly format, otherwise, it performs a identity mapping
         
-        @param   field:str         The name of the field
-        @param   value:¿I?         The raw value of the field
-        @return  {value:}|{:|¿O?}  Pony friendly display value of the field
+        @param   field:str        The name of the field
+        @param   value:¿I?        The raw value of the field
+        @return  {value:}|{:¿O?}  Pony friendly display value of the field
         '''
         # TODO add `metalicense`
-        if isinstance(field, int):
+        if isinstance(value, int):
             if field == 'freedom':
                 if 0 <= value < (1 << 8):
                     rc = []

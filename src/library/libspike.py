@@ -119,7 +119,9 @@ class LibSpike(LibSpikeHelper):
                             code = compile(code, addon, 'exec')
                         exec(code, globals())
                     except:
-                        pass
+                        if os.getenv('SPIKE_DEBUG', '').lower() == 'yes':
+                            import traceback
+                            traceback.print_exc()
     
     
     @staticmethod
@@ -299,6 +301,9 @@ class LibSpike(LibSpikeHelper):
                 installed_info[scrollinfo.scroll] = scrollinfo
                 installed_versions[scrollinfo.name] = scrollinfo.scroll
             except:
+                if os.getenv('SPIKE_DEBUG', '').lower() == 'yes':
+                    import traceback
+                    traceback.print_exc()
                 return 255 # So how did we install it...
         
         while True:
@@ -317,6 +322,9 @@ class LibSpike(LibSpikeHelper):
             for scroll in new_scrolls.key():
                 scrollfile = locate_scroll(scroll) if scroll[new_scrolls] is None else scroll[new_scrolls]
                 if scrollfile is None:
+                    if os.getenv('SPIKE_DEBUG', '').lower() == 'yes':
+                        import traceback
+                        traceback.print_exc()
                     return 255 # but, the proofreader already found them...
                 else:
                     try:
@@ -324,6 +332,9 @@ class LibSpike(LibSpikeHelper):
                         Installer.transpose_fields(scrollinfo, field_scroll)
                         scroll_info[scrollinfo.scroll] = scrollinfo
                     except:
+                        if os.getenv('SPIKE_DEBUG', '').lower() == 'yes':
+                            import traceback
+                            traceback.print_exc()
                         return 255 # but, the proofreader did not have any problem...
             
             # Identify scrolls that may not be installed at the same time
@@ -634,6 +645,9 @@ class LibSpike(LibSpikeHelper):
                                     else:
                                         dirs[fileid] = filename
                             except:
+                                if os.getenv('SPIKE_DEBUG', '').lower() == 'yes':
+                                    import traceback
+                                    traceback.print_exc()
                                 error = max(error, 23)
                                 progress += 1
                                 aggregator(scroll, progress, endstate)
@@ -649,6 +663,9 @@ class LibSpike(LibSpikeHelper):
                                     else:
                                         rm(dirs[dirid], recursive = True)
                                 except:
+                                    if os.getenv('SPIKE_DEBUG', '').lower() == 'yes':
+                                        import traceback
+                                        traceback.print_exc()
                                     error = max(error, 23)
                                 progress += 1
                                 aggregator(scroll, progress, endstate)
@@ -698,9 +715,15 @@ class LibSpike(LibSpikeHelper):
                     try:
                         rm(scrollfile)
                     except:
+                        if os.getenv('SPIKE_DEBUG', '').lower() == 'yes':
+                            import traceback
+                            traceback.print_exc()
                         error = max(error, 23)
                 aggregator(scroll, endstate, endstate)
         except:
+            if os.getenv('SPIKE_DEBUG', '').lower() == 'yes':
+                import traceback
+                traceback.print_exc()
             error = 255
         return error
     
@@ -741,10 +764,19 @@ class LibSpike(LibSpikeHelper):
                         LibSpike.unlock()
                         ride(private)
                     except:
+                        if os.getenv('SPIKE_DEBUG', '').lower() == 'yes':
+                            import traceback
+                            traceback.print_exc()
                         return 21
             except:
+                if os.getenv('SPIKE_DEBUG', '').lower() == 'yes':
+                    import traceback
+                    traceback.print_exc()
                 return 20
         except:
+            if os.getenv('SPIKE_DEBUG', '').lower() == 'yes':
+                import traceback
+                traceback.print_exc()
             return 255
         return 0
     
@@ -943,6 +975,9 @@ class LibSpike(LibSpikeHelper):
                                         report[field] = []
                                     report[field].append((v, installed))
                         except:
+                            if os.getenv('SPIKE_DEBUG', '').lower() == 'yes':
+                                import traceback
+                                traceback.print_exc()
                             return 20
                 
                 # Report findings
@@ -950,6 +985,9 @@ class LibSpike(LibSpikeHelper):
                     for data in report[field]:
                         aggregator(scroll, field, data[0], data[1])
         except:
+            if os.getenv('SPIKE_DEBUG', '').lower() == 'yes':
+                import traceback
+                traceback.print_exc()
             error = 255
         return error
     
@@ -1263,7 +1301,7 @@ class LibSpike(LibSpikeHelper):
                         'post_uninstall' : 'tmpdir rootdir installedfiles private'}
         
         def ishex(x):
-            for i in range(x):
+            for i in range(len(x)):
                 if x[i] not in '0123456789ABCDEFabcdef':
                     return False
             return True
@@ -1349,7 +1387,7 @@ class LibSpike(LibSpikeHelper):
                             if len(element[0]):
                                 raise Exception('Source file in field \'source\' may not be empty')
                             element = element[1]
-                        if element:
+                        if element == '':
                             raise Exception('Destination file in field \'source\' may not be empty')
                         if element in elements:
                             raise Exception('Duplicate destination file \'%s\' in field \'source\'', element)
