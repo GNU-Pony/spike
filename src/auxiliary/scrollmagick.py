@@ -257,7 +257,7 @@ class ScrollMagick():
         values = (list(values) + [None]) if with_none else values
         for f in [field] if isinstance(field, str) else field:
             self.check_is_list(f, with_none, with_class)
-            self.check_element(f, values)
+            self.check_elements(f, values)
     
     
     def addon_proofread(self, scroll, scroll_file):
