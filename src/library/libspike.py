@@ -176,7 +176,7 @@ class LibSpike(LibSpikeHelper):
         '''
         LibSpike.lock(False)
         
-        patterns = [ScrollFinder.simplify_pattern(pattern) for pattern in patterns]
+        patterns = ScrollFinder.simplify_patterns(patterns)
         
         # Get repository names and (path, found):s
         repositories = {}
@@ -286,25 +286,18 @@ class LibSpike(LibSpikeHelper):
         
         scroll_field = {}
         installing = {}
-        
-        new_scrolls = {}
-        for scroll in scrolls:
-            new_scrolls[scroll] = None
+        new_scrolls = make_dictionary([(scroll, None) for scroll in scrolls])
         
         # Load information about already installed scrolls
         # TODO this should be better using spikedb
-        aggregator(scroll, 0)
-        for scrollfile in LibSpikeHelper.locate_all_scrolls(True, None if private else False):
-            try:
-                scrollinfo = Installer.load_information(scrollfile)
-                Installer.transpose_fields(scrollinfo, field_installed)
-                installed_info[scrollinfo.scroll] = scrollinfo
-                installed_versions[scrollinfo.name] = scrollinfo.scroll
-            except:
-                if os.getenv('SPIKE_DEBUG', '').lower() == 'yes':
-                    import traceback
-                    traceback.print_exc()
-                return 255 # So how did we install it...
+        aggregator(None, 0)
+        try:
+            Installer.load_all_information(private, installed_info, installed_versions, field_installed)
+        except:
+            if os.getenv('SPIKE_DEBUG', '').lower() == 'yes':
+                import traceback
+                traceback.print_exc()
+            return 255 # So how did we install it...
         
         empty_dep_test = lambda scroll : (scroll.name == 'spike') and os.path.exists(SPIKE_PATH) and os.path.isdir(SPIKE_PATH)
         while True:
@@ -326,7 +319,7 @@ class LibSpike(LibSpikeHelper):
                     if os.getenv('SPIKE_DEBUG', '').lower() == 'yes':
                         import traceback
                         traceback.print_exc()
-                    return 255 # but, the proofreader already found them...
+                    return 255 # But, the proofreader already found them...
                 else:
                     try:
                         scrollinfo = Installer.load_information(scrollfile)
@@ -336,7 +329,7 @@ class LibSpike(LibSpikeHelper):
                         if os.getenv('SPIKE_DEBUG', '').lower() == 'yes':
                             import traceback
                             traceback.print_exc()
-                        return 255 # but, the proofreader did not have any problem...
+                        return 255 # But, the proofreader did not have any problem...
             
             # Identify scrolls that may not be installed at the same time
             installed = set()

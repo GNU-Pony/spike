@@ -110,6 +110,23 @@ class Installer():
     
     
     @staticmethod
+    def load_all_information(private, installed_info, installed_versions, field_installed):
+        '''
+        Load and map informastion about all installed scrolls
+        
+        @param  private:bool                                 Whether an unprivileged installation is taking place
+        @param  installed_info:dict<ScrollVersion, Scroll>   Mapping from scroll version to scroll information, to fill
+        @param  installed_versions:dict<str, ScrollVersion>  Mapping from scroll name to scroll version, to fill
+        @param  dict<str, dict<¿E?, list<Scroll>>>           Field → value → scroll mapping, to fill
+        '''
+        for scrollfile in LibSpikeHelper.locate_all_scrolls(True, None if private else False):
+            scrollinfo = Installer.load_information(scrollfile)
+            Installer.transpose_fields(scrollinfo, field_installed)
+            installed_info[scrollinfo.scroll] = scrollinfo
+            installed_versions[scrollinfo.name] = scrollinfo.scroll
+    
+    
+    @staticmethod
     def transpose_fields(scroll, map):
         '''
         Fill a map with field → value → scroll data

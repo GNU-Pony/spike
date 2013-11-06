@@ -31,7 +31,7 @@ class ScrollFinder():
     '''
     
     @staticmethod
-    def simplify_pattern(patterns):
+    def simplify_patterns(patterns):
         '''
         Simplify patterns by splitting them into their three parts
         
@@ -184,12 +184,8 @@ class ScrollFinder():
         @param  aggregator:(str)→void                               Function invoked with a scroll file when matched
         '''
         for cat in categories.keys():
-            pats = categories[cat][1]
-            for pat in pats:
-                if len(pat) == 0:
-                    for scroll in scrolls[cat]:
-                        aggregator(scroll[1])
-                elif cat in scrolls:
+            if cat in scrolls:
+                for pat in categories[cat][1]:
                     p = pat[2]
                     for (scroll, full) in scrolls[cat]:
                         if re.search(p, scroll) is not None:
