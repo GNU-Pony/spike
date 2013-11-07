@@ -29,6 +29,17 @@ class ScrollFinder():
     '''
     Module for libspike for finding scrolls
     '''
+    @staticmethod
+    def regex_match(needle, haystack):
+        '''
+        Tests if a pattern can be found in a text
+        
+        @param   needle:str    The pattern to search for
+        @param   haystack:str  The text to search in
+        @return  :bool         Whether the pattern can be found in the text
+        '''
+        return re.search(needle, haystack) is not None
+    
     
     @staticmethod
     def simplify_patterns(patterns):
@@ -91,7 +102,7 @@ class ScrollFinder():
                     repositories[repo][1].append(pattern)
             else:
                 for repo in repositories.keys():
-                    if re.search(r, repo) is not None:
+                    if regex_match(r, repo):
                         repositories[repo][1].append(pattern)
     
     
@@ -134,7 +145,7 @@ class ScrollFinder():
                         out[cat][1].append(pat)
                 else:
                     for cat in cats:
-                        if re.search(c, cat) is not None:
+                        if regex_match(c, cat):
                             out[cat][1].append(pat)
     
     
@@ -188,6 +199,6 @@ class ScrollFinder():
                 for pat in categories[cat][1]:
                     p = pat[2]
                     for (scroll, full) in scrolls[cat]:
-                        if re.search(p, scroll) is not None:
+                        if regex_match(p, scroll):
                             aggregator(full)
 
