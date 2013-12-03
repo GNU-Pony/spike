@@ -1216,7 +1216,7 @@ def patch(patches, strip = 1, forward = True):
     
     @param  patches:str|itr<str>  Patch files to apply
     @param  strip:int             The number of prefix directories to strip away in file names
-    @param  forward:bool          Whether to include the -N/--forware option
+    @param  forward:bool          Whether to include the -N/--forward option
     '''
     __print('patch%s -p%i %s' % (' -N' if forward else '', strip, str(patches)))
     patches = [patches] if isinstance(patches, str) else patches
