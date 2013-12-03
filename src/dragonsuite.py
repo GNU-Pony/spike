@@ -1274,6 +1274,37 @@ def sed_script(pattern, replacement, selection = None, transliterate = False, mu
     return script
 
 
+def filter_locale(i_use_locale, pkgdir, prefix, localedir = '/share/locale'):
+    '''
+    Remove undesired locale files
+    
+    @param  i_use_locale:str  Comma separated list of locales to keep, just '*' for all locales
+    @param  pkgdir:str        The `pkgdir` pass to `package` in the scroll
+    @param  prefix:str        The packages's prefix path
+    @param  localedir:str     The path, excluding prefix, for locales
+    '''
+    if i_use_locale == '*':
+        return
+    if prefix.replace('/', '') == '':
+        prefix = '/usr'
+    localedir = pkgdir + prefix + localedir
+    if os.path.exists(localedir) and os.path.isdir(localedir):
+        localedir_bak = localedir + '-'
+        while os.path.exists(localedir_bak):
+            localedir_bak += '-'
+        mv(localedir_bak, localedir)
+        recreated = False
+        for locale in i_use_locale.split(''):
+            if len(locale) == 0:
+                continue
+            if os.path.exists('%s/%s' % (localedir_bak, locale)):
+                if not recreated:
+                    recreated = True
+                    mkdir(localedir)
+                mv('%s/%s' % (localedir_bak, locale), '%s/%s' % (localedir, locale))
+        rm_r(localedir_bak)
+
+
 def post_install_info(rootdir, installedfiles, private, i_use_info):
     '''
     Perform post-install actions for info manuals
