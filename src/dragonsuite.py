@@ -1280,14 +1280,17 @@ def filter_locale(i_use_locale, pkgdir, prefix, localedir = '/share/locale'):
     
     @param  i_use_locale:str  Comma separated list of locales to keep, just '*' for all locales
     @param  pkgdir:str        The `pkgdir` pass to `package` in the scroll
-    @param  prefix:str        The packages's prefix path
+    @param  prefix:str?       The packages's prefix path
     @param  localedir:str     The path, excluding prefix, for locales
     '''
     if i_use_locale == '*':
         return
-    if prefix.replace('/', '') == '':
-        prefix = '/usr'
-    localedir = pkgdir + prefix + localedir
+    if prefix is not None:
+        if prefix.replace('/', '') == '':
+            prefix = '/usr'
+        localedir = pkgdir + prefix + localedir
+    else:
+        localedir = pkgdir + localedir
     if os.path.exists(localedir) and os.path.isdir(localedir):
         localedir_bak = localedir + '-'
         while os.path.exists(localedir_bak):
