@@ -324,6 +324,17 @@ def export(var, value):
             os.environ[var] = value
 
 
+def defvar(var, value):
+    '''
+    Sets an environment variable to a default value if it is empty or non-existant
+    
+    @param  var:str    The environment variable
+    @param  value:str  The environment variable's default value
+    '''
+    if get(var, '') == '':
+        export(var, value)
+
+
 def get(var, default = ''):
     '''
     Gets an environment variable
