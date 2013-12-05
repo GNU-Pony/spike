@@ -1224,6 +1224,20 @@ def patch(patches, strip = 1, forward = True):
         execute(('patch -%sp%i -i' % ('N' if forward else '', strip)).split(' ') + [p], fail = True)
 
 
+def unpatch(patches, strip = 1, forward = True):
+    '''
+    Revert one or more patches
+    
+    @param  patches:str|itr<str>  Patch files to apply
+    @param  strip:int             The number of prefix directories to strip away in file names
+    @param  forward:bool          Whether to include the -N/--forward option
+    '''
+    __print('unpatch%s -p%i %s' % (' -N' if forward else '', strip, str(patches)))
+    patches = [patches] if isinstance(patches, str) else patches
+    for p in patches:
+        execute(('patch -%sp%i -R -i' % ('N' if forward else '', strip)).split(' ') + [p], fail = True)
+
+
 def sed(scripts, path):
     '''
     Edit one or more file with `sed`
