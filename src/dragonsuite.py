@@ -346,6 +346,22 @@ def get(var, default = ''):
     return os.getenv(var, default)
 
 
+def which(command):
+    '''
+    Locates file in PATH
+    
+    @param   file:str  The file to locate
+    @return  :str?     The location of the file, `None` if not found
+    '''
+    PATH = get('PATH').split(':')
+    for p in PATH:
+        if len(p) > 0:
+            f = '%s/%s' % (p, command)
+            if os.path.exists(f):
+                return f
+    return none
+
+
 def chmod(path, mode, mask = ~0):
     '''
     Changes the protection bits of one or more files
