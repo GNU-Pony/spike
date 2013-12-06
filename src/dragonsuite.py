@@ -862,7 +862,7 @@ def path_escape(*filename):
 
 def path(exprs, existing = False):
     '''
-    Gets files matching a pattern
+    Gets files matching a pattern, and expand ~
     
     Here     => Regular expression
     {a,b,c}  => (a|b|c)
@@ -885,9 +885,9 @@ def path(exprs, existing = False):
     
     @param   exprs:str|itr<str>  Expressions
     @param   existing:bool       Whether to only match to existing files
-    @return  :list<str>          Matching files
+    @return  :str|list<str>      Matching files
     '''
-    def _(expr):
+    def __(expr):
         ps = ['']
         esc = False
         buf = ''
@@ -912,7 +912,7 @@ def path(exprs, existing = False):
                 d += 1
             elif c == '}':
                 if d == 1:
-                    flatten = [_(tp) for tp in buf.split('\0,')]
+                    flatten = [__(tp) for tp in buf.split('\0,')]
                     t = []
                     for f in flatten:
                         t += f
@@ -956,11 +956,16 @@ def path(exprs, existing = False):
         return [p + buf for p in ps]
     rc = []
     for expr in ([exprs] if isinstance(exprs, str) else exprs):
-        for p in _(expr):
+        for p in __(expr):
+            tilde = get('HOME')
+            f = ''
+            if p.startswith('~'):
+                f = tilde
+                p = p[1:]
             if '\0' not in p:
-                rc.append(p)
+                rc.append(f + p)
             else:
-                f = ['']
+                f = [f]
                 if os.sep == '?': p = p.replace('\0?', '\0a')
                 if os.sep == '*': p = p.replace('\0*', '\0b')
                 parts = p.split(os.sep)
@@ -1021,13 +1026,13 @@ def path(exprs, existing = False):
                                 _f.append(_ + m)
                         f = _f
                 rc += f
-    if not existing:
-        return rc
-    nrc = []
-    for p in rc:
-        if os.path.lexists(p) and ((not p.endswith(os.sep)) or os.path.isdir(p)):
-            nrc.append(p)
-    return nrc
+    if existing:
+        nrc = []
+        for p in rc:
+            if os.path.lexists(p) and ((not p.endswith(os.sep)) or os.path.isdir(p)):
+                nrc.append(p)
+        rc = nrc
+    return rc[0] if len(rc) == 1 else rc
 
 
 def decompress(path, format = None):
