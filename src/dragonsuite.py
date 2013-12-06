@@ -839,6 +839,18 @@ def find(path, maxdepth = -1, hardlinks = True):
     return rc
 
 
+def l(elements):
+    '''
+    Encapsulates string and integers in lists and converts iteratables to lists
+    
+    @param   elements:¿E?=str|¿E?=list|itr<¿E?>  The elements to make sure they are in a list
+    @return  elements:list<¿E?>                  The elements in a list
+    '''
+    if isinstance(elements, str) or isinstance(elements, int):
+        return [elements]
+    return list(elements)
+
+
 def path_escape(*filename):
     '''
     Escape a filename for dynamic include in a `path` expression without the risk of it being parsed as an expression, but rather be verbatim
@@ -851,7 +863,7 @@ def path_escape(*filename):
     files = [filename] if isinstance(filename, str) else filename
     rc = []
     for file in files:
-        for c in '\\.^+$[]|(){}*?@':
+        for c in '\\.^+$[]|(){}*?@~':
             file = file.replace(c, '\\' + c)
         rc.append(file)
     if isinstance(filename, str):
