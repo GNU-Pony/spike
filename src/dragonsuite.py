@@ -404,16 +404,21 @@ def chgrp(path, group):
     chown(path, group = group)
 
 
-def ln(source, link, hard = False):
+def ln(source, link, hard = False, parents = False):
     '''
     Create a symbolic or hard link
     
-    @param  source:str  The target of the new link
-    @param  link:str    The path of the new link
-    @param  hard:bool   Whether to create a hard link
+    @param  source:str     The target of the new link
+    @param  link:str       The path of the new link
+    @param  hard:bool      Whether to create a hard link
+    @param  parents:bool   Create missing parent directories
     '''
     if os.path.lexists(link) and os.path.isdir(link):
         link += os.sep + basename(source)
+    elif parents and not os.path.lexists(link):
+        parent = dirname(link)
+        if not os.path.lexists(parent):
+            mkdir_p(parent)
     if hard:
         __print('ln --hard %s %s' % (source, link))
         os.link(source, link)
@@ -425,15 +430,21 @@ def ln(source, link, hard = False):
         os.symlink(source, link)
 
 
-def touch(path, settime = False):
+def touch(path, settime = False, parents = False):
     '''
     Create one or more files if missing
     
     @param  path:str|itr<str>  The file of files
     @param  settime:bool       Whether to set the timestamps on the files if they already exists
+    @param  parents:bool       Create missing parent directories
     '''
     __print('touch %s' + str(path))
     for p in ([path] if isinstance(path, str) else path):
+        if parents:
+            if not os.path.lexists(path):
+                parent = dirname(path)
+                if not os.path.lexists(parent):
+                    mkdir_p(parent)
         if os.path.lexists(p):
             if settime:
                 os.utime(p, None)
@@ -653,13 +664,30 @@ def uninstall_info(path, infodir = None):
         execute(['install-info', '--delete', '--dir-file', infodir, '--', p], fail = False)
 
 
-def mv(source, destination):
+def mv(source, destination, parents = False, cleanup = False):
     '''
     Move one or more files
     
     @param  source:str|itr<str>  The files to move
     @param  destination:str      The destination, either directory or new file
+    @param  parents:bool         Create missing parent directories
+    @param  cleanup:bool         Remove the parent of the source file if its gets empty
     '''
+    def mv_(src, dest):
+        if parents:
+            if not os.path.lexists(dest):
+                parent = dirname(dest)
+                if not os.path.lexists(parent):
+                    mkdir_p(parent)
+        os.rename(src, dest)
+        if cleanup:
+            src = dirname(src)
+            if os.path.lexists(src) and os.path.isdir(src):
+                if len(os.listdir(src)) == 0:
+                    if os.path.islink(src):
+                        rm(src)
+                    else:
+                        rmdir(src)
     __print('mv %s %s' % (str(source), destination))
     ps = [source] if isinstance(source, str) else source
     d = destination if destination.endswith(os.sep) else (destination + os.sep)
@@ -667,7 +695,7 @@ def mv(source, destination):
         if os.path.lexists(destination) and os.path.isdir(destination):
             os.rename(source, d + basename(source))
         else:
-            os.rename(source, destination)
+            mv_(source, destination)
     else:
         if not os.path.lexists(destination):
             raise OSError('Destination %s does not exist but must be a directory' % destination)
@@ -675,7 +703,7 @@ def mv(source, destination):
             raise OSError('Destination %s exists and is not a directory' % destination)
         else:
             for p in ps:
-                os.rename(p, d + basename(p))
+                mv_(p, d + basename(p))
 
 
 def echo(text, newline = True, stderr = False):
