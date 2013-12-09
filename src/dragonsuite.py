@@ -198,7 +198,7 @@ def cut(items, delimiter, fields, complement = False, only_delimited = False, ou
 
 def cat(files, encoding = None):
     '''
-    Read one or more files a create a list of all their combined LF lines in order
+    Read one or more files and create a list of all their combined LF lines in order
     
     @param   files:str|itr<str>  The file or files to read
     @param   encoding:str?       The encoding to use, default if `None`
@@ -359,7 +359,7 @@ def which(command):
             f = '%s/%s' % (p, command)
             if os.path.exists(f):
                 return f
-    return none
+    return None
 
 
 def chmod(path, mode, mask = ~0):
@@ -1332,13 +1332,253 @@ def sed_script(pattern, replacement, selection = None, transliterate = False, mu
     return script
 
 
+def head(path, lines, encoding = None):
+    '''
+    Read a file and return the first LF lines
+    
+    @param   path:str       The file to read
+    @param   lines:int      The number of lines to return
+    @param   encoding:str?  The encoding to use, default if `None`
+    @return  :list<str>     The first lines
+    '''
+    return [] if lines == 0 else cat(path, encoding = encoding)[:lines]
+
+
+def tail(path, lines, encoding = None):
+    '''
+    Read a file and return the last LF lines
+    
+    @param   path:str       The file to read
+    @param   lines:int      The number of lines to return
+    @param   encoding:str?  The encoding to use, default if `None`
+    @return  :list<str>     The last lines
+    '''
+    return [] if lines == 0 else cat(path, encoding = encoding)[-lines:]
+
+
+class ptools():
+    '''
+    Collection of commands provided by ptools and derived from the functionallity of ptools
+    '''
+    def __init__(self, pkgdir, *configurations):
+        '''
+        Constructor
+        
+        @param  pkgdir:str  The `pkgdir` pass to `package` in the scroll
+        @param  confs:*str  Configuratiosn for ptools
+        '''
+        self.pkgdir = pkgdir
+        self.confs = list(configurations) + ['--destdir=' + pkgdir]
+    
+    
+    def pp(*paths):
+        '''
+        Converts a generical FHS-compliant path into a one following fh.conf
+        inside the package's prefix
+        
+        @param  paths:*str  The paths to convert
+        '''
+        rc = execute_pipe(['pp'] + self.confs + ['--'] + list(paths))
+        return rc[0] if len(rc) == 1 else rc
+    
+    
+    def pp_(*paths):
+        '''
+        Converts a generical FHS-compliant path into a one following fh.conf with
+        prefix stripped out. This should only be used with an unconfigures ptools.
+        
+        @param   paths:*str      The paths to convert
+        @return  :str|list<str>  The paths converted
+        '''
+        args = ['pp'] + self.confs
+        pres = ['prefix', 'exec-prefix']
+        pres += ['%s_prefix' % pre for pre in ['var', 'root', 'user', 'local', 'opt']]
+        pres += ['%s_infix' % pre for pre in ['local', 'games', 'opt']]
+        for pre in pres:
+            args.append('--%s=' % pre)
+        args += ['--'] + list(paths)
+        rc = execute_pipe(args)
+        return rc[0] if len(rc) == 1 else rc
+    
+    
+    def pclean():
+        '''
+        Remove unwanted files from the installation
+        '''
+        execute(['pclean'] + self.confs)
+    
+    
+    def pconf(*args, cmd = None):
+        '''
+        Run `./configure` with configurations
+        
+        @param  args:*str  Additional arguments for `./configure`
+        @param  cmd:str?   The command to run, must be specified if not `./[cC]onfigure`
+        '''
+        args = ['pconf'] + self.confs
+        if cmd is not None:
+            args.append('--configure-script=' + cmd)
+        execute(args + ['--'] + list(args))
+    
+    
+    def pmake(*args):
+        '''
+        Run `make` with configurations
+        
+        @param  args:*str  Additional arguments for `make`
+        '''
+        execute(['pmake'] + self.confs + ['--'] + list(args))
+    
+    
+    def pfh(*paths):
+        '''
+        Extract a value of the directory table after configurations
+        
+        @param   paths|*str      The paths by configurations name
+        @return  :str|list<str>  The paths by file name
+        '''
+        rc = execute_pipe(['pfh'] + self.confs + ['--'] + list(paths))
+        return rc[0] if len(rc) == 1 else rc
+    
+    
+    def newbin(source, destination, owner = -1, group = -1, mode = 0o755, strip = False):
+        '''
+        Install a command to /bin in the prefix in pkgdir
+        
+        @param  source:str       The file to install
+        @param  destination:str  The name of the new command
+        @parma  mode:int         Permission bits for the command
+        @param  owner:int|str    The new owner, `-1` for preserved
+        @param  group:int|str    The new group, `-1` for preserved, `-2` to select by owner
+        @param  mode:int         The desired protection bits, `-1` for preserved
+        @param  strip:bool       Whether to strip symbol table
+        '''
+        destination = self.pkgdir + self.pp('/bin/' + destination)
+        install(source, destination, owner = owner, group = group, mode = mode, strip = strip)
+    
+    
+    def newsbin(source, destination, owner = -1, group = -1, mode = 0o755, strip = False):
+        '''
+        Install a command to /sbin in the prefix in pkgdir
+        
+        @param  source:str       The file to install
+        @param  destination:str  The name of the new command
+        @parma  mode:int         Permission bits for the command
+        @param  owner:int|str    The new owner, `-1` for preserved
+        @param  group:int|str    The new group, `-1` for preserved, `-2` to select by owner
+        @param  mode:int         The desired protection bits, `-1` for preserved
+        @param  strip:bool       Whether to strip symbol table
+        '''
+        destination = self.pkgdir + self.pp('/sbin/' + destination)
+        install(source, destination, owner = owner, group = group, mode = mode, strip = strip)
+    
+    
+    def newlibexec(source, destination, owner = -1, group = -1, mode = 0o755, strip = False):
+        '''
+        Install a command to /libexec in the prefix in pkgdir
+        
+        @param  source:str       The file to install
+        @param  destination:str  The name of the new command
+        @parma  mode:int         Permission bits for the command
+        @param  owner:int|str    The new owner, `-1` for preserved
+        @param  group:int|str    The new group, `-1` for preserved, `-2` to select by owner
+        @param  mode:int         The desired protection bits, `-1` for preserved
+        @param  strip:bool       Whether to strip symbol table
+        '''
+        destination = self.pkgdir + self.pp('/libexec/' + destination)
+        install(source, destination, owner = owner, group = group, mode = mode, strip = strip)
+    
+    
+    def __mod(path, shebang, force):
+        '''
+        Modify the shebang in a command
+        
+        @param  path:str      The file to modify
+        @param  shebang:str?  The shebang, without the #!, `None` for automatic
+        @param  force:bool    Whether to add a shebang if there isn't one
+        '''
+        lines = cat(path)
+        if len(lines) == 0:
+            return
+        if not lines[0].startswith('#!'):
+            if force:
+                lines = ['#!'] + lines
+            else:
+                return
+        if shebang is None:
+            shebang = lines[0][2:]
+            post = ' '.join(shebang.split(' ')[:1])
+            shebang = shebang.split(' ')[0]
+            located = which(shebang.split('/')[-1])
+            if locates is not None:
+                shebang = located + post
+            else:
+                pre = None
+                if shebang.startswith('/usr/local/games'):
+                    shebang = shebang[len('/usr/local/games'):]
+                    pre = self.pfh('local_prefix') + self.pfh('games_infix')
+                elif shebang.startswith('/usr/local'):
+                    shebang = shebang[len('/usr/local'):]
+                    pre = self.pfh('local_prefix')
+                elif shebang.startswith('/usr/games'):
+                    shebang = shebang[len('/usr/games'):]
+                    pre = self.pfh('usr_prefix') + self.pfh('games_infix')
+                elif shebang.startswith('/usr'):
+                    shebang = shebang[len('/usr'):]
+                    pre = self.pfh('usr_prefix')
+                else:
+                    pre = self.pfh('root_prefix')
+                shebang = pre + ptools('').pp_(shebang) + post
+        lines[0] = '#!' + shebang
+        lines = '\n'.join(lines).encode('utf-8')
+        with open(path, 'wb') as file:
+            file.write(lines)
+            file.flush()
+    
+    
+    def modbin(destination, shebang = None, force = False):
+        '''
+        Modify the shebang in a command that is installed in /bin inside the prefix in pkgdir
+        
+        @param  path:destination  The name of the command
+        @param  shebang:str?      The shebang, without the #!, `None` for automatic
+        @param  force:bool        Whether to add a shebang if there isn't one
+        '''
+        destination = self.pkgdir + self.pp('/bin/' + destination)
+        self.__mod(destination, shebang = shebang, force = force)
+    
+    
+    def modsbin(destination, shebang = None, force = False):
+        '''
+        Modify the shebang in a command that is installed in /sbin inside the prefix in pkgdir
+        
+        @param  path:destination  The name of the command
+        @param  shebang:str?      The shebang, without the #!, `None` for automatic
+        @param  force:bool        Whether to add a shebang if there isn't one
+        '''
+        destination = self.pkgdir + self.pp('/sbin/' + destination)
+        self.__mod(destination, shebang = shebang, force = force)
+    
+    
+    def modlibexec(destination, shebang = None, force = False):
+        '''
+        Modify the shebang in a command that is installed in /libexec inside the prefix in pkgdir
+        
+        @param  path:destination  The name of the command
+        @param  shebang:str?      The shebang, without the #!, `None` for automatic
+        @param  force:bool        Whether to add a shebang if there isn't one
+        '''
+        destination = self.pkgdir + self.pp('/libexec/' + destination)
+        self.__mod(destination, shebang = shebang, force = force)
+
+
 def filter_locale(i_use_locale, pkgdir, prefix, localedir = '/share/locale'):
     '''
     Remove undesired locale files
     
     @param  i_use_locale:str  Comma separated list of locales to keep, just '*' for all locales
     @param  pkgdir:str        The `pkgdir` pass to `package` in the scroll
-    @param  prefix:str?       The packages's prefix path
+    @param  prefix:str?       The package's prefix path
     @param  localedir:str     The path, excluding prefix, for locales
     '''
     if i_use_locale == '*':
