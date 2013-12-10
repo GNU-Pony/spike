@@ -1282,32 +1282,50 @@ def sha3sum(files):
         return rc
 
 
-def patch(patches, strip = 1, forward = True):
+def patch(patches, strip = 1, forward = True, directory = None):
     '''
     Apply one or more patches
     
     @param  patches:str|itr<str>  Patch files to apply
     @param  strip:int             The number of prefix directories to strip away in file names
     @param  forward:bool          Whether to include the -N/--forward option
+    @param  directory:str?        Change to directory immediately, before doing anything else
     '''
-    __print('patch%s -p%i %s' % (' -N' if forward else '', strip, str(patches)))
+    _forward = ' -N' if forward else ''
+    _directory = (' -d ' + directory) if directory is not None else ''
+    __print('patch%s%s -p%i %s' % (_directory, _forward, strip, str(patches)))
     patches = [patches] if isinstance(patches, str) else patches
+    patch_ = ['patch']
+    if directory is not None:
+        patch_ += ['-d', directory]
+    if forward:
+        patch_.append('-N')
+    patch_ += ['-p%i' % strip, '-i']
     for p in patches:
-        execute(('patch -%sp%i -i' % ('N' if forward else '', strip)).split(' ') + [p], fail = True)
+        execute(patch_ + [p], fail = True)
 
 
-def unpatch(patches, strip = 1, forward = True):
+def unpatch(patches, strip = 1, forward = True, directory = None):
     '''
     Revert one or more patches
     
     @param  patches:str|itr<str>  Patch files to apply
     @param  strip:int             The number of prefix directories to strip away in file names
     @param  forward:bool          Whether to include the -N/--forward option
+    @param  directory:str?        Change to directory immediately, before doing anything else
     '''
-    __print('unpatch%s -p%i %s' % (' -N' if forward else '', strip, str(patches)))
+    _forward = ' -N' if forward else ''
+    _directory = (' -d ' + directory) if directory is not None else ''
+    __print('unpatch%s%s -p%i %s' % (_directory, _forward, strip, str(patches)))
     patches = [patches] if isinstance(patches, str) else patches
+    patch_ = ['patch']
+    if directory is not None:
+        patch_ += ['-d', directory]
+    if forward:
+        patch_.append('-N')
+    patch_ += ['-p%i' % strip, '-R', '-i']
     for p in patches:
-        execute(('patch -%sp%i -R -i' % ('N' if forward else '', strip)).split(' ') + [p], fail = True)
+        execute(patch_ + [p], fail = True)
 
 
 def sed(scripts, path):
