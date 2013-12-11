@@ -1549,10 +1549,12 @@ class ptools():
         if not lines[0].startswith('#!'):
             if force:
                 lines = ['#!'] + lines
+                if shebang is None:
+                    raise Exception('Cannot combine force=True with shebang=None: cannot determine interpreter')
             else:
                 return
         if shebang is None:
-            shebang = lines[0][2:]
+            shebang = lines[0][2:].lstrip(' ')
             post = ' '.join(shebang.split(' ')[:1])
             shebang = shebang.split(' ')[0]
             located = which(shebang.split('/')[-1])
