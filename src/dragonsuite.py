@@ -611,8 +611,18 @@ def upx(path, level = 8, overlay = 1, brute = 0):
     if overlay == 2:  params += ['--overlay=strip']
     if brute == 1:  params += ['--brute']
     if brute == 2:  params += ['--ultra-brute']
-    params += ['--', path] if isinstance(path, str) else (['--'] + path)
+    paths = [path] if isinstance(path, str) else path
+    params += ['--'] + paths
+    sticky = []
+    for p in paths:
+        if (os.stat(p).st_mode & 0o1000) == 0o1000:
+            sticky.append(p)
+            # Remove sticky bit from command so UPX will not complain
+            chmod(p, 0, 0o1000)
     execute(params, fail = False)
+    for p in sticky:
+        # Resetting sticky bit so the command is preserved in swap space
+        chmod(p, 0o1000, 0o1000)
 
 
 def strip(path, *params):
