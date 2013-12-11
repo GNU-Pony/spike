@@ -1476,6 +1476,15 @@ class ptools():
         execute(['pmake'] + self.confs + ['--'] + list(args))
     
     
+    def pgpp(*args):
+        '''
+        Run `gpp` with filesystem hierarchy configurations
+        
+        @param  args:*str  Additional arguments for `gpp`
+        '''
+        execute(['pgpp'] + self.confs + ['--'] + list(args))
+    
+    
     def pfh(*paths):
         '''
         Extract a value of the directory table after configurations
