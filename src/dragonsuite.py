@@ -1388,6 +1388,27 @@ def sed_script(pattern, replacement, selection = None, transliterate = False, mu
     return script
 
 
+def pg(path):
+    '''
+    Open a file in a pager
+    
+    @param  path:str  The file to open
+    '''
+    pager = get('PAGER', '')
+    if (pager == '') or not in_path(pager.split(' ')[0]):
+        pager = get('EDITOR', '')
+    if (pager == '') or not in_path(pager.split(' ')[0]):
+        pager = None
+        for pager_ in ['most', 'less', 'more', 'pg', 'emacs+', 'emacs -nw', 'nano']:
+            if in_path(pager_.split(' ')[0]):
+                pager = pager_
+                break
+        if pager is None:
+            echo('Read ' + path)
+            return
+    execute(pager.split(' ') + ['--', path])
+
+
 def head(path, lines, encoding = None):
     '''
     Read a file and return the first LF lines
