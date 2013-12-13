@@ -1409,6 +1409,26 @@ def pg(path):
     execute(pager.split(' ') + ['--', path])
 
 
+def info(document, *node):
+    '''
+    Open an info manual
+    
+    @param  document:str  The document to open
+    @param  node:*str     The node to open
+    '''
+    execute('info', document, *node)
+
+
+def man(section, *document):
+    '''
+    Open a manpage
+    
+    @param  section:str|int  The section the document is located in
+    @param  document:*str    The document to open
+    '''
+    execute('man', section, *document)
+
+
 def head(path, lines, encoding = None):
     '''
     Read a file and return the first LF lines
