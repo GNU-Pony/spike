@@ -1426,7 +1426,7 @@ def man(section, *document):
     @param  section:str|int  The section the document is located in
     @param  document:*str    The document to open
     '''
-    execute('man', section, *document)
+    execute('man', str(section), *document)
 
 
 def head(path, lines, encoding = None):
