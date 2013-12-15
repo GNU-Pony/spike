@@ -148,6 +148,7 @@ makedepends:list<str>=[]
 
 checkdepends:list<str>=[]
 	Packages required by the package at checktime.
+	All dependencies in makedepends are automatically included.
 
 optdepends:list<str>=[]
 	Optional packages that add functionality to the package at runtime.
