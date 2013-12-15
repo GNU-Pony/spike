@@ -1429,6 +1429,18 @@ def man(section, *document):
     execute('man', str(section), *document)
 
 
+def behead(path, lines, encoding = None):
+    '''
+    Read a file and return all but the first LF lines
+    
+    @param   path:str       The file to read
+    @param   lines:int      The number of lines to skip
+    @param   encoding:str?  The encoding to use, default if `None`
+    @return  :list<str>     The first lines
+    '''
+    return cat(path, encoding = encoding)[lines:]
+
+
 def head(path, lines, encoding = None):
     '''
     Read a file and return the first LF lines
