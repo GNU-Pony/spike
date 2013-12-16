@@ -404,6 +404,17 @@ def chgrp(path, group):
     chown(path, group = group)
 
 
+def ln_s(source, link, parents = False):
+    '''
+    Create a symbolic link
+    
+    @param  source:str    The target of the new link
+    @param  link:str      The path of the new link
+    @param  parents:bool  Create missing parent directories
+    '''
+    ln(source, link, hard = False, parents = parents)
+
+
 def ln(source, link, hard = False, parents = False):
     '''
     Create a symbolic or hard link
