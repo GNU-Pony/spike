@@ -90,15 +90,16 @@ class Spikeless():
         environ = {}
         for var in os.environ:
             environ[var] = os.environ[var]
-        def reset_environ(reset_to):
+        def reset_environ(reset_to, keep_flags = True):
             delete = []
             s = set(reset_to.keys())
             for var in os.environ:
-                if var not in s:
-                    delete.append(var)
-                else:
-                    os.putenv(var, reset_to[var])
-                    os.environ[var] = reset_to[var]
+                if (not keep_flags) or (var.lower().startswith('i_use_')):
+                    if var not in s:
+                        delete.append(var)
+                    else:
+                        os.putenv(var, reset_to[var])
+                        os.environ[var] = reset_to[var]
             for var in delete:
                 os.unsetenv(var)
                 del os.environ[var]
@@ -322,6 +323,7 @@ class Spikeless():
         
         pre = preFunctor(fresh_installation, startdir, pinpal, private, environ)
         post = postFunctor(fresh_installation, startdir, pinpal, private, environ)
+        reset_environ(environ, False)
         return (pre, pkgdir, post)
 
 
