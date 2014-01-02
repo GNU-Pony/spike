@@ -1833,4 +1833,5 @@ def uninstall_alternative(rootdir, installedfiles, provided, provider):
             for alt in alts:
                 if alt != provider:
                     ln('../alternatives.providers/%s/%s' % (provided, alt), link)
+                    return
 
