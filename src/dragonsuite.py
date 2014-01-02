@@ -1833,5 +1833,8 @@ def uninstall_alternative(rootdir, installedfiles, provided, provider):
             for alt in alts:
                 if alt != provider:
                     ln('../alternatives.providers/%s/%s' % (provided, alt), link)
+                    msg('The command %s is not provided by %s' % (provided, alt))
                     return
+            rm(link)
+            msg('The command %s does not longer have a provider' % provided)
 
