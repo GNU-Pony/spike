@@ -1795,3 +1795,42 @@ def pre_uninstall_info(rootdir, installedfiles, private):
                 files.append(file)
         uninstall_info(files, _infodir[:-1])
 
+
+def install_alternative(rootdir, provided, provider):
+    '''
+    Configure the system to use a provider for a command if that is not already done.
+    This is only to be used on system-wide installations.
+    
+    @param  rootdir   The root directory for the installation
+    @param  provided  The command that can be provided by the package
+    @param  provider  The name of the package that can provide the command
+    '''
+    link = '%s/etc/alternatives/%s' % (rootdir, provided)
+    if not os.path.exists(link):
+        # Either the link is broken or it does not exist
+        ln('../alternatives.providers/%s/%s' % (provided, provider), link, parents = True)
+
+
+def uninstall_alternative(rootdir, installedfiles, provided, provider):
+    '''
+    Configure the system NOT to use a specific provider for a command.
+    This is only to be used on system-wide installations.
+    
+    @param  rootdir         The root directory for the installation
+    @param  installedfiles  File that have been installed by the package
+    @param  provided        The command that can be provided by the package
+    @param  provider        The name of the package that can provide the command
+    '''
+    link = '%s/etc/alternatives/%s' % (rootdir, provided)
+    if os.path.exists(link):
+        path = os.path.realpath(link)
+        if os.path.startswith(rootdir):
+            path = path[len(rootdir):]
+            if not path.startswith(os.sep): # In case the rootdir ends with /
+                path = os.sep + path
+        if path in installedfiles:
+            alts = os.listdir('%s/etc/alternatives.providers/%s' % (rootdir, provided))
+            for alt in alts:
+                if alt != provider:
+                    ln('../alternatives.providers/%s/%s' % (provided, alt), link)
+
