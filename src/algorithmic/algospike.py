@@ -69,7 +69,7 @@ def bin_search(list, item, min, max):
 
 def multibin_search(rc, list, items):
     '''
-    Find the indices of multiple items in a list, with time complexity 𝓞(log n + m) and memory complexity 𝓞(log m) 
+    Find the indices of multiple items in a list, with time complexity 𝓞(log n + m) and memory complexity 𝓞(log m)
     
     @param  rc:append((itemIndex:int, listIndex:int))→void     Object to which to append found items
     @param  list:[int]→¿E?;__len__()→int                       Sorted list in which to search, the number of elements is named ‘n’ in the complexity analysis
