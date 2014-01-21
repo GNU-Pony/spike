@@ -62,10 +62,10 @@ error('algospike.bin_search, searching for non-existing, does not work', got == 
 
 got = []
 items = 'a a d d d d d d d d d f i i i i i j j k k k l m n s s s s s s s s s v v'.split(' ')
-multibin_search(got, items, [' ', 'd', 'i', 'g', 'k', 'm', 'z'])
+multibin_search(got, items, [' ', 'd', 'g', 'i', 'k', 'm', 'z'])
 got = [item[1] for item in sorted(got, key = lambda item : item[0])]
 error('algospike.multibin_search, searching for non-existing, does not work',
-      got[0] == ~0 and 2 <= got[1] <= 10 and 12 <= got[2] <= 16 and got[3] == ~12 and
+      got[0] == ~0 and 2 <= got[1] <= 10 and got[2] == ~12 and 12 <= got[3] <= 16 and
       19 <= got[4] <= 21 and got[5] == 23 and got[6] == ~len(items))
 
 
