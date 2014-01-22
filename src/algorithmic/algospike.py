@@ -152,7 +152,7 @@ def tsort(rc, lostrc, data):
     
     @param   rc:append((¿E?, list<¿E?>?))→void     Feed the items on topological order, accompanied by all items a list
                                                    cyclic dependencies it has that has yes not been feed. Instead of a
-                                                   empty list it will feed `None` it the item is not used to break a cycle.
+                                                   empty list it will feed `None` if the item is not used to break a cycle.
     @param   lostrc:append((¿E?, ¿E?))→void        Feed a dependency and what requires it when a dependency cannot be found
     @param   data:dict<¿E?, (set<¿E?>, itr<¿E?>)>  Dictionary from item to dependencies and those of them that are absolute
     @return  :bool                                 Whether the sort can be resolved without breaking an absolute cycle,
