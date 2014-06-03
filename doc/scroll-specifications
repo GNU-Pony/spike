@@ -12,6 +12,7 @@ pkgname:str
 		haskell-	Haskell modules
 		java-		Java modules
 		issue9-		Google Go modules (go is reserved for Go! as it predates Go)
+		appleswift-	Apple Swift modules (swift is reserved for the original Swift language)
 
 	Default suffixes:
 		-git		git repository download
