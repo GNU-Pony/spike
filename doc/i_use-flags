@@ -6,7 +6,10 @@ set to true if the value starts with a ‘y’ or ‘Y’.
 The following I_USE-flags are used:
 
 I_USE_INFO      Whether you want info manuals installed
-I_USE_PDF_INFO  Whether you want PDF compilations of info manuals installed
+I_USE_PDF       Whether you want PDF compilations of info manuals installed
+I_USE_DVI       Whether you want DVI compilations of info manuals installed
+I_USE_PS        Whether you want PostScript compilations of info manuals installed
+I_USE_HTML      Whether you want HTML compilations of info manuals installed
 I_USE_MAN       Whether you want man manuals installed
 I_USE_MAN_*     Whether you want man manuals if the language code *
 I_USE_BOOTDIR   ‘normal’ for a seperate /boot directory, ‘flat’ for
