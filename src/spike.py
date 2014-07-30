@@ -3,7 +3,7 @@
 '''
 spike – a package manager running on top of git
 
-Copyright © 2012, 2013  Mattias Andrée (maandree@member.fsf.org)
+Copyright © 2012, 2013, 2014  Mattias Andrée (maandree@member.fsf.org)
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -522,7 +522,7 @@ class Spike():
         '''
         print('spike – a package manager running on top of git\n'
               '\n'
-              'Copyright © 2012, 2013  Mattias Andrée (maandree@member.fsf.org)\n'
+              'Copyright © 2012, 2013, 2014  Mattias Andrée (maandree@member.fsf.org)\n'
               '\n'
               'This program is free software: you can redistribute it and/or modify\n'
               'it under the terms of the GNU General Public License as published by\n'
