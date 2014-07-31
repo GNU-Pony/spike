@@ -10,7 +10,7 @@ spike --proofread SCROLL...
 spike --ride SCROLL [--private]
 --> execute package in best possible way
 
-spike --read SCROLL... (--list | [--info FIELD]... [--written YES/NO])
+spike --read SCROLL... (--list | [--info FIELDS]... [--written YES/NO])
 --> get scroll information
 
 spike --write SCROLL... [--pinpal ROOT | --private] [--asdep | --asexplicit] [--nodep] [--force] [--shred]
@@ -35,7 +35,7 @@ spike --claim FILE... [--recursive | --entire] [--force] [--private] SCROLL
 spike --disclaim FILE... [--recursive] [--private] SCROLL
 --> remove FILE from SCROLL, and all subfiles if --rescursive
 
-spike --update [--pinpal ROOT] [--ignore SCROLL]... [--private] [--shred]
+spike --update [--pinpal ROOT | --private] [--ignore SCROLLS]... [--shred]
 --> install updated packages
 
 spike --archive ARCHIVE [--scrolls]

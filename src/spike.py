@@ -132,7 +132,7 @@ class Spike():
         opts.add_argumentless(['-W', '--write'],                      help = 'Install a pony (package) from scroll\n'
                                                              'slaves: [--pinpal= | --private] [--asdep | --asexplicit] [--nodep] [--force] [--shred]')
         opts.add_argumentless(['-U', '--update'],                     help = 'Update to new versions of the installed ponies\n'
-                                                             'slaves: [--pinpal=] [--ignore=]... [--private] [--shred]')
+                                                             'slaves: [--pinpal= | --private] [--ignore=]... [--shred]')
         opts.add_argumentless(['-E', '--erase'],                      help = 'Uninstall a pony\n'
                                                              'slaves: [--pinpal= | --private] [--shred]')
         opts.add_argumentless([      '--demote'],                     help = 'Demote pony to a dependency\n'
@@ -335,6 +335,9 @@ class Spike():
                 allowed.add('-i')
                 allowed.add('-u')
                 allowed.add('--shred')
+                exclusives.add('--pinpal')
+                exclusives.add('-u')
+                opts.test_exclusiveness(self.execprog, exclusives, longmap, True)
                 opts.test_allowed(self.execprog, allowed, longmap, True)
                 opts.test_files(self.execprog, 0, 0, True)
                 LibSpike.initialise(shred = opts.opts['--shred'] is not None)
