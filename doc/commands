@@ -22,10 +22,10 @@ spike --find SCROLL... [--owner | --written YES/NO]
 spike --erase SCROLL... [--pinpal ROOT | --private] [--shred]
 --> uninstall package
 
-spike --demote SCROLL...
+spike --demote SCROLL... [--private]
 --> demote package to a dependency
 
-spike --promote SCROLL...
+spike --promote SCROLL... [--private]
 --> premote package to an explicitly installed package
 
 spike --claim FILE... [--recursive | --entire] [--force] [--private] SCROLL
