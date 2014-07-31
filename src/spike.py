@@ -554,7 +554,7 @@ class Spike():
         '''
         Update the spike and the scroll archives
         
-        @parma   verify:bool  Whether to verify signatures
+        @param   verify:bool  Whether to verify signatures
         @return  :byte        Exit value, see description of `mane` 
         '''
         class Agg:

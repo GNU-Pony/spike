@@ -383,7 +383,7 @@ class DBCtrl():
         Convert an integer object to a raw integer stored in a string
         
         @param   value:int  Integer
-        @parma   len:int    The length of the raw string
+        @param   len:int    The length of the raw string
         @return  :str       Raw string
         '''
         arr = []
@@ -403,7 +403,7 @@ class DBCtrl():
         Convert an integer object to a raw integer stored in a byte array
         
         @param   value:int  Integer
-        @parma   len:int    The length of the raw byte array
+        @param   len:int    The length of the raw byte array
         @return  :bytes     Raw byte array
         '''
         rc = []

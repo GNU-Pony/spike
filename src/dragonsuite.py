@@ -1576,7 +1576,7 @@ class ptools():
         
         @param  source:str       The file to install
         @param  destination:str  The name of the new command
-        @parma  mode:int         Permission bits for the command
+        @param  mode:int         Permission bits for the command
         @param  owner:int|str    The new owner, `-1` for preserved
         @param  group:int|str    The new group, `-1` for preserved, `-2` to select by owner
         @param  mode:int         The desired protection bits, `-1` for preserved
@@ -1592,7 +1592,7 @@ class ptools():
         
         @param  source:str       The file to install
         @param  destination:str  The name of the new command
-        @parma  mode:int         Permission bits for the command
+        @param  mode:int         Permission bits for the command
         @param  owner:int|str    The new owner, `-1` for preserved
         @param  group:int|str    The new group, `-1` for preserved, `-2` to select by owner
         @param  mode:int         The desired protection bits, `-1` for preserved
@@ -1608,7 +1608,7 @@ class ptools():
         
         @param  source:str       The file to install
         @param  destination:str  The name of the new command
-        @parma  mode:int         Permission bits for the command
+        @param  mode:int         Permission bits for the command
         @param  owner:int|str    The new owner, `-1` for preserved
         @param  group:int|str    The new group, `-1` for preserved, `-2` to select by owner
         @param  mode:int         The desired protection bits, `-1` for preserved
