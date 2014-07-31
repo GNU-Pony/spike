@@ -244,6 +244,14 @@ class Spike():
         exclusives = set()
         exit_value = 0
         
+        def comma_split(values):
+            if values is None:
+                return None
+            rc = []
+            for value in values:
+                rc += value.split(',')
+            return rc
+        
         try:
             if opts.opts['-v'] is not None:
                 opts.test_allowed(self.execprog, allowed, longmap, True)
@@ -331,7 +339,7 @@ class Spike():
                 opts.test_files(self.execprog, 0, 0, True)
                 LibSpike.initialise(shred = opts.opts['--shred'] is not None)
                 exit_value = self.update(root    = opts.opts['--pinpal'][0] if opts.opts['--pinpal'] is not None else '/',
-                                         ignores = opts.opts['-i'] if opts.opts['-i'] is not None else [],
+                                         ignores = comma_split(opts.opts['-i']) if opts.opts['-i'] is not None else [],
                                          private = opts.opts['-u'] is not None)
                 
             elif opts.opts['-E'] is not None:
@@ -390,12 +398,12 @@ class Spike():
                             printerr(self.execprog + ': only \'yes\',  \'y\', \'no\' and \'n\' are allowed for -w(--written)')
                             exit(4)
                         LibSpike.initialise()
-                        exit_value = self.read_info(opts.files, field = opts.opts['-f'],
+                        exit_value = self.read_info(opts.files, field = comma_split(opts.opts['-f']),
                                                     installed = opts.opts['-w'][0][0] == 'y',
                                                     notinstalled = opts.opts['-w'][0][0] == 'n')
                     else:
                         LibSpike.initialise()
-                        exit_value = self.read_info(opts.files, field = opts.opts['-f'])
+                        exit_value = self.read_info(opts.files, field = comma_split(opts.opts['-f']))
                     
             elif opts.opts['-C'] is not None:
                 exclusives.add('--recursive')
