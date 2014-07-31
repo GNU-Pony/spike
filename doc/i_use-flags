@@ -24,8 +24,6 @@ I_USE_TTY       Whether you want TTY only program resources installed
 I_USE_LOCALE    Comma (,) separated list of locates to install,
 		in order of preference so programs with hard compiled language
 		knows what language it should use.
-I_USE_GETTY     Name of the getty program use, such as util-linux:agetty or gates-of-tartaros:got,
-		‘a:b’ means the command ‘b’ that is provided by ‘a’, ‘c’ is shorthand for ‘c:c’
 I_USE_TOOLKIT   Ordered comma separated list of prefered toolkits, for example gtk2,qt5,gtk3
 I_USE_DISPLAY   Ordered comma separated list of prefered display servers, for example wayland,xorg,mir
 
