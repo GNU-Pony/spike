@@ -79,7 +79,7 @@ freedom:or-flag:SOFTWARE_SHAREABLE,SOFTWARE_COMMERCIAL,SOFTWARE_DERIVATIVE,
 license:list<str>
 	Licences that applies to the package, the part of the package that
 	the license applies to may be specified. If so, the license and the
-	that text should be separated by a colon.
+	that text should be separated by a colon and a space.
 
 metalicense:list<(value:or-flag:¿F?, mask:or-flag:¿F?)?>?=None
         		F=NO_TRADEMARKS,NO_PATENTS,CONTRACT_BASED,COMMERCIAL,
