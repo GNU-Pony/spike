@@ -155,7 +155,7 @@ optdepends:list<str>=[]
 	Optional packages that add functionality to the package at runtime.
 
 noextract:list<str>=[]
-	Sources, by destination name, that should not be extracted.
+	Sources that should not be extracted.
 
 source:list<str|list<str>>
 	Source file URL:s to download, each element may be a list of wget parameters,
