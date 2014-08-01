@@ -43,7 +43,6 @@ I_USE_INTERNET          Whether you are connected to the Internet at all,
 I_USE_NETWORK           Just like I_USE_INTERNET, but a network instread of the Internet
 I_USE_BACKLIGHT         Whether you use monitors with backlighting, CRT does not
 I_USE_AUDIO             Whether you use audio playback, you probably do not if it is a server
-I_USE_CLOSE_AS_ICONIFY  Whether you prefer that applications save their state when closed
 I_USE_CD                Comma separated list of CD features you want, - for none: read,write,rewrite,clone,play,rip
 I_USE_DVD               Comma separated list of DVD features you want, - for none: read,write,rewrite,clone,play,rip
 I_USE_HDDVD             Comma separated list of HDDVD features you want, - for none: read,write,rewrite,clone,play,rip
